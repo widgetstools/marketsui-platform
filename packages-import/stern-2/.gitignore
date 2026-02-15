@@ -6,3 +6,5 @@ dist/
 *.db
 coverage/
 .DS_Store
+.claude/
+logs/
