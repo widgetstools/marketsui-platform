@@ -10,6 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@openfin/core": "^42.103.1",
+    "@openfin/workspace": "^22.3.27",
+    "@openfin/workspace-platform": "^22.3.27",
+    "@stern/openfin-platform": "1.0.0",
     "@stern/shared-types": "1.0.0",
     "@stern/ui": "1.0.0",
     "@stern/widget-sdk": "1.0.0",

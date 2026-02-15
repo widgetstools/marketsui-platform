@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link, useSearchParams } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, useSearchParams } from 'react-router-dom';
 import { AppProvider } from './providers/AppProvider.js';
 import { OrdersBlotter } from './widgets/OrdersBlotter.js';
 import { FillsBlotter } from './widgets/FillsBlotter.js';
@@ -59,16 +59,14 @@ function HomePage() {
  */
 export function App() {
   return (
-    <BrowserRouter>
-      <AppProvider>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/blotter/orders" element={<BlotterPage Widget={OrdersBlotter} />} />
-          <Route path="/blotter/fills" element={<BlotterPage Widget={FillsBlotter} />} />
-          <Route path="/blotter/:type" element={<BlotterPage Widget={SimpleBlotter} />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AppProvider>
-    </BrowserRouter>
+    <AppProvider>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/blotter/orders" element={<BlotterPage Widget={OrdersBlotter} />} />
+        <Route path="/blotter/fills" element={<BlotterPage Widget={FillsBlotter} />} />
+        <Route path="/blotter/:type" element={<BlotterPage Widget={SimpleBlotter} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AppProvider>
   );
 }
