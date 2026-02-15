@@ -31,3 +31,31 @@ export type {
 // Registry
 // ============================================================================
 export { WidgetRegistry } from './registry/WidgetRegistry.js';
+
+// ============================================================================
+// Providers
+// ============================================================================
+export { WidgetHost, useWidgetHost } from './providers/WidgetHost.js';
+
+// ============================================================================
+// Hooks
+// ============================================================================
+export { useWidget } from './hooks/useWidget.js';
+export { useSettingsScreen } from './hooks/useSettingsScreen.js';
+
+// ============================================================================
+// Adapters
+// ============================================================================
+export { BrowserAdapter } from './adapters/BrowserAdapter.js';
+
+// ============================================================================
+// Services
+// ============================================================================
+export { ConfigClient } from './services/configClient.js';
+
+// ============================================================================
+// Extensibility
+// ============================================================================
+export { renderSlot } from './extensibility/renderSlot.js';
+export { createExtendedWidget } from './extensibility/createExtendedWidget.js';
+export { compose } from './extensibility/compose.js';
