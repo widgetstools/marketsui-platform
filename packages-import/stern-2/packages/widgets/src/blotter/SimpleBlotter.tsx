@@ -178,18 +178,6 @@ export const SimpleBlotter: React.FC<SimpleBlotterProps> = ({
     );
   }
 
-  // ─── Empty state ───────────────────────────────────
-  if (!widget.config) {
-    const emptySlot = renderSlot(slots?.emptyState, slotContext);
-    if (emptySlot) return <>{emptySlot}</>;
-
-    return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
-        No configuration found.
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full w-full bg-background">
       {renderSlot(slots?.header, slotContext)}

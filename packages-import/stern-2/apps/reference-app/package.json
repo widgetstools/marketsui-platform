@@ -18,6 +18,7 @@
     "@stern/ui": "1.0.0",
     "@stern/widget-sdk": "1.0.0",
     "@stern/widgets": "1.0.0",
+    "@stomp/stompjs": "^7.3.0",
     "@tanstack/react-query": "^5.80.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -3,6 +3,7 @@ import { AgGridReact } from 'ag-grid-react';
 import type { GridApi, ColDef, GridReadyEvent } from 'ag-grid-community';
 import { ModuleRegistry } from 'ag-grid-community';
 import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { useAgGridTheme } from '../theme/useAgGridTheme.js';
 
 // Register AG Grid Enterprise modules
 ModuleRegistry.registerModules([AllEnterpriseModule]);
@@ -22,6 +23,7 @@ export const BlotterGrid: React.FC<BlotterGridProps> = ({
   getRowId: getRowIdProp,
 }) => {
   const gridApiRef = useRef<GridApi | null>(null);
+  const { theme } = useAgGridTheme();
 
   const defaultColDef = useMemo(() => ({
     flex: 1,
@@ -57,6 +59,7 @@ export const BlotterGrid: React.FC<BlotterGridProps> = ({
   return (
     <div className="flex-1 w-full" style={{ minHeight: 0 }}>
       <AgGridReact
+        theme={theme}
         columnDefs={columns}
         defaultColDef={defaultColDef}
         statusBar={statusBar}

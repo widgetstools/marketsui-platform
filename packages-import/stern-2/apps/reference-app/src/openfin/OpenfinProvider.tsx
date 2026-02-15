@@ -1,19 +1,53 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { init } from '@openfin/workspace-platform';
 import {
   buildUrl,
   initializeBaseUrlFromManifest,
   THEME_PALETTES,
+  createMenuItem,
+  type DockMenuItem,
 } from '@stern/openfin-platform';
 import * as dock from './openfinDock.js';
+import { DockConfigurator } from './DockConfigurator.js';
+
+/**
+ * Default menu items seeded from the widget routes registry.
+ */
+function getDefaultMenuItems(): DockMenuItem[] {
+  return [
+    createMenuItem({
+      id: 'orders-blotter',
+      caption: 'Orders Blotter',
+      url: '/blotter/orders',
+      openMode: 'view',
+      order: 0,
+    }),
+    createMenuItem({
+      id: 'fills-blotter',
+      caption: 'Fills Blotter',
+      url: '/blotter/fills',
+      openMode: 'view',
+      order: 1,
+    }),
+    createMenuItem({
+      id: 'positions-blotter',
+      caption: 'Positions Blotter',
+      url: '/blotter/positions',
+      openMode: 'view',
+      order: 2,
+    }),
+  ];
+}
 
 /**
  * OpenfinProvider — platform provider component loaded at /platform/provider.
- * Initializes the workspace platform, registers the dock, then hides itself.
+ * Initializes the workspace platform, registers the dock, and shows a configurator UI.
  */
 export default function OpenfinProvider() {
   const isInitialized = useRef(false);
-  const [status, setStatus] = useState('Initializing...');
+  const [status, setStatus] = useState<'initializing' | 'ready' | 'error' | 'no-openfin'>('initializing');
+  const [statusMessage, setStatusMessage] = useState('Initializing...');
+  const [menuItems, setMenuItems] = useState<DockMenuItem[]>(getDefaultMenuItems);
 
   useEffect(() => {
     let analyticsErrorHandler: ((event: PromiseRejectionEvent) => void) | null = null;
@@ -26,8 +60,8 @@ export default function OpenfinProvider() {
       };
       doInit();
     } else if (typeof window !== 'undefined' && !window.fin) {
-      // Browser mode — show status for development
-      setStatus('Not in OpenFin environment');
+      setStatus('no-openfin');
+      setStatusMessage('Not in OpenFin environment — showing configurator in preview mode');
     }
 
     return () => {
@@ -55,7 +89,7 @@ export default function OpenfinProvider() {
       const icon = buildUrl('/star.svg');
       const pngIcon = buildUrl('/star.png');
 
-      setStatus('Initializing workspace platform...');
+      setStatusMessage('Initializing workspace platform...');
 
       // Initialize OpenFin workspace platform
       try {
@@ -85,7 +119,7 @@ export default function OpenfinProvider() {
         }
       }
 
-      setStatus('Waiting for platform API...');
+      setStatusMessage('Waiting for platform API...');
 
       // Wait for platform-api-ready
       try {
@@ -96,25 +130,9 @@ export default function OpenfinProvider() {
             // Small delay for workspace APIs to fully initialize
             await new Promise((resolve) => setTimeout(resolve, 500));
 
-            setStatus('Registering dock...');
+            setStatusMessage('Registering dock...');
 
-            // Hardcoded menu items for reference app widgets
-            const menuItems = [
-              {
-                id: 'orders-blotter',
-                caption: 'Orders Blotter',
-                url: '/blotter/orders',
-                openMode: 'view' as const,
-                order: 0,
-              },
-              {
-                id: 'fills-blotter',
-                caption: 'Fills Blotter',
-                url: '/blotter/fills',
-                openMode: 'view' as const,
-                order: 1,
-              },
-            ];
+            const items = getDefaultMenuItems();
 
             // Register dock
             if (dock.isDockAvailable()) {
@@ -123,7 +141,7 @@ export default function OpenfinProvider() {
                   id: 'stern-reference-platform',
                   title: 'Stern Reference Platform',
                   icon: pngIcon,
-                  menuItems,
+                  menuItems: items,
                 });
                 console.log('[Provider] Dock registered');
               } catch (dockError: any) {
@@ -137,65 +155,99 @@ export default function OpenfinProvider() {
               await dock.show();
             }
 
-            // Hide provider window
+            // Hide provider window (user can re-show via Tools > Toggle Provider Window)
             const providerWindow = fin.Window.getCurrentSync();
             await providerWindow.hide();
 
-            // Handle close button — hide unless quitting
+            // Handle close — initiate platform quit
             providerWindow.on('close-requested', async () => {
               if (dock.isQuitting()) {
                 await providerWindow.close(true);
                 return;
               }
+
+              // Platform is requesting us to close (e.g. user confirmed "Close platform" dialog).
+              // Initiate a full quit sequence.
+              dock.setQuitting();
+
               try {
-                await providerWindow.hide();
-              } catch (error) {
-                console.error('[Provider] Error hiding window', error);
-              }
+                await dock.deregister();
+              } catch { /* ignore */ }
+
+              try {
+                await providerWindow.close(true);
+              } catch { /* ignore */ }
+
+              try {
+                const app = fin.Application.getCurrentSync();
+                await app.quit(true);
+              } catch { /* already dead */ }
             });
 
-            setStatus('Ready');
+            setMenuItems(items);
+            setStatus('ready');
+            setStatusMessage('Ready');
           } catch (error) {
             console.error('[Provider] Failed to register workspace components', error);
-            setStatus('Error registering dock');
+            setStatus('error');
+            setStatusMessage('Error registering dock');
           }
         });
       } catch (platformError) {
         console.error('[Provider] Failed to get platform', platformError);
       }
 
-      setStatus('Platform initialized');
+      setStatusMessage('Platform initialized');
       return analyticsErrorHandler;
     } catch (error) {
       console.error('[Provider] Failed to initialize platform', error);
-      setStatus('Initialization failed');
+      setStatus('error');
+      setStatusMessage('Initialization failed');
       return () => {};
     }
   }
 
+  const handleItemsChange = useCallback((items: DockMenuItem[]) => {
+    setMenuItems(items);
+  }, []);
+
+  // Show configurator when ready or in browser preview mode
+  if (status === 'ready' || status === 'no-openfin') {
+    return (
+      <div className="h-screen w-screen flex flex-col bg-background text-foreground">
+        {/* Minimal status bar */}
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card text-xs text-muted-foreground">
+          <span>Stern Reference Platform</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+            {status === 'no-openfin' ? 'Preview Mode' : 'Connected'}
+          </span>
+        </div>
+
+        {/* Dock Configurator */}
+        <div className="flex-1 overflow-hidden">
+          <DockConfigurator
+            initialItems={menuItems}
+            onItemsChange={handleItemsChange}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Loading / error state
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      background: '#1e1f23',
-      color: '#fff',
-      fontFamily: 'system-ui, sans-serif',
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          width: 48,
-          height: 48,
-          border: '3px solid rgba(255,255,255,0.3)',
-          borderTopColor: '#0A76D3',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto 16px',
-        }} />
-        <h1 style={{ fontSize: 20, margin: '0 0 8px' }}>Stern Reference Platform</h1>
-        <p style={{ fontSize: 14, opacity: 0.7 }}>{status}</p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <div className="h-screen w-screen flex items-center justify-center bg-background text-foreground">
+      <div className="text-center">
+        {status === 'error' ? (
+          <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
+            <span className="text-destructive text-lg">!</span>
+          </div>
+        ) : (
+          <div className="h-12 w-12 mx-auto mb-4 rounded-full border-[3px] border-muted border-t-primary animate-spin" />
+        )}
+        <h1 className="text-lg font-semibold mb-1">Stern Reference Platform</h1>
+        <p className="text-sm text-muted-foreground">{statusMessage}</p>
       </div>
     </div>
   );

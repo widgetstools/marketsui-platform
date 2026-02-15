@@ -17,14 +17,15 @@ export class ConfigClient {
   // Config CRUD
   // =========================================================================
 
-  async getById(configId: string): Promise<UnifiedConfig> {
-    const res = await fetch(`${this.baseUrl}/api/v1/configurations/${configId}`);
-    if (!res.ok) throw new Error(`Config ${configId} not found (${res.status})`);
+  async getById(configId: string): Promise<UnifiedConfig | null> {
+    const res = await fetch(`${this.baseUrl}/configurations/${configId}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`Failed to fetch config ${configId} (${res.status})`);
     return res.json();
   }
 
   async create(data: Partial<UnifiedConfig>): Promise<UnifiedConfig> {
-    const res = await fetch(`${this.baseUrl}/api/v1/configurations`, {
+    const res = await fetch(`${this.baseUrl}/configurations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -34,7 +35,7 @@ export class ConfigClient {
   }
 
   async update(configId: string, updates: Partial<UnifiedConfig>): Promise<UnifiedConfig> {
-    const res = await fetch(`${this.baseUrl}/api/v1/configurations/${configId}`, {
+    const res = await fetch(`${this.baseUrl}/configurations/${configId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
@@ -44,14 +45,14 @@ export class ConfigClient {
   }
 
   async delete(configId: string): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/api/v1/configurations/${configId}`, {
+    const res = await fetch(`${this.baseUrl}/configurations/${configId}`, {
       method: 'DELETE'
     });
     if (!res.ok) throw new Error(`Failed to delete config ${configId} (${res.status})`);
   }
 
   async clone(configId: string, newName: string, userId: string): Promise<UnifiedConfig> {
-    const res = await fetch(`${this.baseUrl}/api/v1/configurations/${configId}/clone`, {
+    const res = await fetch(`${this.baseUrl}/configurations/${configId}/clone`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newName, userId })
@@ -70,8 +71,8 @@ export class ConfigClient {
     if (filter.nodeIds?.length) params.set('nodeId', filter.nodeIds[0]);
 
     const url = params.toString()
-      ? `${this.baseUrl}/api/v1/configurations?${params}`
-      : `${this.baseUrl}/api/v1/configurations`;
+      ? `${this.baseUrl}/configurations?${params}`
+      : `${this.baseUrl}/configurations`;
 
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Failed to query configs (${res.status})`);
@@ -87,7 +88,7 @@ export class ConfigClient {
     const params = new URLSearchParams({ userId, componentType, name });
     if (componentSubType) params.set('componentSubType', componentSubType);
 
-    const res = await fetch(`${this.baseUrl}/api/v1/configurations/lookup?${params}`);
+    const res = await fetch(`${this.baseUrl}/configurations/lookup?${params}`);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Failed to lookup config (${res.status})`);
     return res.json();
@@ -98,8 +99,8 @@ export class ConfigClient {
     if (componentType) params.set('componentType', componentType);
 
     const url = params.toString()
-      ? `${this.baseUrl}/api/v1/configurations/by-parent/${parentId}?${params}`
-      : `${this.baseUrl}/api/v1/configurations/by-parent/${parentId}`;
+      ? `${this.baseUrl}/configurations/by-parent/${parentId}?${params}`
+      : `${this.baseUrl}/configurations/by-parent/${parentId}`;
 
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Failed to get configs by parent (${res.status})`);
@@ -118,7 +119,7 @@ export class ConfigClient {
     const params = new URLSearchParams({ path, componentType });
     if (componentSubType) params.set('componentSubType', componentSubType);
 
-    const res = await fetch(`${this.baseUrl}/api/v1/configurations/resolved?${params}`);
+    const res = await fetch(`${this.baseUrl}/configurations/resolved?${params}`);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Failed to resolve config (${res.status})`);
     return res.json();
@@ -130,7 +131,7 @@ export class ConfigClient {
     userId: string,
     newName?: string
   ): Promise<UnifiedConfig> {
-    const res = await fetch(`${this.baseUrl}/api/v1/configurations/${configId}/fork`, {
+    const res = await fetch(`${this.baseUrl}/configurations/${configId}/fork`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetNodeId, userId, newName })
@@ -144,7 +145,7 @@ export class ConfigClient {
     targetNodePath: string,
     userId: string
   ): Promise<UnifiedConfig> {
-    const res = await fetch(`${this.baseUrl}/api/v1/configurations/${configId}/promote`, {
+    const res = await fetch(`${this.baseUrl}/configurations/${configId}/promote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetNodePath, userId })
@@ -203,7 +204,7 @@ export class ConfigClient {
 
   async loadLayout(layoutId: string): Promise<unknown> {
     const config = await this.getById(layoutId);
-    return config.config;
+    return config?.config ?? null;
   }
 
   async deleteLayout(layoutId: string): Promise<void> {

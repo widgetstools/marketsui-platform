@@ -70,13 +70,21 @@ export async function register(config: {
   try {
     console.log('[DOCK] Registering dock provider', config.id);
 
-    // Sync theme from platform
+    // Deregister any previous dock to ensure clean state
+    try {
+      await Dock.deregister();
+      console.log('[DOCK] Deregistered previous dock');
+    } catch {
+      // No previous registration — expected on first launch
+    }
+
+    // Sync theme from platform (default to 'dark' to match our init config)
     try {
       const platform = getCurrentSync();
-      const schemes = await platform.Theme.getSelectedScheme();
-      currentTheme = (schemes as any) === 'dark' ? 'dark' : 'light';
+      const scheme = await platform.Theme.getSelectedScheme();
+      currentTheme = (scheme as string) === 'light' ? 'light' : 'dark';
     } catch {
-      currentTheme = 'light';
+      currentTheme = 'dark';
     }
 
     // Build dock buttons
@@ -84,7 +92,12 @@ export async function register(config: {
     if (config.menuItems && config.menuItems.length > 0) {
       buttons.push(buildApplicationsButton(config.menuItems));
     }
-    buttons.push(...buildSystemButtons());
+    const systemButtons = buildSystemButtons();
+    buttons.push(...systemButtons);
+
+    // Debug: log what we're registering
+    const toolsButton = systemButtons.find((b: any) => b.tooltip === 'Tools') as any;
+    console.log('[DOCK] Tools dropdown options:', toolsButton?.options?.map((o: any) => o.tooltip));
 
     const dockProvider: any = {
       id: config.id,
@@ -224,15 +237,30 @@ export function dockGetCustomActions(): CustomActionsMap {
       }
     },
 
+    'launch-data-providers': async (): Promise<void> => {
+      try {
+        await launchMenuItem({
+          id: 'data-providers',
+          caption: 'Data Providers',
+          url: '/dataproviders',
+          openMode: 'window',
+          order: 0,
+          windowOptions: { width: 1200, height: 800 },
+        } as DockMenuItem);
+      } catch (error) {
+        console.error('[DOCK] Failed to launch data providers', error);
+      }
+    },
+
     'reload-dock': async (): Promise<void> => {
       try {
         if (!currentConfig) return;
 
-        // Re-sync theme
+        // Re-sync theme (default to 'dark')
         try {
           const platform = getCurrentSync();
-          const schemes = await platform.Theme.getSelectedScheme();
-          currentTheme = (schemes as any) === 'dark' ? 'dark' : 'light';
+          const scheme = await platform.Theme.getSelectedScheme();
+          currentTheme = (scheme as string) === 'light' ? 'light' : 'dark';
         } catch { /* ignore */ }
 
         const dockProviderToRestore: any = {
@@ -491,6 +519,11 @@ function buildSystemButtons(): DockButton[] {
       iconUrl: getThemedIcon('tools'),
       options: [
         {
+          tooltip: 'Data Providers',
+          iconUrl: getThemedIcon('data'),
+          action: {id: 'launch-data-providers'},
+        },
+        {
           tooltip: 'Reload Dock',
           iconUrl: getThemedIcon('reload'),
           action: { id: 'reload-dock' },
@@ -501,7 +534,7 @@ function buildSystemButtons(): DockButton[] {
           action: { id: 'show-dock-devtools' },
         },
         {
-          tooltip: 'Toggle Provider Window',
+          tooltip: 'Toggle Provider Window1',
           iconUrl: getThemedIcon('provider-window'),
           action: { id: 'toggle-provider-window' },
         },

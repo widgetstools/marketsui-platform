@@ -35,3 +35,6 @@ export type { BlotterDependencies, BlotterProviderProps } from './BlotterProvide
 
 // ─── Interfaces ───────────────────────────────────
 export type { IBlotterDataProvider, IActionRegistry } from './interfaces.js';
+
+// ─── AG Grid Theme ───────────────────────────────
+export { sternDarkTheme, sternLightTheme, useAgGridTheme } from './theme/index.js';
