@@ -8,7 +8,7 @@ import {
   type DockMenuItem,
 } from '@stern/openfin-platform';
 import * as dock from './openfinDock.js';
-import { DockConfigurator } from './DockConfigurator.js';
+import { DockConfigurator } from '@stern/openfin-platform';
 
 /**
  * Default menu items seeded from the widget routes registry.
@@ -229,6 +229,7 @@ export default function OpenfinProvider() {
           <DockConfigurator
             initialItems={menuItems}
             onItemsChange={handleItemsChange}
+            onApply={(items) => dock.updateConfig({ menuItems: items })}
           />
         </div>
       </div>

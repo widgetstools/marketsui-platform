@@ -13,7 +13,7 @@ import {
 import { Plus, Database, ChevronRight, Settings } from 'lucide-react';
 import type { DataProviderConfig, ProviderType } from '@stern/shared-types';
 import { getDefaultProviderConfig } from '@stern/shared-types';
-import { useDeleteDataProvider } from '../../hooks/useDataProviderQueries.js';
+import { useDeleteDataProvider } from './hooks/useDataProviderQueries.js';
 import { ProviderList } from './ProviderList.js';
 import { ProviderForm } from './ProviderForm.js';
 import { TypeSelectionDialog } from './TypeSelectionDialog.js';

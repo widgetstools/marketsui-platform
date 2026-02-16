@@ -38,3 +38,6 @@ export type { IBlotterDataProvider, IActionRegistry } from './interfaces.js';
 
 // ─── AG Grid Theme ───────────────────────────────
 export { sternDarkTheme, sternLightTheme, useAgGridTheme } from './theme/index.js';
+
+// ─── Provider Editor ────────────────────────────
+export * from './provider-editor/index.js';

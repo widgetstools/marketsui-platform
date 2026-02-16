@@ -28,7 +28,7 @@ import {
   OpenFinCustomEvents,
   launchMenuItem,
 } from '@stern/openfin-platform';
-import { getDefaultMenuIcon } from '../utils/dock/defaultIcons.js';
+import { getDefaultMenuIcon } from '@stern/openfin-platform';
 
 // ============================================================================
 // Module State

@@ -5,7 +5,7 @@ import { OrdersBlotter } from './widgets/OrdersBlotter.js';
 import { FillsBlotter } from './widgets/FillsBlotter.js';
 import { SimpleBlotter } from '@stern/widgets';
 import { widgetRoutes } from './registry/widgetRoutes.js';
-import { DataProviderEditor } from './components/provider/DataProviderEditor.js';
+import { DataProviderEditor } from '@stern/widgets';
 
 /**
  * BlotterPage — renders a blotter widget using the configId from URL search params.

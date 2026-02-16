@@ -28,7 +28,7 @@ import { Info } from 'lucide-react';
 import {
   useCreateDataProvider,
   useUpdateDataProvider,
-} from '../../hooks/useDataProviderQueries.js';
+} from './hooks/useDataProviderQueries.js';
 import type {
   DataProviderConfig,
   StompProviderConfig,

@@ -6,7 +6,8 @@
  * Each icon category has both light and dark theme variants.
  */
 
-import { buildUrl, type DockMenuItem } from '@stern/openfin-platform';
+import { buildUrl } from './urlHelper.js';
+import type { DockMenuItem } from '../types/dockConfig.js';
 
 interface IconCategory {
   baseName: string;

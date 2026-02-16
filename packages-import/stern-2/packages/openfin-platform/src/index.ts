@@ -68,6 +68,23 @@ export {
 } from './platform/menuLauncher.js';
 export type { ConfigLookupResult, ConfigLookupCallback } from './platform/menuLauncher.js';
 
+// ─── Components ─────────────────────────────────
+export { DockConfigurator } from './components/DockConfigurator.js';
+export type { DockConfiguratorProps } from './components/DockConfigurator.js';
+
+// ─── Dock Utils ─────────────────────────────────
+export {
+  findMenuItem,
+  updateMenuItem,
+  deleteMenuItem,
+  addMenuItem,
+  duplicateMenuItem,
+  moveMenuItem,
+  countItems,
+  getAllItemIds,
+} from './utils/treeUtils.js';
+export { getDefaultMenuIcon } from './utils/defaultIcons.js';
+
 // ─── Hooks ──────────────────────────────────────
 export { useOpenfinTheme } from './hooks/useOpenfinTheme.js';
 export { useOpenFinEvents } from './hooks/useOpenFinEvents.js';

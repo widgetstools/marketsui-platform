@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
   cn,
 } from '@stern/ui';
-import { createMenuItem, type DockMenuItem } from '@stern/openfin-platform';
+import { createMenuItem, type DockMenuItem } from '../types/dockConfig.js';
 import {
   findMenuItem,
   updateMenuItem,
@@ -30,16 +30,16 @@ import {
   duplicateMenuItem,
   moveMenuItem,
   countItems,
-} from '../utils/dock/treeUtils.js';
-import * as dock from './openfinDock.js';
+} from '../utils/treeUtils.js';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-interface DockConfiguratorProps {
+export interface DockConfiguratorProps {
   initialItems: DockMenuItem[];
   onItemsChange?: (items: DockMenuItem[]) => void;
+  onApply?: (items: DockMenuItem[]) => Promise<void>;
 }
 
 // ============================================================================
@@ -338,7 +338,7 @@ function PropertiesPanel({ item, onUpdate }: PropertiesPanelProps) {
 // DockConfigurator Component
 // ============================================================================
 
-export function DockConfigurator({ initialItems, onItemsChange }: DockConfiguratorProps) {
+export function DockConfigurator({ initialItems, onItemsChange, onApply }: DockConfiguratorProps) {
   const [menuItems, setMenuItems] = useState<DockMenuItem[]>(initialItems);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -437,11 +437,12 @@ export function DockConfigurator({ initialItems, onItemsChange }: DockConfigurat
     });
   }, []);
 
-  // -- Save: update the live dock --
+  // -- Save: apply via callback --
   const handleSave = useCallback(async () => {
+    if (!onApply) return;
     setIsSaving(true);
     try {
-      await dock.updateConfig({ menuItems });
+      await onApply(menuItems);
       setIsDirty(false);
       console.log('[DockConfigurator] Dock updated with', menuItems.length, 'items');
     } catch (error) {
@@ -449,7 +450,7 @@ export function DockConfigurator({ initialItems, onItemsChange }: DockConfigurat
     } finally {
       setIsSaving(false);
     }
-  }, [menuItems]);
+  }, [menuItems, onApply]);
 
   // -- Export --
   const handleExport = useCallback(() => {
@@ -531,7 +532,7 @@ export function DockConfigurator({ initialItems, onItemsChange }: DockConfigurat
             <Button
               size="sm"
               className="h-7 text-xs px-3"
-              disabled={!isDirty || isSaving}
+              disabled={!isDirty || isSaving || !onApply}
               onClick={handleSave}
             >
               <IconSave className="h-3.5 w-3.5 mr-1.5" />

@@ -19,6 +19,8 @@
     "@openfin/core": "^42.103.1",
     "@openfin/workspace": "^22.3.27",
     "@openfin/workspace-platform": "^22.3.27",
+    "@stern/ui": "1.0.0",
+    "lucide-react": ">=0.300.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },

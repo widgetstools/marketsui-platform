@@ -37,7 +37,7 @@ export function useConnectionTest(config: StompProviderConfig): UseConnectionTes
     }
 
     try {
-      const { StompDataProvider } = await import('../../../../services/providers/StompDatasourceProvider.js');
+      const { StompDataProvider } = await import('../StompDatasourceProvider.js');
 
       const provider = new StompDataProvider({
         websocketUrl: config.websocketUrl,

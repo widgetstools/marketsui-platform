@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ScrollArea, Input, Button } from '@stern/ui';
 import { Database, Wifi, Globe, Zap, TestTube, Star, Search, Trash2 } from 'lucide-react';
 import type { ProviderType, DataProviderConfig } from '@stern/shared-types';
-import { useDataProviders } from '../../hooks/useDataProviderQueries.js';
+import { useDataProviders } from './hooks/useDataProviderQueries.js';
 
 interface ProviderListProps {
   userId: string;
