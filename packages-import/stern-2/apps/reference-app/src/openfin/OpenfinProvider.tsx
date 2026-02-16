@@ -5,10 +5,11 @@ import {
   initializeBaseUrlFromManifest,
   THEME_PALETTES,
   createMenuItem,
+  DockConfigurator,
   type DockMenuItem,
 } from '@stern/openfin-platform';
+import { dataProviderConfigService } from '@stern/widgets';
 import * as dock from './openfinDock.js';
-import { DockConfigurator } from '@stern/openfin-platform';
 
 /**
  * Default menu items seeded from the widget routes registry.
@@ -86,6 +87,20 @@ export default function OpenfinProvider() {
 
       // Initialize base URL from manifest
       await initializeBaseUrlFromManifest();
+
+      // Read apiUrl from manifest customData and configure services
+      try {
+        const app = await fin.Application.getCurrent();
+        const manifest = await app.getManifest() as any;
+        const apiUrl = manifest?.platform?.defaultWindowOptions?.customData?.platformContext?.apiUrl;
+        if (apiUrl) {
+          dataProviderConfigService.configure({ apiUrl });
+          console.log('[Provider] Configured apiUrl from manifest:', apiUrl);
+        }
+      } catch {
+        console.warn('[Provider] Could not read apiUrl from manifest, using default');
+      }
+
       const icon = buildUrl('/star.svg');
       const pngIcon = buildUrl('/star.png');
 

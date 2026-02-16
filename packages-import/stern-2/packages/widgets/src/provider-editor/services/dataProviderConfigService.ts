@@ -13,9 +13,20 @@ import {
 } from '@stern/shared-types';
 import type { DataProviderConfig, ProviderConfig } from '@stern/shared-types';
 
-const API_BASE = 'http://localhost:3001/api/v1/configurations';
+const DEFAULT_API_URL = 'http://localhost:3001';
 
 export class DataProviderConfigService {
+  private apiBase = `${DEFAULT_API_URL}/api/v1/configurations`;
+
+  /**
+   * Configure the service with a custom API base URL.
+   * Should be called once at app startup (e.g., from manifest customData).
+   */
+  configure(options: { apiUrl: string }): void {
+    const base = options.apiUrl.replace(/\/+$/, '');
+    this.apiBase = `${base}/api/v1/configurations`;
+  }
+
   /**
    * Convert DataProviderConfig to UnifiedConfig format for storage.
    */
@@ -66,7 +77,7 @@ export class DataProviderConfigService {
 
   async create(provider: DataProviderConfig, userId: string): Promise<DataProviderConfig> {
     const unifiedConfig = this.toUnifiedConfig(provider, userId);
-    const res = await fetch(API_BASE, {
+    const res = await fetch(this.apiBase, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(unifiedConfig),
@@ -88,7 +99,7 @@ export class DataProviderConfigService {
       body.componentSubType = PROVIDER_TYPE_TO_COMPONENT_SUBTYPE[updates.providerType];
     }
 
-    const res = await fetch(`${API_BASE}/${providerId}`, {
+    const res = await fetch(`${this.apiBase}/${providerId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -98,12 +109,12 @@ export class DataProviderConfigService {
   }
 
   async delete(providerId: string): Promise<void> {
-    const res = await fetch(`${API_BASE}/${providerId}`, { method: 'DELETE' });
+    const res = await fetch(`${this.apiBase}/${providerId}`, { method: 'DELETE' });
     if (!res.ok) throw new Error(`Failed to delete provider (${res.status})`);
   }
 
   async getById(providerId: string): Promise<DataProviderConfig | null> {
-    const res = await fetch(`${API_BASE}/${providerId}`);
+    const res = await fetch(`${this.apiBase}/${providerId}`);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Failed to fetch provider (${res.status})`);
     return this.fromUnifiedConfig(await res.json());
@@ -111,7 +122,7 @@ export class DataProviderConfigService {
 
   async getByUser(userId: string): Promise<DataProviderConfig[]> {
     const params = new URLSearchParams({ includeDeleted: 'false' });
-    const res = await fetch(`${API_BASE}/by-user/${userId}?${params}`);
+    const res = await fetch(`${this.apiBase}/by-user/${userId}?${params}`);
     if (!res.ok) throw new Error(`Failed to fetch providers (${res.status})`);
 
     const configs: UnifiedConfig[] = await res.json();

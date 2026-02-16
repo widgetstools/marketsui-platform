@@ -12,7 +12,14 @@
     "providerUrl": "http://localhost:5173/platform/provider",
     "preventQuitOnLastWindowClosed": true,
     "defaultWindowOptions": {
-      "title": "Stern Reference Platform"
+      "title": "Stern Reference Platform",
+      "customData": {
+        "platformContext": {
+          "apiUrl": "http://localhost:3001",
+          "environment": "local",
+          "description": "REST API endpoint for configuration service"
+        }
+      }
     }
   },
   "desktopSettings": {

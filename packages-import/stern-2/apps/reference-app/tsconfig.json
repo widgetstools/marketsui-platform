@@ -5,6 +5,7 @@
     "rootDir": "./src",
     "jsx": "react-jsx",
     "noEmit": true,
+    "types": ["vite/client"],
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "baseUrl": ".",
     "paths": {

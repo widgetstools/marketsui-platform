@@ -1,12 +1,16 @@
 import React from 'react';
 import { WidgetHost, BrowserAdapter, WidgetRegistry } from '@stern/widget-sdk';
-import { BlotterProvider } from '@stern/widgets';
+import { BlotterProvider, dataProviderConfigService } from '@stern/widgets';
 import type { IBlotterDataProvider, IActionRegistry } from '@stern/widgets';
 import { MockDataProvider } from '../data/MockDataProvider.js';
 import { widgetRegistry } from '../registry/widgetRegistry.js';
 
-const API_URL = 'http://localhost:3001/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = `${API_BASE_URL}/api/v1`;
 const USER_ID = 'default-user';
+
+// Configure the data provider config service with the resolved API URL
+dataProviderConfigService.configure({ apiUrl: API_BASE_URL });
 
 /**
  * Create the platform adapter — uses BrowserAdapter for development,
