@@ -36,6 +36,7 @@ import { getDefaultMenuIcon } from '@stern/openfin-platform';
 
 let registration: DockProviderRegistration | undefined;
 let currentConfig: DockProviderConfig | undefined;
+let currentRegistrationId: string | undefined;
 let currentMenuItems: DockMenuItem[] = [];
 let currentTheme: 'light' | 'dark' = 'light';
 
@@ -120,6 +121,7 @@ export async function register(config: {
       disableUserRearrangement: dockProvider.disableUserRearrangement,
       buttons: dockProvider.buttons,
     };
+    currentRegistrationId = config.id;
     currentMenuItems = config.menuItems ?? [];
 
     registration = await Dock.register(dockProvider);
@@ -147,6 +149,7 @@ export async function deregister(): Promise<void> {
       await Dock.deregister();
       registration = undefined;
       currentConfig = undefined;
+      currentRegistrationId = undefined;
       console.log('[DOCK] Deregistered');
     }
   } catch (error) {
@@ -254,7 +257,7 @@ export function dockGetCustomActions(): CustomActionsMap {
 
     'reload-dock': async (): Promise<void> => {
       try {
-        if (!registration || !currentConfig) return;
+        if (!currentConfig || !currentRegistrationId) return;
 
         // Re-sync theme
         try {
@@ -263,17 +266,20 @@ export function dockGetCustomActions(): CustomActionsMap {
           currentTheme = (scheme as string) === 'light' ? 'light' : 'dark';
         } catch { /* ignore */ }
 
-        // Rebuild buttons with the current menu items and refreshed theme icons,
-        // then push via updateDockProviderConfig — no deregister/register needed.
+        // Rebuild buttons from stored state with refreshed theme icons.
         const buttons: DockButton[] = [];
         if (currentMenuItems.length > 0) {
           buttons.push(buildApplicationsButton(currentMenuItems));
         }
         buttons.push(...buildSystemButtons());
 
-        const newConfig: DockProviderConfig = { ...currentConfig, buttons };
-        await registration.updateDockProviderConfig(newConfig);
-        currentConfig = newConfig;
+        // Full deregister/register cycle. Dock.deregister() does not trigger
+        // the workspace platform's quit() so the platform stays alive.
+        await Dock.deregister();
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        registration = await Dock.register({ ...currentConfig, id: currentRegistrationId, buttons } as any);
+        await Dock.show();
+        currentConfig = { ...currentConfig, buttons };
         console.log('[DOCK] Reload complete');
       } catch (error) {
         console.error('[DOCK] Failed to reload dock', error);
@@ -411,17 +417,35 @@ export function dockGetCustomActions(): CustomActionsMap {
     },
 
     'toggle-provider-window': async (): Promise<void> => {
+      const EDITOR_NAME = 'stern-dock-editor';
       try {
-        const providerWindow = fin.Window.getCurrentSync();
-        const isShowing = await providerWindow.isShowing();
+        // Try to show/hide an existing dock editor window.
+        const existing = fin.Window.wrapSync({ uuid: fin.me.uuid, name: EDITOR_NAME });
+        const isShowing = await existing.isShowing();
         if (isShowing) {
-          await providerWindow.hide();
+          await existing.hide();
         } else {
-          await providerWindow.show();
-          await providerWindow.bringToFront();
+          await existing.show();
+          await existing.bringToFront();
         }
-      } catch (error) {
-        console.error('[DOCK] Failed to toggle provider window', error);
+      } catch {
+        // Window does not exist yet — create it as a plain fin.Window so that
+        // closing it does not trigger the workspace platform's auto-quit logic.
+        try {
+          await fin.Window.create({
+            name: EDITOR_NAME,
+            url: buildUrl('/dock-editor'),
+            defaultWidth: 900,
+            defaultHeight: 680,
+            defaultCentered: true,
+            autoShow: true,
+            frame: true,
+            resizable: true,
+            saveWindowState: false,
+          } as any);
+        } catch (error) {
+          console.error('[DOCK] Failed to create dock editor window', error);
+        }
       }
     },
 

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { init } from '@openfin/workspace-platform';
+import type { WorkspacePlatformOverrideCallback } from '@openfin/workspace-platform';
 import {
   buildUrl,
   initializeBaseUrlFromManifest,
@@ -11,58 +12,42 @@ import {
 import { dataProviderConfigService } from '@stern/widgets';
 import * as dock from './openfinDock.js';
 
-/**
- * Default menu items seeded from the widget routes registry.
- */
 function getDefaultMenuItems(): DockMenuItem[] {
   return [
-    createMenuItem({
-      id: 'orders-blotter',
-      caption: 'Orders Blotter',
-      url: '/blotter/orders',
-      openMode: 'view',
-      order: 0,
-    }),
-    createMenuItem({
-      id: 'fills-blotter',
-      caption: 'Fills Blotter',
-      url: '/blotter/fills',
-      openMode: 'view',
-      order: 1,
-    }),
-    createMenuItem({
-      id: 'positions-blotter',
-      caption: 'Positions Blotter',
-      url: '/blotter/positions',
-      openMode: 'view',
-      order: 2,
-    }),
+    createMenuItem({ id: 'orders-blotter',    caption: 'Orders Blotter',    url: '/blotter/orders',    openMode: 'view', order: 0 }),
+    createMenuItem({ id: 'fills-blotter',     caption: 'Fills Blotter',     url: '/blotter/fills',     openMode: 'view', order: 1 }),
+    createMenuItem({ id: 'positions-blotter', caption: 'Positions Blotter', url: '/blotter/positions', openMode: 'view', order: 2 }),
   ];
 }
 
 /**
- * OpenfinProvider — platform provider component loaded at /platform/provider.
- * Initializes the workspace platform, registers the dock, and shows a configurator UI.
+ * OpenfinProvider — platform provider loaded at /platform/provider.
+ *
+ * The provider window stays hidden at all times in OpenFin.
+ * The Dock Editor is a separate fin.Window at /dock-editor that communicates
+ * with this provider via IAB:
+ *   stern:dock-editor:request-config → provider responds with current menu items
+ *   stern:dock-editor:apply          → provider applies updated menu items to dock
  */
 export default function OpenfinProvider() {
   const isInitialized = useRef(false);
   const [status, setStatus] = useState<'initializing' | 'ready' | 'error' | 'no-openfin'>('initializing');
   const [statusMessage, setStatusMessage] = useState('Initializing...');
   const [menuItems, setMenuItems] = useState<DockMenuItem[]>(getDefaultMenuItems);
+  // Ref keeps IAB handlers from capturing stale state.
+  const menuItemsRef = useRef<DockMenuItem[]>(menuItems);
+  useEffect(() => { menuItemsRef.current = menuItems; }, [menuItems]);
 
   useEffect(() => {
     let analyticsErrorHandler: ((event: PromiseRejectionEvent) => void) | null = null;
 
     if (typeof window !== 'undefined' && window.fin && !isInitialized.current) {
       isInitialized.current = true;
-
-      const doInit = async () => {
-        analyticsErrorHandler = await initializePlatform();
-      };
+      const doInit = async () => { analyticsErrorHandler = await initializePlatform(); };
       doInit();
     } else if (typeof window !== 'undefined' && !window.fin) {
       setStatus('no-openfin');
-      setStatusMessage('Not in OpenFin environment — showing configurator in preview mode');
+      setStatusMessage('Not in OpenFin environment — preview mode');
     }
 
     return () => {
@@ -74,7 +59,6 @@ export default function OpenfinProvider() {
 
   async function initializePlatform(): Promise<(event: PromiseRejectionEvent) => void> {
     try {
-      // Suppress OpenFin analytics errors
       const analyticsErrorHandler = (event: PromiseRejectionEvent) => {
         if (
           event.reason?.message?.includes('system topic payload') ||
@@ -85,49 +69,70 @@ export default function OpenfinProvider() {
       };
       window.addEventListener('unhandledrejection', analyticsErrorHandler);
 
-      // Initialize base URL from manifest
       await initializeBaseUrlFromManifest();
 
-      // Read apiUrl from manifest customData and configure services
       try {
         const app = await fin.Application.getCurrent();
         const manifest = await app.getManifest() as any;
         const apiUrl = manifest?.platform?.defaultWindowOptions?.customData?.platformContext?.apiUrl;
         if (apiUrl) {
           dataProviderConfigService.configure({ apiUrl });
-          console.log('[Provider] Configured apiUrl from manifest:', apiUrl);
         }
-      } catch {
-        console.warn('[Provider] Could not read apiUrl from manifest, using default');
-      }
+      } catch { /* ignore — apiUrl defaults will be used */ }
 
-      const icon = buildUrl('/star.svg');
+      const icon    = buildUrl('/star.svg');
       const pngIcon = buildUrl('/star.png');
 
       setStatusMessage('Initializing workspace platform...');
 
-      // Initialize OpenFin workspace platform
       try {
+        // ---------------------------------------------------------------
+        // overrideCallback must be at the TOP LEVEL of init() per the
+        // OpenFin workspace-starter reference implementation.
+        //
+        // closeWindow: close the window directly without cascading into
+        //   the "last window → auto-quit" logic, so editor windows can
+        //   be closed without tearing down the platform.
+        //
+        // quit: suppress auto-quit that originates from closeWindow;
+        //   allow all explicit quit requests (dock "Close Platform",
+        //   our custom quit action, etc.).
+        // ---------------------------------------------------------------
+        let closingWindowCount = 0;
+        const overrideCallback: WorkspacePlatformOverrideCallback = async (WorkspacePlatformProvider) => {
+          class SternPlatformProvider extends WorkspacePlatformProvider {
+            async closeWindow(
+              ...args: Parameters<InstanceType<typeof WorkspacePlatformProvider>['closeWindow']>
+            ) {
+              closingWindowCount++;
+              try {
+                return await super.closeWindow(...args);
+              } finally {
+                closingWindowCount--;
+              }
+            }
+
+            async quit(
+              ...args: Parameters<InstanceType<typeof WorkspacePlatformProvider>['quit']>
+            ) {
+              if (closingWindowCount > 0) {
+                // Triggered by the workspace platform auto-quitting after the last
+                // browser window closed — suppress so the dock stays alive.
+                return;
+              }
+              // Explicit quit (dock "Close Platform", our quit action, etc.)
+              dock.setQuitting();
+              return super.quit(...args);
+            }
+          }
+          return new SternPlatformProvider();
+        };
+
         await init({
           browser: {
             defaultWindowOptions: {
               icon,
-              workspacePlatform: {
-                pages: [],
-                favicon: icon,
-              },
-            },
-            overrideCallback: async (WorkspacePlatformProvider) => {
-              class SternPlatformProvider extends WorkspacePlatformProvider {
-                async quit(...args: Parameters<InstanceType<typeof WorkspacePlatformProvider>['quit']>) {
-                  // Only honour a quit request that originated from the dock's
-                  // explicit quit action — ignore quits triggered automatically
-                  // when the last editor window is closed.
-                  if (!dock.isQuitting()) return;
-                  return super.quit(...args);
-                }
-              }
-              return new SternPlatformProvider();
+              workspacePlatform: { pages: [], favicon: icon },
             },
           },
           theme: [{
@@ -136,7 +141,8 @@ export default function OpenfinProvider() {
             palettes: THEME_PALETTES as any,
           }],
           customActions: dock.dockGetCustomActions(),
-        });
+          overrideCallback,
+        } as any);
       } catch (initError: unknown) {
         const error = initError as Error;
         if (error?.message?.includes('system topic payload')) {
@@ -148,20 +154,17 @@ export default function OpenfinProvider() {
 
       setStatusMessage('Waiting for platform API...');
 
-      // Wait for platform-api-ready
       try {
         const platform = fin.Platform.getCurrentSync();
 
         platform.once('platform-api-ready', async () => {
           try {
-            // Small delay for workspace APIs to fully initialize
             await new Promise((resolve) => setTimeout(resolve, 500));
 
             setStatusMessage('Registering dock...');
 
             const items = getDefaultMenuItems();
 
-            // Register dock
             if (dock.isDockAvailable()) {
               try {
                 await dock.register({
@@ -170,7 +173,6 @@ export default function OpenfinProvider() {
                   icon: pngIcon,
                   menuItems: items,
                 });
-                console.log('[Provider] Dock registered');
               } catch (dockError: any) {
                 if (dockError?.message?.includes('system topic payload')) {
                   console.warn('[Provider] Dock registered (analytics error suppressed)');
@@ -182,24 +184,44 @@ export default function OpenfinProvider() {
               await dock.show();
             }
 
-            // Hide provider window (user can re-show via Tools > Toggle Provider Window)
+            // ------------------------------------------------------------------
+            // Keep the provider window permanently hidden. It is never shown
+            // to the user directly — the Dock Editor is a separate fin.Window.
+            // ------------------------------------------------------------------
             const providerWindow = fin.Window.getCurrentSync();
             await providerWindow.hide();
 
-            // Handle close — hide the dock editor window rather than quitting.
-            // A full quit only happens when dock.isQuitting() is true (triggered
-            // by the explicit Quit action in the dock).
-            providerWindow.on('close-requested', async () => {
-              if (dock.isQuitting()) {
-                await providerWindow.close(true);
-                return;
-              }
-
-              // User clicked the X on the Dock Editor — just hide it.
-              try {
-                await providerWindow.hide();
-              } catch { /* ignore */ }
+            // Per workspace-starter pattern: use .once() and always close when
+            // close-requested fires. At this point dock.isQuitting() is true
+            // because our quit() override sets it before calling super.quit().
+            providerWindow.once('close-requested', async () => {
+              try { await dock.deregister(); } catch { /* ignore */ }
+              try { await providerWindow.close(true); } catch { /* ignore */ }
             });
+
+            // ------------------------------------------------------------------
+            // IAB: serve the Dock Editor window with the current menu items
+            // and apply config changes it sends back.
+            // ------------------------------------------------------------------
+            await fin.InterApplicationBus.subscribe(
+              { uuid: fin.me.uuid },
+              'stern:dock-editor:request-config',
+              async () => {
+                await fin.InterApplicationBus.publish(
+                  'stern:dock-editor:config',
+                  { menuItems: menuItemsRef.current },
+                );
+              },
+            );
+
+            await fin.InterApplicationBus.subscribe(
+              { uuid: fin.me.uuid },
+              'stern:dock-editor:apply',
+              async (_sender: unknown, data: { menuItems: DockMenuItem[] }) => {
+                await dock.updateConfig({ menuItems: data.menuItems });
+                setMenuItems(data.menuItems);
+              },
+            );
 
             setMenuItems(items);
             setStatus('ready');
@@ -224,36 +246,28 @@ export default function OpenfinProvider() {
     }
   }
 
-  const handleItemsChange = useCallback((items: DockMenuItem[]) => {
-    setMenuItems(items);
-  }, []);
-
-  // Show configurator when ready or in browser preview mode
-  if (status === 'ready' || status === 'no-openfin') {
+  // In OpenFin the provider window is always hidden — this UI is only
+  // reached in browser preview mode (status === 'no-openfin').
+  if (status === 'no-openfin') {
     return (
       <div className="h-screen w-screen flex flex-col bg-background text-foreground">
-        {/* Minimal status bar */}
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card text-xs text-muted-foreground">
           <span>Stern Reference Platform</span>
           <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-            {status === 'no-openfin' ? 'Preview Mode' : 'Connected'}
+            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
+            Preview Mode
           </span>
         </div>
-
-        {/* Dock Configurator */}
         <div className="flex-1 overflow-hidden">
           <DockConfigurator
             initialItems={menuItems}
-            onItemsChange={handleItemsChange}
-            onApply={(items) => dock.updateConfig({ menuItems: items })}
+            onApply={async () => {}}
           />
         </div>
       </div>
     );
   }
 
-  // Loading / error state
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-background text-foreground">
       <div className="text-center">

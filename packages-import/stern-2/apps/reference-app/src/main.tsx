@@ -7,6 +7,7 @@ import { OpenFinThemeBridge } from './providers/OpenFinThemeBridge.js';
 import './index.css';
 
 const OpenfinProvider = lazy(() => import('./openfin/OpenfinProvider.js'));
+const DockEditorWindow = lazy(() => import('./openfin/DockEditorWindow.js'));
 
 const isOpenFin = typeof window !== 'undefined' && !!(window as any).fin;
 
@@ -32,6 +33,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             element={
               <Suspense fallback={<LoadingFallback />}>
                 <OpenfinProvider />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/dock-editor"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <DockEditorWindow />
               </Suspense>
             }
           />
