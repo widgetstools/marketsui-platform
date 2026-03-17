@@ -36,7 +36,7 @@ import { getDefaultMenuIcon } from '@stern/openfin-platform';
 
 let registration: DockProviderRegistration | undefined;
 let currentConfig: DockProviderConfig | undefined;
-let currentDockId: string | undefined;
+let currentMenuItems: DockMenuItem[] = [];
 let currentTheme: 'light' | 'dark' = 'light';
 
 let _isQuitting = false;
@@ -120,7 +120,7 @@ export async function register(config: {
       disableUserRearrangement: dockProvider.disableUserRearrangement,
       buttons: dockProvider.buttons,
     };
-    currentDockId = dockProvider.id;
+    currentMenuItems = config.menuItems ?? [];
 
     registration = await Dock.register(dockProvider);
     console.log('[DOCK] Registered successfully', { buttonCount: buttons.length });
@@ -147,7 +147,6 @@ export async function deregister(): Promise<void> {
       await Dock.deregister();
       registration = undefined;
       currentConfig = undefined;
-      currentDockId = undefined;
       console.log('[DOCK] Deregistered');
     }
   } catch (error) {
@@ -179,6 +178,7 @@ export async function updateConfig(config: {
 
     await registration.updateDockProviderConfig(newConfig);
     currentConfig = newConfig;
+    if (config.menuItems) currentMenuItems = config.menuItems;
     console.log('[DOCK] Configuration updated');
   } catch (error) {
     console.error('[DOCK] Failed to update dock', error);
@@ -254,24 +254,26 @@ export function dockGetCustomActions(): CustomActionsMap {
 
     'reload-dock': async (): Promise<void> => {
       try {
-        if (!currentConfig) return;
+        if (!registration || !currentConfig) return;
 
-        // Re-sync theme (default to 'dark')
+        // Re-sync theme
         try {
           const platform = getCurrentSync();
           const scheme = await platform.Theme.getSelectedScheme();
           currentTheme = (scheme as string) === 'light' ? 'light' : 'dark';
         } catch { /* ignore */ }
 
-        const dockProviderToRestore: any = {
-          ...currentConfig,
-          id: currentDockId || 'stern-reference-platform',
-        };
+        // Rebuild buttons with the current menu items and refreshed theme icons,
+        // then push via updateDockProviderConfig — no deregister/register needed.
+        const buttons: DockButton[] = [];
+        if (currentMenuItems.length > 0) {
+          buttons.push(buildApplicationsButton(currentMenuItems));
+        }
+        buttons.push(...buildSystemButtons());
 
-        await Dock.deregister();
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        registration = await Dock.register(dockProviderToRestore);
-        await Dock.show();
+        const newConfig: DockProviderConfig = { ...currentConfig, buttons };
+        await registration.updateDockProviderConfig(newConfig);
+        currentConfig = newConfig;
         console.log('[DOCK] Reload complete');
       } catch (error) {
         console.error('[DOCK] Failed to reload dock', error);
@@ -534,8 +536,8 @@ function buildSystemButtons(): DockButton[] {
           action: { id: 'show-dock-devtools' },
         },
         {
-          tooltip: 'Toggle Provider Window1',
-          iconUrl: getThemedIcon('provider-window'),
+          tooltip: 'Dock Editor',
+          iconUrl: getThemedIcon('settings'),
           action: { id: 'toggle-provider-window' },
         },
       ],

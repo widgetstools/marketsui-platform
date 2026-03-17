@@ -117,6 +117,18 @@ export default function OpenfinProvider() {
                 favicon: icon,
               },
             },
+            overrideCallback: async (WorkspacePlatformProvider) => {
+              class SternPlatformProvider extends WorkspacePlatformProvider {
+                async quit(...args: Parameters<InstanceType<typeof WorkspacePlatformProvider>['quit']>) {
+                  // Only honour a quit request that originated from the dock's
+                  // explicit quit action — ignore quits triggered automatically
+                  // when the last editor window is closed.
+                  if (!dock.isQuitting()) return;
+                  return super.quit(...args);
+                }
+              }
+              return new SternPlatformProvider();
+            },
           },
           theme: [{
             label: 'Stern Theme',
@@ -174,29 +186,19 @@ export default function OpenfinProvider() {
             const providerWindow = fin.Window.getCurrentSync();
             await providerWindow.hide();
 
-            // Handle close — initiate platform quit
+            // Handle close — hide the dock editor window rather than quitting.
+            // A full quit only happens when dock.isQuitting() is true (triggered
+            // by the explicit Quit action in the dock).
             providerWindow.on('close-requested', async () => {
               if (dock.isQuitting()) {
                 await providerWindow.close(true);
                 return;
               }
 
-              // Platform is requesting us to close (e.g. user confirmed "Close platform" dialog).
-              // Initiate a full quit sequence.
-              dock.setQuitting();
-
+              // User clicked the X on the Dock Editor — just hide it.
               try {
-                await dock.deregister();
+                await providerWindow.hide();
               } catch { /* ignore */ }
-
-              try {
-                await providerWindow.close(true);
-              } catch { /* ignore */ }
-
-              try {
-                const app = fin.Application.getCurrentSync();
-                await app.quit(true);
-              } catch { /* already dead */ }
             });
 
             setMenuItems(items);
