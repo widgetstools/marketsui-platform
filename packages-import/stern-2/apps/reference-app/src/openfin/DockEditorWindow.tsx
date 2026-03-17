@@ -21,7 +21,7 @@ export default function DockEditorWindow() {
     const onConfig = (_sender: unknown, data: { menuItems: DockMenuItem[] }) => {
       if (!receivedRef.current) {
         receivedRef.current = true;
-        setItems(data.menuItems);
+        setItems(Array.isArray(data.menuItems) ? data.menuItems : []);
       }
     };
 

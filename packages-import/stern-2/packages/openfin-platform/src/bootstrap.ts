@@ -351,7 +351,8 @@ export async function bootstrapPlatform(opts: BootstrapPlatformOptions): Promise
         if (d.isDockAvailable()) {
           try {
             const treeRow = await cs.get('DOCK_MENU_TREE');
-            const items = treeRow ? (treeRow.config.items as DockMenuItem[]) : defaultDockItems;
+            const rawItems = treeRow?.config?.items;
+            const items: DockMenuItem[] = Array.isArray(rawItems) ? rawItems : defaultDockItems;
             await d.register({ id: `${cfg.appId}-dock`, title: opts.dock.title, icon: opts.dock.icon, menuItems: items });
           } catch (e: any) {
             if (!e?.message?.includes('system topic payload')) throw e;
@@ -372,7 +373,8 @@ export async function bootstrapPlatform(opts: BootstrapPlatformOptions): Promise
           'stern:dock-editor:request-config',
           async () => {
             const treeRow = await cs.get('DOCK_MENU_TREE');
-            const items = treeRow ? (treeRow.config.items as DockMenuItem[]) : defaultDockItems;
+            const rawItems = treeRow?.config?.items;
+            const items: DockMenuItem[] = Array.isArray(rawItems) ? rawItems : defaultDockItems;
             await fin.InterApplicationBus.publish('stern:dock-editor:config', { menuItems: items });
           },
         );
