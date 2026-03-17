@@ -52,6 +52,8 @@ export { BrowserAdapter } from './adapters/BrowserAdapter.js';
 // Services
 // ============================================================================
 export { ConfigClient } from './services/configClient.js';
+export { createConfigService } from './config/createConfigService.js';
+export type { CreateConfigServiceOptions } from './config/createConfigService.js';
 
 // ============================================================================
 // Extensibility

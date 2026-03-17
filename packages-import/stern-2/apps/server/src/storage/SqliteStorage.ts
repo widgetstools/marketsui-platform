@@ -91,7 +91,8 @@ export class SqliteStorage implements IConfigurationStorage {
         creationTime DATETIME NOT NULL,
         lastUpdated DATETIME NOT NULL,
         deletedAt DATETIME,
-        deletedBy TEXT
+        deletedBy TEXT,
+        rowKind TEXT
       );
     `);
 
@@ -105,6 +106,9 @@ export class SqliteStorage implements IConfigurationStorage {
       }
       if (!columns.includes('nodeId')) {
         this.db.run('ALTER TABLE configurations ADD COLUMN nodeId TEXT');
+      }
+      if (!columns.includes('rowKind')) {
+        this.db.run('ALTER TABLE configurations ADD COLUMN rowKind TEXT');
       }
     } catch {
       // Columns already exist or table is new
@@ -133,8 +137,8 @@ export class SqliteStorage implements IConfigurationStorage {
         configId, appId, userId, parentId, nodeId, componentType, componentSubType,
         name, description, icon, config, settings, activeSetting, tags, category,
         isShared, isDefault, isLocked, createdBy, lastUpdatedBy,
-        creationTime, lastUpdated, deletedAt, deletedBy
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        creationTime, lastUpdated, deletedAt, deletedBy, rowKind
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     try {
@@ -162,7 +166,8 @@ export class SqliteStorage implements IConfigurationStorage {
         config.creationTime.toISOString(),
         config.lastUpdated.toISOString(),
         config.deletedAt ? config.deletedAt.toISOString() : null,
-        config.deletedBy || null
+        config.deletedBy || null,
+        config.rowKind || null,
       ]);
 
       this.saveToFile();
@@ -237,7 +242,7 @@ export class SqliteStorage implements IConfigurationStorage {
         componentType = ?, componentSubType = ?, name = ?,
         description = ?, icon = ?, config = ?, settings = ?, activeSetting = ?,
         tags = ?, category = ?, isShared = ?, isDefault = ?, isLocked = ?,
-        lastUpdatedBy = ?, lastUpdated = ?
+        lastUpdatedBy = ?, lastUpdated = ?, rowKind = ?
       WHERE configId = ?
     `;
 
@@ -261,7 +266,8 @@ export class SqliteStorage implements IConfigurationStorage {
       updated.isLocked ? 1 : 0,
       updated.lastUpdatedBy,
       updated.lastUpdated.toISOString(),
-      configId
+      updated.rowKind || null,
+      configId,
     ]);
 
     this.saveToFile();
@@ -665,7 +671,8 @@ export class SqliteStorage implements IConfigurationStorage {
       creationTime: new Date(row.creationTime),
       lastUpdated: new Date(row.lastUpdated),
       deletedAt: row.deletedAt ? new Date(row.deletedAt) : null,
-      deletedBy: row.deletedBy || null
+      deletedBy: row.deletedBy || null,
+      rowKind: row.rowKind || undefined,
     };
   }
 }

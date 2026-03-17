@@ -101,6 +101,9 @@ export interface UnifiedConfig {
   deletedAt?: Date | null;    // Soft delete timestamp
   deletedBy?: string | null;  // User who deleted
 
+  // === Row kind (ConfigService compat) ===
+  rowKind?: string;                    // 'registration' | 'template' | 'instance' | 'workspace'
+
   // === Hierarchy (optional, backward-compatible) ===
   nodeId?: string;                     // hierarchy node where this config lives
   nodePath?: string;                   // "/stern/APAC/HongKong/.../trader-1"

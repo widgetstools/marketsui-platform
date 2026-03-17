@@ -7,6 +7,8 @@ export interface DockMenuItem {
   caption: string;
   url: string;
   openMode: 'window' | 'view';
+  configType?: string;
+  configSubType?: string;
   icon?: string;
   children?: DockMenuItem[];
   order: number;

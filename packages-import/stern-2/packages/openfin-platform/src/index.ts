@@ -85,6 +85,19 @@ export {
 } from './utils/treeUtils.js';
 export { getDefaultMenuIcon } from './utils/defaultIcons.js';
 
+// ─── Bootstrap ──────────────────────────────────
+export {
+  bootstrapPlatform,
+  AppContext,
+  resolveInstanceId,
+} from './bootstrap.js';
+export type {
+  AppConfig,
+  DockActions,
+  BootstrapPlatformOptions,
+  RegistrationEntry,
+} from './bootstrap.js';
+
 // ─── Hooks ──────────────────────────────────────
 export { useOpenfinTheme } from './hooks/useOpenfinTheme.js';
 export { useOpenFinEvents } from './hooks/useOpenFinEvents.js';
