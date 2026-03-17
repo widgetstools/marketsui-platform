@@ -36,7 +36,6 @@ import { getDefaultMenuIcon } from '@stern/openfin-platform';
 
 let registration: DockProviderRegistration | undefined;
 let currentConfig: DockProviderConfig | undefined;
-let currentRegistrationId: string | undefined;
 let currentMenuItems: DockMenuItem[] = [];
 let currentTheme: 'light' | 'dark' = 'light';
 
@@ -121,7 +120,6 @@ export async function register(config: {
       disableUserRearrangement: dockProvider.disableUserRearrangement,
       buttons: dockProvider.buttons,
     };
-    currentRegistrationId = config.id;
     currentMenuItems = config.menuItems ?? [];
 
     registration = await Dock.register(dockProvider);
@@ -149,7 +147,6 @@ export async function deregister(): Promise<void> {
       await Dock.deregister();
       registration = undefined;
       currentConfig = undefined;
-      currentRegistrationId = undefined;
       console.log('[DOCK] Deregistered');
     }
   } catch (error) {
@@ -257,7 +254,11 @@ export function dockGetCustomActions(): CustomActionsMap {
 
     'reload-dock': async (): Promise<void> => {
       try {
-        if (!currentConfig || !currentRegistrationId) return;
+        console.log('[DOCK] Reload triggered', { hasRegistration: !!registration, hasConfig: !!currentConfig, menuItemCount: currentMenuItems.length });
+        if (!registration || !currentConfig) {
+          console.warn('[DOCK] Reload skipped — dock not registered');
+          return;
+        }
 
         // Re-sync theme
         try {
@@ -266,20 +267,25 @@ export function dockGetCustomActions(): CustomActionsMap {
           currentTheme = (scheme as string) === 'light' ? 'light' : 'dark';
         } catch { /* ignore */ }
 
-        // Rebuild buttons from stored state with refreshed theme icons.
+        // Rebuild buttons with refreshed theme icons and current menu items.
+        // updateDockProviderConfig is the only safe reload mechanism —
+        // Dock.deregister() tears down the openfin-workspace channel and
+        // prevents any subsequent Dock.register() call in the same session.
         const buttons: DockButton[] = [];
         if (currentMenuItems.length > 0) {
           buttons.push(buildApplicationsButton(currentMenuItems));
         }
         buttons.push(...buildSystemButtons());
 
-        // Full deregister/register cycle. Dock.deregister() does not trigger
-        // the workspace platform's quit() so the platform stays alive.
-        await Dock.deregister();
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        registration = await Dock.register({ ...currentConfig, id: currentRegistrationId, buttons } as any);
+        const newConfig: DockProviderConfig = { ...currentConfig, buttons };
+        await registration.updateDockProviderConfig(newConfig);
+        currentConfig = newConfig;
+
+        // Minimize then re-show to force a visual refresh of the dock UI.
+        await Dock.minimize();
+        await new Promise<void>((r) => setTimeout(r, 150));
         await Dock.show();
-        currentConfig = { ...currentConfig, buttons };
+
         console.log('[DOCK] Reload complete');
       } catch (error) {
         console.error('[DOCK] Failed to reload dock', error);
