@@ -71,7 +71,7 @@ export class AppContext {
 // resolveInstanceId — clone detection (§5)
 // ============================================================================
 
-export async function resolveInstanceId(cs: ConfigService): Promise<string> {
+export async function resolveInstanceId(): Promise<string> {
   const urlId = new URLSearchParams(location.search).get('id');
   if (!urlId) return '';
 
@@ -81,6 +81,8 @@ export async function resolveInstanceId(cs: ConfigService): Promise<string> {
     if (windowName === urlId) return urlId;
 
     // Clone detected — create new instance from source
+    const inst = AppContext.instance ?? { appId: 'stern-platform', userId: 'default-user' };
+    const cs = createConfigService({ mode: 'indexeddb', appId: inst.appId, userId: inst.userId ?? 'default-user' });
     const { configType, configSubType } = ConfigId.parse(urlId);
     const newId = ConfigId.instance(configType, configSubType);
     await cs.clone(urlId, newId);

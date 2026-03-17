@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, Link, useSearchParams } from 'react-router-dom';
+import { resolveInstanceId } from '@stern/openfin-platform';
 import { AppProvider } from './providers/AppProvider.js';
 import { OrdersBlotter } from './widgets/OrdersBlotter.js';
 import { FillsBlotter } from './widgets/FillsBlotter.js';
@@ -11,8 +12,18 @@ import { DataProviderEditor } from '@stern/widgets';
  * BlotterPage — renders a blotter widget using the configId from URL search params.
  */
 function BlotterPage({ Widget }: { Widget: React.ComponentType<{ configId: string }> }) {
-  const [searchParams] = useSearchParams();
-  const configId = searchParams.get('id') || 'default-config';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [configId, setConfigId] = useState(() => searchParams.get('id') || 'default-config');
+
+  useEffect(() => {
+    resolveInstanceId().then((id) => {
+      if (id && id !== configId) {
+        setConfigId(id);
+        setSearchParams({ id }, { replace: true });
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="h-screen w-screen">
