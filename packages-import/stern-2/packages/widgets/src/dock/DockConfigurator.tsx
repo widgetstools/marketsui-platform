@@ -21,8 +21,9 @@ import {
   TooltipTrigger,
   cn,
 } from '@stern/ui';
-import { createMenuItem, type DockMenuItem } from '../types/dockConfig.js';
 import {
+  createMenuItem,
+  type DockMenuItem,
   findMenuItem,
   updateMenuItem,
   deleteMenuItem,
@@ -30,7 +31,7 @@ import {
   duplicateMenuItem,
   moveMenuItem,
   countItems,
-} from '../utils/treeUtils.js';
+} from '@stern/openfin-platform';
 
 // ============================================================================
 // Types

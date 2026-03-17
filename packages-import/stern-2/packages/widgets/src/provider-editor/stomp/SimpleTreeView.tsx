@@ -13,7 +13,7 @@
 import React, { useMemo } from 'react';
 import { Checkbox } from '@stern/ui';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { FieldNode } from './FieldSelector.js';
+import type { FieldNode } from '@stern/shared-types';
 
 const TYPE_COLORS: Record<string, string> = {
   string: 'bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/20',

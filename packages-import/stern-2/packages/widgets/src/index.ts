@@ -41,3 +41,14 @@ export { sternDarkTheme, sternLightTheme, useAgGridTheme } from './theme/index.j
 
 // ─── Provider Editor ────────────────────────────
 export * from './provider-editor/index.js';
+
+// ─── Dock Configurator ───────────────────────────
+export { DockConfigurator } from './dock/DockConfigurator.js';
+export type { DockConfiguratorProps } from './dock/DockConfigurator.js';
+
+// ─── OpenFin Hooks ───────────────────────────────
+export { useOpenfinTheme } from './hooks/openfin/useOpenfinTheme.js';
+export { useViewManager } from './hooks/openfin/useViewManager.js';
+export type { UseViewManagerReturn } from './hooks/openfin/useViewManager.js';
+export { useOpenFinEvents } from './hooks/openfin/useOpenFinEvents.js';
+export type { UseOpenFinEventsReturn } from './hooks/openfin/useOpenFinEvents.js';

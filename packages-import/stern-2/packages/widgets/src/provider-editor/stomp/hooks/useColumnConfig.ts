@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { StompProviderConfig, ColumnDefinition } from '@stern/shared-types';
-import { type FieldNode, findFieldByPath, convertFieldNodeToInfo } from '../FieldSelector.js';
+import { type FieldNode, findFieldByPath, convertFieldNodeToInfo } from '@stern/shared-types';
 
 export interface UseColumnConfigReturn {
   manualColumns: ColumnDefinition[];

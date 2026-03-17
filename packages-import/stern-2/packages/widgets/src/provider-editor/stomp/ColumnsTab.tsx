@@ -27,7 +27,7 @@ import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import { AgGridReact } from 'ag-grid-react';
 import { useAgGridTheme } from '../../theme/index.js';
 import { Plus, Trash2 } from 'lucide-react';
-import type { FieldNode } from './FieldSelector.js';
+import type { FieldNode } from '@stern/shared-types';
 import type { ColumnDefinition } from '@stern/shared-types';
 
 // Register AG-Grid Enterprise modules

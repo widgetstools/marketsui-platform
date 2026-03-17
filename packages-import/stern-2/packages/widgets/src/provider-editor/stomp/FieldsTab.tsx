@@ -13,9 +13,9 @@
 import React, { useMemo } from 'react';
 import { Input, Checkbox, ScrollArea, Badge, Button } from '@stern/ui';
 import { Search, Database, Loader2 } from 'lucide-react';
-import type { FieldNode } from './FieldSelector.js';
+import type { FieldNode } from '@stern/shared-types';
 import { SimpleTreeView } from './SimpleTreeView.js';
-import { filterFields } from './FieldSelector.js';
+import { filterFields } from '@stern/shared-types';
 
 interface FieldsTabProps {
   inferredFields: FieldNode[];

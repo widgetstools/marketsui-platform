@@ -3,8 +3,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { iabService } from '../services/OpenfinIABService.js';
-import type { OpenFinEventMap, OpenFinEventHandler, UnsubscribeFunction } from '../types/openfinEvents.js';
+import { iabService } from '@stern/openfin-platform';
+import type { OpenFinEventMap, OpenFinEventHandler, UnsubscribeFunction } from '@stern/openfin-platform';
 
 export interface UseOpenFinEventsReturn {
   on: <E extends keyof OpenFinEventMap>(event: E, handler: OpenFinEventHandler<E>) => UnsubscribeFunction;

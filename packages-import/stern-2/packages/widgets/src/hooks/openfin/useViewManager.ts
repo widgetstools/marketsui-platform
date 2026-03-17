@@ -3,8 +3,8 @@
  */
 
 import { useCallback, useState, useEffect } from 'react';
-import { platformContext } from '../core/PlatformContext.js';
-import type { ViewInstance, CreateViewOptions } from '../core/interfaces.js';
+import { platformContext } from '@stern/openfin-platform';
+import type { ViewInstance, CreateViewOptions } from '@stern/openfin-platform';
 
 export type { ViewInstance, CreateViewOptions };
 

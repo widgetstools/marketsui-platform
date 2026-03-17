@@ -4,8 +4,8 @@
  */
 
 import { useEffect } from 'react';
-import { OpenFinCustomEvents } from '../types/openfinEvents.js';
-import { platformContext } from '../core/PlatformContext.js';
+import { OpenFinCustomEvents } from '@stern/openfin-platform';
+import { platformContext } from '@stern/openfin-platform';
 
 export function useOpenfinTheme() {
   // Listen for theme change events from dock via IAB

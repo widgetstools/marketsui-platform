@@ -11,7 +11,7 @@ import {
   convertFieldInfoToNode,
   collectNonObjectLeaves,
   findFieldByPath,
-} from '../FieldSelector.js';
+} from '@stern/shared-types';
 
 export interface UseFieldInferenceReturn {
   inferring: boolean;

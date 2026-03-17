@@ -2,5 +2,6 @@
 export * from './configuration.js';
 export * from './configRow.js';
 export * from './dataProvider.js';
+export * from './fieldSelector.js';
 export * from './simpleBlotter.js';
 export * from './widget.js';

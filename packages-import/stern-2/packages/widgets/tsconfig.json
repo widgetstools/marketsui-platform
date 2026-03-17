@@ -7,6 +7,6 @@
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../openfin-platform/src/types/openfin.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

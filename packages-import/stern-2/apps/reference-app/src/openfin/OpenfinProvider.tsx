@@ -1,11 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import {
-  buildUrl,
-  DockConfigurator,
-  bootstrapPlatform,
-  type DockMenuItem,
-} from '@stern/openfin-platform';
-import { createMenuItem } from '@stern/openfin-platform';
+import { buildUrl, bootstrapPlatform, type DockMenuItem, createMenuItem } from '@stern/openfin-platform';
+import { DockConfigurator } from '@stern/widgets';
 import * as dock from './openfinDock.js';
 
 function getDefaultMenuItems(): DockMenuItem[] {

@@ -2,7 +2,7 @@
  * FieldSelector — type definitions and utilities for the STOMP field tree.
  */
 
-import type { FieldInfo } from '@stern/shared-types';
+import type { FieldInfo } from './dataProvider.js';
 
 export interface FieldNode {
   path: string;

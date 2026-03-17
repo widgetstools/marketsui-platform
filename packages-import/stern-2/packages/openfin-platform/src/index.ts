@@ -68,10 +68,6 @@ export {
 } from './platform/menuLauncher.js';
 export type { ConfigLookupResult, ConfigLookupCallback } from './platform/menuLauncher.js';
 
-// ─── Components ─────────────────────────────────
-export { DockConfigurator } from './components/DockConfigurator.js';
-export type { DockConfiguratorProps } from './components/DockConfigurator.js';
-
 // ─── Dock Utils ─────────────────────────────────
 export {
   findMenuItem,
@@ -98,9 +94,3 @@ export type {
   RegistrationEntry,
 } from './bootstrap.js';
 
-// ─── Hooks ──────────────────────────────────────
-export { useOpenfinTheme } from './hooks/useOpenfinTheme.js';
-export { useOpenFinEvents } from './hooks/useOpenFinEvents.js';
-export type { UseOpenFinEventsReturn } from './hooks/useOpenFinEvents.js';
-export { useViewManager } from './hooks/useViewManager.js';
-export type { UseViewManagerReturn } from './hooks/useViewManager.js';
