@@ -6,17 +6,21 @@
 
 ## Overview
 
-A standalone React + OpenFin starter project that replicates all 4 sub-projects from the OpenFin frontend-framework-starter React directory, with trading-themed views using the existing design system at `/Users/develop/projects/design-system/react-app`.
+An exact replication of all 4 React sub-projects from the OpenFin frontend-framework-starter, with two changes:
+1. **Vite** instead of CRA for container and workspace (web and WPS already use Vite)
+2. **shadcn/ui components** instead of the original's custom CSS utility classes
+
+All OpenFin APIs, FDC3 patterns, manifest structures, and application logic are replicated exactly as-is.
 
 ## Decisions
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Build tool | Vite (all 4 apps) | CRA is deprecated; design system already uses Vite |
-| Project structure | npm workspaces monorepo | Shared deps, single install, proper shared package |
-| Styling | Reuse design system | Leverages existing 44 components, AG Grid, Tailwind |
-| View content | Trading-themed | Blotters, order tickets, instrument views instead of generic demos |
-| Relationship to marketsui | Standalone starter | Not the marketsui-reference-react from the design doc |
+| Decision | Choice |
+|---|---|
+| Build tool | Vite (all 4 apps) |
+| UI components | shadcn/ui (Tailwind-based) |
+| Project structure | npm workspaces monorepo |
+| View content | Exact match to original (View1/View2/View3 with same FDC3 demos) |
+| OpenFin API usage | Identical to original |
 
 ---
 
@@ -26,25 +30,33 @@ A standalone React + OpenFin starter project that replicates all 4 sub-projects 
 markets/
 ├── package.json                    # npm workspaces root
 ├── tsconfig.base.json              # shared TS config
-├── vite.config.shared.ts           # shared Vite config factory
 ├── .gitignore
 ├── apps/
 │   ├── container/
 │   │   ├── package.json
 │   │   ├── vite.config.ts
-│   │   ├── tsconfig.json           # extends ../../tsconfig.base.json
+│   │   ├── tsconfig.json
 │   │   ├── index.html
 │   │   ├── launch.mjs
 │   │   ├── public/
 │   │   │   └── platform/manifest.fin.json
 │   │   └── src/
 │   │       ├── main.tsx
+│   │       ├── index.css
+│   │       ├── App.tsx
 │   │       ├── platform/
-│   │       │   └── Provider.tsx
-│   │       └── views/
-│   │           ├── BlotterView.tsx
-│   │           ├── OrderTicketView.tsx
-│   │           └── NotificationsView.tsx
+│   │       │   ├── Provider.tsx
+│   │       │   └── WithScript.tsx
+│   │       ├── views/
+│   │       │   ├── View1.tsx
+│   │       │   ├── View2.tsx
+│   │       │   └── View3.tsx
+│   │       ├── types/
+│   │       │   ├── fin.d.ts
+│   │       │   └── fdc3.d.ts
+│   │       ├── components/ui/       # shadcn components
+│   │       └── lib/
+│   │           └── utils.ts         # cn() helper
 │   ├── workspace/
 │   │   ├── package.json
 │   │   ├── vite.config.ts
@@ -54,10 +66,11 @@ markets/
 │   │   ├── public/
 │   │   │   ├── platform/manifest.fin.json
 │   │   │   └── views/
-│   │   │       ├── blotter.fin.json
-│   │   │       └── order-ticket.fin.json
+│   │   │       ├── view1.fin.json
+│   │   │       └── view2.fin.json
 │   │   └── src/
 │   │       ├── main.tsx
+│   │       ├── index.css
 │   │       ├── App.tsx
 │   │       ├── platform/
 │   │       │   ├── Provider.tsx
@@ -65,10 +78,17 @@ markets/
 │   │       │   ├── home.ts
 │   │       │   ├── store.ts
 │   │       │   ├── dock.ts
-│   │       │   └── notifications.ts
-│   │       └── views/
-│   │           ├── BlotterView.tsx
-│   │           └── OrderTicketView.tsx
+│   │       │   ├── notifications.ts
+│   │       │   └── launch.ts
+│   │       ├── views/
+│   │       │   ├── View1.tsx
+│   │       │   └── View2.tsx
+│   │       ├── types/
+│   │       │   ├── fin.d.ts
+│   │       │   └── fdc3.d.ts
+│   │       ├── components/ui/
+│   │       └── lib/
+│   │           └── utils.ts
 │   ├── web/
 │   │   ├── package.json
 │   │   ├── vite.config.ts
@@ -81,9 +101,13 @@ markets/
 │   │   └── src/
 │   │       ├── main.tsx
 │   │       ├── App.tsx
+│   │       ├── index.css
 │   │       ├── config.ts
 │   │       ├── provider.ts
-│   │       └── iframe-broker.ts
+│   │       ├── iframe-broker.ts
+│   │       ├── components/ui/
+│   │       └── lib/
+│   │           └── utils.ts
 │   └── workspace-platform-starter/
 │       ├── package.json
 │       ├── vite.config.ts
@@ -100,331 +124,267 @@ markets/
 │       └── src/
 │           ├── main.tsx
 │           ├── app.tsx
+│           ├── index.css
 │           ├── Provider.tsx
 │           ├── hooks/
 │           │   ├── useOpenFin.tsx
 │           │   ├── usePlatformState.tsx
 │           │   └── useRaiseIntent.tsx
-│           └── views/
-│               ├── InstrumentView.tsx
-│               └── StateReceiverView.tsx
-├── packages/
-│   └── shared/
-│       ├── package.json
-│       ├── tsconfig.json
-│       └── src/
-│           ├── index.ts
-│           ├── types/
-│           │   ├── fin.d.ts
-│           │   ├── fdc3.d.ts
-│           │   └── openfin.ts
-│           ├── styles/
-│           │   ├── theme.css
-│           │   ├── utilities.css
-│           │   └── index.css
-│           └── utils/
-│               ├── launch.ts
-│               ├── with-script.tsx
-│               └── fdc3-helpers.ts
+│           ├── views/
+│           │   ├── View1.tsx
+│           │   └── View2.tsx
+│           ├── components/ui/
+│           └── lib/
+│               └── utils.ts
 └── docs/
-    ├── MARKETSUI_DESIGN.md
-    └── superpowers/specs/
 ```
 
----
-
-## 2. Shared Package (`@markets/shared`)
-
-**Purpose:** Eliminates duplication of CSS, type declarations, and utility code that was copy-pasted across all 4 original projects.
-
-### Types (`src/types/`)
-
-- **`fin.d.ts`** — Declares global `fin` variable typed from `@openfin/core`
-- **`fdc3.d.ts`** — Declares global `fdc3` variable typed from `@finos/fdc3`
-- **`openfin.ts`** — Shared interfaces:
-  - `CustomSettings { apps?: AppDefinition[] }`
-  - `PlatformSettings { id: string; title: string; icon: string }`
-  - `AppDefinition` — app manifest shape with `appId`, `title`, `manifestType`, `manifest`, `icons`, `intents`
-
-### Styles (`src/styles/`)
-
-- **`theme.css`** — CSS custom properties bridging design system Tailwind theme with OpenFin's `--theme-*` variables. Supports dark/light mode via `.theme-light` class toggle.
-- **`utilities.css`** — Layout utility classes from the original: `.row`, `.col`, `.fill`, `.gap5`, `.gap10`, `.gap20`, `.gap40`, `.pad0`, `.pad10`, `.pad20`, `.middle`, `.spread`, `.scroll`, `.drag`, `.no-drag`. Form, table, and button styling.
-- **`index.css`** — Barrel import of theme + utilities.
-
-### Utilities (`src/utils/`)
-
-- **`launch.ts`** — App launcher supporting all OpenFin manifest types:
-  - `AppManifestType.Snapshot` → `platform.applySnapshot()`
-  - `AppManifestType.View` → `platform.createView()`
-  - `AppManifestType.External` → `fin.System.launchExternalProcess()`
-  - Default → `fin.Application.startFromManifest()`
-
-- **`with-script.tsx`** — React HOC that dynamically injects a `<script>` tag into the DOM head. Used to load the OpenFin Anywhere shim for browser-based FDC3 support.
-
-- **`fdc3-helpers.ts`** — Common FDC3 operations:
-  - `broadcastInstrument(ticker: string)` — broadcasts `fdc3.instrument` context on user channel
-  - `broadcastOnAppChannel(channelName: string, context: Context)` — broadcasts on named app channel
-  - `listenForContext(callback)` — adds context listener on user channel
-  - `listenOnAppChannel(channelName: string, callback)` — listens on named app channel
+Each app has its own `components/ui/` and `lib/utils.ts` for shadcn (standard shadcn project structure). No shared package needed — each app is self-contained like the original.
 
 ---
 
-## 3. Container App (`apps/container/`)
+## 2. Container App (`apps/container/`)
 
-The simplest OpenFin integration pattern. Basic platform init, FDC3 context sharing, notifications.
+Exact replica of `frameworks/react/container/`. Basic platform init, FDC3 context sharing, notifications.
 
 ### Entry Point (`src/main.tsx`)
 
-React Router routes:
-- `/` → `App` (landing page with instructions to run `npm run client:container`)
-- `/views/blotter` → `BlotterView` wrapped with `WithScript` (loads Anywhere shim)
-- `/views/order-ticket` → `OrderTicketView` wrapped with `WithScript`
-- `/views/notifications` → `NotificationsView` (no shim needed)
+React Router routes (identical to original):
+- `/` → `App` (landing page with instructions to run `npm run client`)
+- `/views/view1` → `View1` wrapped with `WithScript` (loads Anywhere shim)
+- `/views/view2` → `View2` wrapped with `WithScript`
+- `/views/view3` → `View3` (no shim)
 - `/platform/provider` → `Provider` (lazy loaded)
 
-### Platform Provider (`src/platform/Provider.tsx`)
+### `src/App.tsx`
+Landing page displaying instructions. Uses shadcn `Card` and `Button` instead of raw HTML.
 
+### `src/platform/Provider.tsx`
 - Calls `fin.Platform.init({})` on mount
 - Displays runtime version from `fin.System.getRuntimeInfo()`
+- Uses shadcn `Card` for layout
 
-### Views
+### `src/platform/WithScript.tsx`
+HOC that dynamically injects `<script>` tag into DOM head. Loads the Anywhere shim URL: `https://built-on-openfin.github.io/web-starter/web/v23.0.0/web-client-api/js/shim.api.bundle.js`. Identical logic to original.
 
-**BlotterView (`src/views/BlotterView.tsx`)**
-- Uses design system's AG Grid blotter to display a list of financial instruments
-- On row selection, broadcasts the instrument via FDC3 user channel: `fdc3.broadcast({ type: 'fdc3.instrument', id: { ticker } })`
-- Also broadcasts on app channel `"INSTRUMENT-CHANNEL"` for direct comms
-- Replaces the original View1's simple MSFT broadcast with a real instrument selection flow
+### `src/views/View1.tsx` — FDC3 Broadcaster
+- `broadcastFDC3Context()` — broadcasts `fdc3.instrument` (MSFT) via `fdc3.broadcast()`
+- `broadcastFDC3ContextAppChannel()` — broadcasts on `"CUSTOM-APP-CHANNEL"` with AAPL instrument via `fdc3.getOrCreateChannel()`
+- Uses shadcn `Button`, `Card`, `Badge` instead of raw styled buttons
 
-**OrderTicketView (`src/views/OrderTicketView.tsx`)**
-- Listens for FDC3 instrument context on user channel via `fdc3.addContextListener(null, callback)`
-- Listens on app channel `"INSTRUMENT-CHANNEL"` via `fdc3.getOrCreateChannel().addContextListener()`
-- When instrument received, populates an order entry form using design system components
-- Displays received context as formatted JSON below the form
-- Replaces the original View2's simple context display
+### `src/views/View2.tsx` — FDC3 Listener
+- `listenForFDC3Context()` — `fdc3.addContextListener(null, callback)` for user channel
+- `listenForFDC3ContextAppChannel()` — listens on `"CUSTOM-APP-CHANNEL"` app channel
+- Displays received context as formatted JSON
+- Uses shadcn `Card`, `Button`, `ScrollArea`
 
-**NotificationsView (`src/views/NotificationsView.tsx`)**
-- Registers with `@openfin/notifications` on mount
-- Listens for `notification-action` events
-- Button to create trade confirmation notification (transient toast with "Confirm" and "Reject" action buttons)
-- Displays notification action results
-- Replaces the original View3's generic notification demo
+### `src/views/View3.tsx` — Notifications
+- `Notifications.register()` on mount, listens for `notification-action`
+- `showNotification()` creates transient toast with a button
+- Uses shadcn `Button`, `Card`
+
+### Type Declarations
+- `src/types/fin.d.ts` — declares global `fin` from `@openfin/core`
+- `src/types/fdc3.d.ts` — declares global `fdc3` from `@finos/fdc3`
 
 ### OpenFin Manifest (`public/platform/manifest.fin.json`)
+- Runtime: `43.142.101.2`, security realm `react-container-starter`
+- UUID: `react-container-starter`
+- Provider URL: `http://localhost:5173/platform/provider`
+- Snapshot: single window with 3 stacked views (view1, view2, view3) in a row layout
+- All views: `fdc3InteropApi: "2.0"`, `currentContextGroup: "green"`
 
-```json
-{
-  "runtime": { "version": "43.142.101.2" },
-  "platform": {
-    "uuid": "markets-container-starter",
-    "autoShow": false
-  },
-  "snapshot": {
-    "windows": [{
-      "layout": {
-        "content": [{
-          "type": "row",
-          "content": [
-            { "componentState": { "url": "http://localhost:5173/views/blotter" } },
-            { "componentState": { "url": "http://localhost:5173/views/order-ticket" } },
-            { "componentState": { "url": "http://localhost:5173/views/notifications" } }
-          ]
-        }]
-      }
-    }]
-  }
-}
-```
+### `launch.mjs`
+Node script using `@openfin/node-adapter` (`connect`/`launch`). Identical to original.
 
-All views: `fdc3InteropApi: "2.0"`, `currentContextGroup: "green"`.
+### Styling
+- `src/index.css` — Tailwind base + shadcn CSS variables for dark/light theme
+- OpenFin theme integration: CSS variables map `--theme-*` fallbacks alongside Tailwind variables
+- The original's `.row`, `.col`, `.fill`, `.gap10` etc. replaced with Tailwind utility classes
 
 ---
 
-## 4. Workspace App (`apps/workspace/`)
+## 3. Workspace App (`apps/workspace/`)
 
-Full workspace platform with Home, Store, Dock, Notifications, and app management.
+Exact replica of `frameworks/react/workspace/`. Full workspace platform with Home, Store, Dock, Notifications.
 
 ### Entry Point (`src/main.tsx`)
 
 React Router routes:
-- `/` → `App` (landing page)
-- `/views/blotter` → `BlotterView`
-- `/views/order-ticket` → `OrderTicketView`
+- `/` → `App`
+- `/views/view1` → `View1` (no WithScript — runs natively in OpenFin)
+- `/views/view2` → `View2`
 - `/platform/provider` → `Provider`
 
-### Platform Provider (`src/platform/Provider.tsx`)
+### `src/App.tsx`
+Landing page (same pattern as container). shadcn Card.
 
-1. Reads `customSettings` from manifest via `fin.Application.getCurrent().getManifest()`
+### `src/platform/Provider.tsx`
+1. Reads `customSettings` from OpenFin manifest via `fin.Application.getCurrent().getManifest()`
 2. Initializes workspace platform via `@openfin/workspace-platform init()`:
    - Default window options (icon, favicon, pages)
-   - Theme: `brandPrimary: '#7B61FF'` (design system purple), `backgroundPrimary: '#1E1F23'`
+   - Theme: `brandPrimary: '#0A76D3'`, `backgroundPrimary: '#1E1F23'` (same as original)
    - Custom `"launch-app"` action handler
-3. On `platform-api-ready`, bootstraps: `registerHome()` + `Home.show()`, `registerStore()`, `registerDock()`, `registerNotifications()`
-4. On `close-requested`, deregisters all and quits
+3. On `platform-api-ready`: `registerHome()` + `Home.show()`, `registerStore()`, `registerDock()`, `registerNotifications()`
+4. On `close-requested`: deregisters all components, quits
 
-### Workspace Modules
+### `src/platform/shapes.ts`
+```typescript
+interface CustomSettings { apps?: App[] }
+interface PlatformSettings { id: string; title: string; icon: string }
+```
 
-**`src/platform/shapes.ts`** — TypeScript interfaces:
-- `CustomSettings { apps?: AppDefinition[] }` (uses shared type)
-- `PlatformSettings { id: string; title: string; icon: string }`
-
-**`src/platform/home.ts`** — Home provider:
-- `onUserInput` maps apps to `HomeSearchResult[]` using `CLITemplate.SimpleText`
-- `onResultDispatch` launches selected app via shared `launchApp()`
+### `src/platform/home.ts`
+- `HomeProvider` with `onUserInput` mapping apps to `HomeSearchResult[]` via `CLITemplate.SimpleText`
+- `onResultDispatch` launches selected app
 - Supports manifest types: view, snapshot, manifest, external
 
-**`src/platform/store.ts`** — Storefront:
-- Navigation: "Trading Apps" → "All Apps" section
-- Landing page with top row grid of apps
+### `src/platform/store.ts`
+- Navigation: single "Apps" → "All Apps" section
+- Landing page with top row grid
 - Footer with platform icon and title
-- `launchApp` callback for app selection
+- `launchApp` callback
 
-**`src/platform/dock.ts`** — Dock registration:
-- Workspace components: home, store, notifications, switchWorkspace
-- "Apps" dropdown button with app entries from manifest
+### `src/platform/dock.ts`
+- `Dock.register()` with workspace components: home, store, notifications, switchWorkspace
+- "Apps" dropdown button with app icons
 
-**`src/platform/notifications.ts`** — `Notifications.register()` from `@openfin/workspace/notifications`
+### `src/platform/notifications.ts`
+`Notifications.register()` from `@openfin/workspace/notifications`
 
-### Views
+### `src/platform/launch.ts`
+App launcher supporting all manifest types:
+- `AppManifestType.Snapshot` → `platform.applySnapshot()`
+- `AppManifestType.View` → `platform.createView()`
+- `AppManifestType.External` → `fin.System.launchExternalProcess()`
+- Default → `fin.Application.startFromManifest()`
 
-Same trading-themed views as container (BlotterView + OrderTicketView), but without `WithScript` wrapper since workspace apps run natively in OpenFin. BlotterView also integrates notification creation for trade alerts.
+### `src/views/View1.tsx` — Notifications + FDC3 Broadcaster
+- Notifications: register, listen for actions, create transient toast (uses `@openfin/notifications` directly)
+- FDC3 broadcast on user channel (MSFT instrument)
+- FDC3 broadcast on app channel `"CUSTOM-APP-CHANNEL"` (AAPL instrument)
+- shadcn `Button`, `Card`, `Badge`
+
+### `src/views/View2.tsx` — FDC3 Listener
+- `fdc3.addContextListener()` for user channel
+- `fdc3.getOrCreateChannel("CUSTOM-APP-CHANNEL").addContextListener()` for app channel
+- Displays received context as JSON
+- shadcn `Card`, `Button`, `ScrollArea`
 
 ### Manifests
-
-- `public/platform/manifest.fin.json`: Runtime 43.142.101.2, UUID `markets-workspace-starter`, `preventQuitOnLastWindowClosed: true`, `customSettings.apps` array with blotter and order-ticket app definitions
-- `public/views/blotter.fin.json`: View manifest, FDC3 2.0, context group green
-- `public/views/order-ticket.fin.json`: View manifest, FDC3 2.0, context group green
+- `public/platform/manifest.fin.json`: Runtime 43.142.101.2, UUID `react-workspace-starter`, `preventQuitOnLastWindowClosed: true`, `customSettings.apps` with view1 and view2 app definitions
+- `public/views/view1.fin.json`: FDC3 2.0, context group green
+- `public/views/view2.fin.json`: FDC3 2.0, context group green
 
 ---
 
-## 5. Web App (`apps/web/`)
+## 4. Web App (`apps/web/`)
 
-Browser-only OpenFin via `@openfin/core-web`. No native OpenFin runtime required.
+Exact replica of `frameworks/react/web/`. Browser-only via `@openfin/core-web`.
 
 ### Build Configuration (`vite.config.ts`)
-
 - `vite-plugin-static-copy` copies `shared-worker.js` from `@openfin/core-web/out/shared-worker.js` to `dist/assets/`
-- Multi-page build: `index.html` (main) + `iframe-broker.html` (broker)
-- Dev server on default Vite port
+- Multi-page build via rollup input: `index.html` + `iframe-broker.html`
 
-### Source Files
-
-**`src/config.ts`**
+### `src/config.ts`
 ```typescript
 export const SHARED_WORKER_URL = '/assets/shared-worker.js';
 export const BROKER_URL = '/iframe-broker.html';
 export const LAYOUT_URL = '/default.layout.fin.json';
 ```
 
-**`src/provider.ts`** — Core Web initialization:
-1. Fetches layout snapshot from `LAYOUT_URL`
+### `src/provider.ts`
+1. Fetches `default.layout.fin.json` as `WebLayoutSnapshot`
 2. Gets `#layout_container` DOM element
-3. Calls `connect()` from `@openfin/core-web` with:
+3. `connect()` from `@openfin/core-web`:
    - `connectionInheritance: "enabled"`
-   - `brokerUrl` pointing to iframe-broker
-   - `interopConfig`: providerId `"markets-web-layout"`, contextGroup `"green"`
+   - `brokerUrl` → iframe-broker
+   - `interopConfig`: providerId `"web-layout-basic"`, contextGroup `"green"`
    - `platform: { layoutSnapshot }`
-4. `fin.Interop.init("markets-web-layout")`
+4. `fin.Interop.init("web-layout-basic")`
 5. `fin.Platform.Layout.init({ container })`
 
-**`src/iframe-broker.ts`** — `initBrokerConnection()` from `@openfin/core-web/iframe-broker` with shared worker URL.
+### `src/iframe-broker.ts`
+`initBrokerConnection()` from `@openfin/core-web/iframe-broker` with shared worker URL.
 
-**`src/main.tsx`** — Calls `init()` then renders `<App />`. Imports `@openfin/core-web/styles.css`.
+### `src/main.tsx`
+Calls `init()` from provider, renders `<App />`. Imports `@openfin/core-web/styles.css`.
 
-**`src/App.tsx`** — Design system header with theme toggle + `<main id="layout_container" />`.
+### `src/App.tsx`
+Header + `<main id="layout_container" />`. Uses shadcn for the header.
 
 ### Layout (`public/default.layout.fin.json`)
-
-2x2 grid of views. Each panel loads a trading-themed URL demonstrating design system components in a browser context. Each view has `web.frameName` to control interop inheritance.
+2x2 grid of views, each loading `https://example.com`. Each view has `web.frameName` to disable interop inheritance. `showMaximiseIcon: true`.
 
 ### PWA Manifest (`public/manifest.json`)
-
-Standard PWA manifest with interop config (sharedWorkerUrl, brokerUrl, providerId, defaultContextGroup).
+Interop config: sharedWorkerUrl, brokerUrl, providerId, defaultContextGroup.
 
 ---
 
-## 6. Workspace Platform Starter App (`apps/workspace-platform-starter/`)
+## 5. Workspace Platform Starter App (`apps/workspace-platform-starter/`)
 
-The most advanced pattern. Wraps the full WPS framework with custom React hooks for FDC3 intents and cross-view state management.
+Exact replica of `frameworks/react/workspace-platform-starter/`. WPS framework wrapper with custom React hooks.
 
-### Build Configuration
-
-- **`vite.config.ts`**: Port 8080, path alias `workspace-platform-starter` → `./openfin/framework`
-- **`rollup.config.mjs`**: Builds 30+ OpenFin module bundles from `./openfin/modules/*` (auth, endpoint, init-options, log, actions, analytics, composite, integrations, lifecycle, platform-override, content-creation, share, interop-override)
+### Build
+- `vite.config.ts`: Port 8080, path alias `workspace-platform-starter` → `./openfin/framework`
+- `rollup.config.mjs`: Builds 30+ OpenFin module bundles from `./openfin/modules/*`
 
 ### Entry (`src/main.tsx` + `src/app.tsx`)
-
-React Router routes:
+React Router:
 - `/` → `Provider`
-- `/view1` → `InstrumentView`
-- `/view2` → `StateReceiverView`
+- `/view1` → `View1`
+- `/view2` → `View2`
+
+### `src/Provider.tsx`
+Calls `useOpenFin()` hook. Displays platform provider message. shadcn Card.
 
 ### Custom React Hooks
 
-**`src/hooks/useOpenFin.tsx`** — Full platform bootstrap:
+**`src/hooks/useOpenFin.tsx`**
 1. Opens splash screen via `platformSplashProvider.open()`
 2. Creates logger via `createLogger("Provider")`
 3. Gets platform sync: `fin.Platform.getCurrentSync()`
-4. On `platform-api-ready`, calls `bootstrap()` from `workspace-platform-starter/bootstrapper`
-5. Calls `initializePlatform()` from `workspace-platform-starter/platform/platform`
-6. Closes splash on completion
-7. `useRef` prevents double initialization in StrictMode
+4. On `platform-api-ready`, calls `bootstrap()` + `initializePlatform()` from WPS framework
+5. Closes splash on completion
+6. `useRef` prevents double init in StrictMode
 
-**`src/hooks/usePlatformState.tsx`** — FDC3 app channel-based cross-view state:
+**`src/hooks/usePlatformState.tsx`**
 - Creates/joins FDC3 app channel by topic name
-- Broadcasts context of type `"workspace.platformState"` with payload
-- Listens for context changes, returns `[value, setValue]` tuple
-- Cleans up listeners on unmount
-- Uses `fdc3.getOrCreateChannel()`, `channel.broadcast()`, `channel.getCurrentContext()`, `channel.addContextListener()`
+- Broadcasts `"workspace.platformState"` context with payload
+- Listens for changes, returns `[value, setValue]` tuple
+- Cleans up on unmount
 
-**`src/hooks/useRaiseIntent.tsx`** — Memoized callback: `window.fdc3.raiseIntent(intentName, context)`
+**`src/hooks/useRaiseIntent.tsx`**
+Memoized callback: `window.fdc3.raiseIntent(intentName, context)`
 
-### Views
+### `src/views/View1.tsx`
+Three buttons (shadcn Button + Card):
+- "View Contact" → `raiseIntent('ViewContact', { type: 'fdc3.contact', ... })`
+- "View Quote" → `raiseIntent('ViewQuote', { type: 'custom.instrument', ... })`
+- "Set global state" → `usePlatformState` broadcasts "Hello World!" on "demo" channel
 
-**InstrumentView (`src/views/InstrumentView.tsx`)** — Three trading actions:
-- "View Contact" — `raiseIntent('ViewContact', { type: 'fdc3.contact', ... })` for counterparty lookup
-- "View Quote" — `raiseIntent('ViewQuote', { type: 'custom.instrument', ... })` for price quote
-- "Set global state" — `usePlatformState` broadcasts instrument selection on `"trading-state"` channel
-- Uses design system button and instrument display components
-
-**StateReceiverView (`src/views/StateReceiverView.tsx`)** — Displays current value from `usePlatformState("trading-state")`. Live-updating panel showing selected instrument details, styled with design system components.
+### `src/views/View2.tsx`
+Displays current value from `usePlatformState("demo")`. shadcn Card.
 
 ### Manifests
+- `public/apps.json`: Two inline-view apps (view-1, view-2), FDC3 2.0
+- `public/manifest.fin.json` (~500 lines): Full WPS manifest — same structure as original with UUID `workspace-platform-starter-react-wrapper`
+- `public/splash.html`: Splash screen with `fin.InterApplicationBus.Channel.connect()` for progress
 
-**`public/apps.json`** — Two inline-view apps:
-- `instrument-view`: URL `http://localhost:8080/view1`, fdc3InteropApi 2.0
-- `state-receiver-view`: URL `http://localhost:8080/view2`, fdc3InteropApi 2.0, declares `ViewQuote` intent for `custom.instrument`
-
-**`public/manifest.fin.json`** (~500 lines) — Full workspace platform manifest:
-- UUID: `markets-workspace-platform-starter`
-- Runtime 43.142.101.2
-- Extensive permissions (launchExternalProcess, downloadAsset, openUrlWithBrowser)
-- Bootstrap config: home, store, dock, notifications all enabled, autoShow dock+home
-- Splash screen provider
-- Platform modules (wps-platform-override, wps-interop-override, cloud-interop)
-- App provider with endpoint URLs for app definitions
-- Endpoint provider with local-storage, favorite-storage, context-processor, notification-source modules
-- Interop broker with intent resolver, FDC3 2.0 intents (StartCall, StartChat, ViewChart, ViewContact, ViewProfile, ViewQuote, ViewNews, ViewAnalysis, ViewInstrument)
-
-**`public/splash.html`** — Connects via `fin.InterApplicationBus.Channel.connect()` to receive progress updates. Styled with shared CSS.
-
-### OpenFin Framework Directory (`openfin/`)
-
-- `framework/` — WPS framework code (external dependency, gitignored)
-- `modules/` — Custom modules built by rollup.config.mjs
-- `.eslintignore` — ignores framework/ and modules/
+### OpenFin Framework (`openfin/`)
+- `framework/` — WPS framework (external, gitignored)
+- `modules/` — Custom modules built by rollup
 
 ---
 
-## 7. Dependencies
+## 6. Dependencies
 
 ### Root `package.json`
-
 ```json
 {
   "name": "markets",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": ["apps/*"],
   "scripts": {
     "dev:container": "npm run dev -w apps/container",
     "dev:workspace": "npm run dev -w apps/workspace",
@@ -432,15 +392,12 @@ React Router routes:
     "dev:wps": "npm run dev -w apps/workspace-platform-starter",
     "build": "npm run build --workspaces",
     "client:container": "npm run client -w apps/container",
-    "client:workspace": "npm run client -w apps/workspace",
-    "lint": "eslint .",
-    "typecheck": "tsc --build"
+    "client:workspace": "npm run client -w apps/workspace"
   }
 }
 ```
 
-### Shared TypeScript Config (`tsconfig.base.json`)
-
+### `tsconfig.base.json`
 ```json
 {
   "compilerOptions": {
@@ -459,88 +416,81 @@ React Router routes:
 }
 ```
 
-### Per-App OpenFin Dependencies
+### Per-App Dependencies
 
-| Package | Container | Workspace | Web | WPS |
-|---|---|---|---|---|
-| `@openfin/core` | 43.x | 43.x | — | — |
-| `@openfin/workspace` | 23.x | 23.x | — | 23.x |
-| `@openfin/workspace-platform` | — | 23.x | — | 23.x |
-| `@openfin/notifications` | 2.13.x | 2.13.x | — | — |
-| `@openfin/core-web` | — | — | 0.43.x | — |
-| `@openfin/node-adapter` | 43.x | 43.x | — | — |
-| `@openfin/cloud-interop` | — | — | — | 0.43.x |
-| `@openfin/openid-connect` | — | — | — | 1.0.x |
-| `@openfin/snap-sdk` | — | — | — | 1.3.x |
-| `react-router-dom` | 7.x | 7.x | — | 7.x |
-
-### Common Dependencies (all apps)
-
+**All apps share:**
 - React 19.x, React DOM 19.x
 - TypeScript 5.8+
 - Vite 6.x
 - `@finos/fdc3@2.0.3`
+- Tailwind CSS 4.x
+- `tailwind-merge`, `clsx`, `class-variance-authority` (for shadcn)
+- `lucide-react` (shadcn icons)
 
-### Design System Integration
+**Container:**
+- `@openfin/core@43.101.2`
+- `@openfin/workspace@23.0.20`
+- `@openfin/notifications@2.13.1`
+- `@openfin/node-adapter@43.101.2`
+- `react-router-dom@7.x`
+- shadcn components: Button, Card, Badge, ScrollArea
 
-Referenced as workspace path dependency:
-```json
-"@design-system/react-app": "file:../../design-system/react-app"
-```
+**Workspace:**
+- `@openfin/core@43.101.2`
+- `@openfin/workspace@23.0.20`
+- `@openfin/workspace-platform@23.0.20`
+- `@openfin/notifications@2.13.1`
+- `@openfin/node-adapter@43.101.2`
+- `react-router-dom@7.x`
+- shadcn components: Button, Card, Badge, ScrollArea
 
-Import pattern (direct file imports — the design system has no barrel export):
-```typescript
-import { ThemeProvider } from '@design-system/react-app/src/components/theme/ThemeProvider';
-import { BlotterPanel } from '@design-system/react-app/src/components/trading/fi/BlotterPanel';
-import { OrderBook } from '@design-system/react-app/src/components/trading/OrderBook';
-import { PriceDisplay } from '@design-system/react-app/src/components/trading/PriceDisplay';
-import { PositionsTable } from '@design-system/react-app/src/components/trading/PositionsTable';
-import { cn } from '@design-system/react-app/src/lib/utils';
-```
+**Web:**
+- `@openfin/core-web@0.43.113`
+- shadcn components: Button, Card
+
+**WPS:**
+- `@openfin/workspace@23.0.20`
+- `@openfin/workspace-platform@23.0.20`
+- `@openfin/cloud-interop@0.43.113`
+- `@openfin/openid-connect@1.0.0`
+- `@openfin/snap-sdk@1.3.4`
+- `react-router-dom@7.x`
+- shadcn components: Button, Card, Badge
+
+---
+
+## 7. shadcn/ui Integration
+
+Each app uses shadcn/ui components initialized per-app (standard shadcn setup):
+- `components/ui/` — generated shadcn components
+- `lib/utils.ts` — `cn()` helper using `clsx` + `tailwind-merge`
+- `index.css` — Tailwind directives + shadcn CSS variables
+
+The original's custom CSS utilities (`.row`, `.col`, `.fill`, `.gap10`, `.pad10`, etc.) are replaced with Tailwind equivalents:
+- `.row` → `flex flex-row`
+- `.col` → `flex flex-col`
+- `.fill` → `flex-1`
+- `.gap10` → `gap-2.5`
+- `.pad10` → `p-2.5`
+- `.middle` → `items-center`
+- `.spread` → `justify-between`
+
+The original's themed CSS variables (`--theme-*` fallback pattern) are preserved in each app's `index.css` alongside shadcn's CSS variable system, so OpenFin theming still works.
 
 ---
 
 ## 8. Error Handling
 
-- Each view wraps OpenFin API calls in try/catch with user-facing error messages displayed in the UI
-- Platform providers handle initialization failures gracefully with error state display
-- FDC3 operations degrade gracefully when not in an OpenFin context (check `typeof fin !== 'undefined'` and `typeof fdc3 !== 'undefined'`)
-- Notifications registration handles the case where the notifications service is unavailable
+Identical to original:
+- Views wrap OpenFin API calls in try/catch
+- Platform providers handle initialization failures
+- FDC3 operations check `typeof fin !== 'undefined'` and `typeof fdc3 !== 'undefined'`
 
 ---
 
-## 9. Feature Mapping (Original → New)
-
-| Original Feature | Original Location | New Location | Changes |
-|---|---|---|---|
-| Platform init | container/Provider.tsx | apps/container/src/platform/Provider.tsx | Same API |
-| FDC3 user channel broadcast | container/View1 | apps/container/src/views/BlotterView.tsx | Instrument selection instead of hardcoded MSFT |
-| FDC3 app channel broadcast | container/View1 | apps/container/src/views/BlotterView.tsx | "INSTRUMENT-CHANNEL" |
-| FDC3 context listener | container/View2 | apps/container/src/views/OrderTicketView.tsx | Populates order form |
-| Notifications | container/View3 | apps/container/src/views/NotificationsView.tsx | Trade confirmation theme |
-| WithScript HOC | container/WithScript.tsx | packages/shared/src/utils/with-script.tsx | Shared |
-| Workspace platform init | workspace/Provider.tsx | apps/workspace/src/platform/Provider.tsx | Purple theme (#7B61FF) |
-| Home registration | workspace/home.ts | apps/workspace/src/platform/home.ts | Same API |
-| Store registration | workspace/store.ts | apps/workspace/src/platform/store.ts | "Trading Apps" naming |
-| Dock registration | workspace/dock.ts | apps/workspace/src/platform/dock.ts | Same API |
-| App launcher | workspace/launch.ts | packages/shared/src/utils/launch.ts | Shared |
-| Core Web connect | web/provider.ts | apps/web/src/provider.ts | Same API |
-| Iframe broker | web/iframe-broker.ts | apps/web/src/iframe-broker.ts | Same API |
-| useOpenFin hook | wps/useOpenFin.tsx | apps/wps/src/hooks/useOpenFin.tsx | Same API |
-| usePlatformState hook | wps/usePlatformState.tsx | apps/wps/src/hooks/usePlatformState.tsx | "trading-state" channel |
-| useRaiseIntent hook | wps/useRaiseIntent.tsx | apps/wps/src/hooks/useRaiseIntent.tsx | Same API |
-| FDC3 intents | wps/view1 | apps/wps/src/views/InstrumentView.tsx | Trading context |
-| Cross-view state | wps/view1+view2 | apps/wps/src/views/ | Trading instrument state |
-| Splash screen | wps/splash.html | apps/wps/public/splash.html | Same pattern |
-| CSS design system | Duplicated per project | packages/shared/src/styles/ | Single source |
-| Type declarations | Duplicated per project | packages/shared/src/types/ | Single source |
-
----
-
-## 10. Out of Scope
+## 9. Out of Scope
 
 - Testing infrastructure (original has none)
-- CI/CD pipelines
-- Docker/containerization
-- marketsui ecosystem integration (standalone starter)
-- Custom OpenFin modules development (WPS uses pre-built modules)
+- CI/CD
+- Trading-themed content (exact match to original demos)
+- Shared package (each app is self-contained like original)
