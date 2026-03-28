@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+.env
+.env.*
+!.env.example
+
+# OpenFin WPS framework (external dependency)
+apps/workspace-platform-starter/openfin/framework/
+apps/workspace-platform-starter/openfin/modules/
+apps/workspace-platform-starter/public/openfin/
+apps/workspace-platform-starter/public/common/

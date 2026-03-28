@@ -1,0 +1,19 @@
+{
+  "name": "markets",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:container": "npm run dev -w apps/container",
+    "dev:workspace": "npm run dev -w apps/workspace",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:wps": "npm run dev -w apps/workspace-platform-starter",
+    "build": "npm run build --workspaces",
+    "client:container": "npm run client -w apps/container",
+    "client:workspace": "npm run client -w apps/workspace"
+  }
+}
