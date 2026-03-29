@@ -8,6 +8,7 @@ const Provider = React.lazy(() => import("./platform/Provider"));
 const View1 = React.lazy(() => import("./views/View1"));
 const View2 = React.lazy(() => import("./views/View2"));
 const DockEditor = React.lazy(() => import("./views/DockEditor"));
+const ImportConfig = React.lazy(() => import("./views/ImportConfig"));
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
@@ -19,6 +20,7 @@ root.render(
         <Route path="/views/view2" element={<View2 />} />
         <Route path="/platform/provider" element={<Provider />} />
         <Route path="/dock-editor" element={<React.Suspense fallback={<div>Loading...</div>}><DockEditor /></React.Suspense>} />
+        <Route path="/import-config" element={<React.Suspense fallback={<div>Loading...</div>}><ImportConfig /></React.Suspense>} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

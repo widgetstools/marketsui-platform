@@ -100,7 +100,7 @@ export async function initWorkspace(config?: WorkspaceConfig): Promise<void> {
   });
 
   // init() starts the platform and triggers "platform-api-ready" above
-  await initializePlatform(settings.platformSettings, config?.theme, config?.customActions);
+  await initializePlatform(settings.platformSettings, config?.theme);
 }
 
 // ─── Platform initialization ─────────────────────────────────────────
@@ -320,61 +320,40 @@ async function initializePlatform(
       },
 
       // ── Import config from a previously exported JSON file ──
+      // ── Open the import config window ──
       "import-config": async (e): Promise<void> => {
         if (e.callerType !== CustomActionCallerType.CustomDropdownItem) {
           return;
         }
+
+        // Open a dedicated React window for the file picker — same pattern
+        // as the dock editor. A hidden provider window cannot show a native
+        // file picker dialog, so we host the UI in its own OpenFin window.
         try {
-          if (!configManager) {
-            console.error("ConfigManager not initialized.");
-            return;
-          }
+          const existingWindow = fin.Window.wrapSync({
+            uuid: fin.me.identity.uuid,
+            name: "import-config",
+          });
+          await existingWindow.setAsForeground();
+        } catch {
+          // Window doesn't exist yet — create it
+          const app = await fin.Application.getCurrent();
+          const manifest: Record<string, unknown> = await app.getManifest();
+          const platformConfig = manifest.platform as Record<string, string> | undefined;
+          const providerUrl = platformConfig?.providerUrl ?? "";
+          const origin = new URL(providerUrl).origin;
 
-          // Create a hidden file input and trigger it
-          const input = document.createElement("input");
-          input.type = "file";
-          input.accept = ".json";
-
-          input.onchange = async (event) => {
-            const file = (event.target as HTMLInputElement).files?.[0];
-            if (!file) return;
-
-            try {
-              const text = await file.text();
-              const importData = JSON.parse(text);
-
-              // Import dock config if present
-              if (importData.appConfig && Array.isArray(importData.appConfig)) {
-                for (const config of importData.appConfig) {
-                  if (config.configId === "dock-config" && config.config) {
-                    await configManager!.saveDockConfig(config.config);
-                  } else if (config.configId) {
-                    await configManager!.saveConfig(config);
-                  }
-                }
-              }
-
-              console.log("Config imported. Reloading dock...");
-
-              // Reload the dock to reflect imported config
-              await Dock.deregister();
-              await registerDock(
-                cachedPlatformSettings!,
-                cachedCustomSettings?.apps,
-                cachedDockIcon,
-                cachedThemeToggleDarkIcon,
-            cachedThemeToggleLightIcon,
-                cachedRoles,
-              );
-              await Dock.show();
-            } catch (parseError) {
-              console.error("Failed to parse import file.", parseError);
-            }
-          };
-
-          input.click();
-        } catch (error) {
-          console.error("Failed to import config.", error);
+          await fin.Window.create({
+            name: "import-config",
+            url: `${origin}/import-config`,
+            defaultWidth: 400,
+            defaultHeight: 320,
+            autoShow: true,
+            frame: true,
+            resizable: false,
+            saveWindowState: false,
+            contextMenu: false,
+          });
         }
       },
 

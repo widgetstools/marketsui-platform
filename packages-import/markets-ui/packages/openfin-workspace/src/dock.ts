@@ -243,6 +243,26 @@ export async function registerDock(
       console.warn("Could not subscribe to dock-config-update IAB topic.", iabError);
     }
 
+    // --- 5. Listen for reload requests from the import config window ---
+    // After a successful config import the import window publishes this
+    // topic so the dock picks up the newly imported buttons.
+    try {
+      await fin.InterApplicationBus.subscribe(
+        { uuid: fin.me.identity.uuid },
+        "reload-dock-after-import",
+        async () => {
+          console.log("Reloading dock after config import.");
+          const savedConfig = await loadDockConfig();
+          if (savedConfig) {
+            const updatedUserButtons = toOpenFinDockButtons(savedConfig);
+            await applyDockButtons(updatedUserButtons);
+          }
+        },
+      );
+    } catch (iabError) {
+      console.warn("Could not subscribe to reload-dock-after-import IAB topic.", iabError);
+    }
+
     return registration;
   } catch (error) {
     console.error("Failed to register the dock provider.", error);
