@@ -5,15 +5,20 @@
     "node": ">=22"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
+    "dev:reference": "npm run dev -w apps/react-reference-app",
     "dev:container": "npm run dev -w apps/container",
-    "dev:workspace": "npm run dev -w apps/workspace",
     "dev:web": "npm run dev -w apps/web",
     "dev:wps": "npm run dev -w apps/workspace-platform-starter",
     "build": "npm run build --workspaces",
+    "client:reference": "npm run client -w apps/react-reference-app",
     "client:container": "npm run client -w apps/container",
-    "client:workspace": "npm run client -w apps/workspace"
+    "preview:reference": "npm run preview -w apps/react-reference-app",
+    "preview:container": "npm run preview -w apps/container",
+    "preview:web": "npm run preview -w apps/web",
+    "preview:wps": "npm run preview -w apps/workspace-platform-starter"
   }
 }
