@@ -29,27 +29,60 @@ import type { DockEditorConfig } from "./dock-config-types";
 let configManagerInstance: ConfigManager | undefined;
 
 /**
+ * Holds the in-progress init promise when the fallback ConfigManager
+ * is being created. This prevents a race condition where two concurrent
+ * callers both try to create separate instances before the first one
+ * has finished initialising.
+ *
+ * How it works:
+ *   - First caller: creates the promise and awaits it.
+ *   - Concurrent callers: receive the same promise and await the same result.
+ *   - Once resolved, configManagerInstance is set and the promise is cleared.
+ */
+let initPromise: Promise<ConfigManager> | undefined;
+
+/**
  * Set the shared ConfigManager instance.
+ *
  * Called once from workspace.ts after creating and initializing
- * the ConfigManager during platform startup.
+ * the ConfigManager during platform startup. Once set, the
+ * getConfigManager() fallback path is never used.
  */
 export function setConfigManager(manager: ConfigManager): void {
   configManagerInstance = manager;
 }
 
 /**
- * Get the ConfigManager instance, creating a fallback if needed.
+ * Returns the ConfigManager instance, creating a fallback if needed.
  *
- * The fallback handles the case where the dock-editor runs in a
- * separate OpenFin window — it creates its own ConfigManager that
- * connects to the same Dexie database.
+ * Why a fallback? The dock-editor runs in a separate OpenFin child
+ * window. That window can't access the provider's in-memory
+ * configManagerInstance, so it creates its own — which still connects
+ * to the same Dexie database on disk.
+ *
+ * The promise guard (initPromise) ensures that even if this function
+ * is called multiple times before the first init completes, only one
+ * ConfigManager is ever created.
  */
 async function getConfigManager(): Promise<ConfigManager> {
-  if (!configManagerInstance) {
-    configManagerInstance = createConfigManager();
-    await configManagerInstance.init();
+  // Fast path: instance already exists
+  if (configManagerInstance) {
+    return configManagerInstance;
   }
-  return configManagerInstance;
+
+  // If init is already in progress, wait for that same promise
+  // rather than starting a second one.
+  if (!initPromise) {
+    initPromise = (async () => {
+      const manager = createConfigManager();
+      await manager.init();
+      configManagerInstance = manager;
+      initPromise = undefined; // clear so it can be GC'd
+      return manager;
+    })();
+  }
+
+  return initPromise;
 }
 
 // ─── Public API (same signatures as before) ──────────────────────────

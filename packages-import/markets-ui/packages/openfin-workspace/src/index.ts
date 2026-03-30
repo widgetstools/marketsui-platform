@@ -3,7 +3,16 @@ export { initWorkspace } from "./workspace";
 export { launchApp } from "./launch";
 
 // ─── Dock management ─────────────────────────────────────────────────
-export { updateDockButtons, getDefaultEditorConfig, recolorDockIcons } from "./dock";
+export {
+  updateDockButtons,
+  getDefaultEditorConfig,
+  recolorDockIcons,
+  // IAB topic names — exported so packages that publish/subscribe
+  // to these topics use the same string constant, not separate literals.
+  IAB_DOCK_CONFIG_UPDATE,
+  IAB_RELOAD_AFTER_IMPORT,
+  IAB_THEME_CHANGED,
+} from "./dock";
 
 // ─── Persistence (config service) ────────────────────────────────────
 export { saveDockConfig, loadDockConfig, clearDockConfig } from "./db";

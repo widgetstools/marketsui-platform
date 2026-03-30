@@ -67,5 +67,6 @@ export async function registerStore(
     return metaInfo;
   } catch (err) {
     console.error("An error was encountered while trying to register the storefront provider", err);
+    return undefined;
   }
 }

@@ -5,28 +5,36 @@ import { Dock, Home, Storefront, type App } from "@openfin/workspace";
 import { ColorSchemeOptionType, CustomActionCallerType, getCurrentSync, init } from "@openfin/workspace-platform";
 import { createConfigManager, type ConfigManager } from "@marketsui/config-service";
 import { setConfigManager } from "./db";
-import { registerDock, recolorDockIcons } from "./dock";
+import {
+  registerDock,
+  recolorDockIcons,
+  reloadDockFromConfig,
+  ACTION_LAUNCH_APP,
+  ACTION_TOGGLE_THEME,
+  ACTION_OPEN_DOCK_EDITOR,
+  ACTION_RELOAD_DOCK,
+  ACTION_SHOW_DEVTOOLS,
+  ACTION_EXPORT_CONFIG,
+  ACTION_IMPORT_CONFIG,
+  ACTION_TOGGLE_PROVIDER,
+  IAB_THEME_CHANGED,
+} from "./dock";
 import { registerHome } from "./home";
 import { launchApp } from "./launch";
 import { registerNotifications } from "./notifications";
 import { registerStore } from "./store";
 import type { CustomSettings, PlatformSettings, WorkspaceConfig } from "./types";
 
-/** Prevents initWorkspace() from being called more than once. */
+/**
+ * Prevents initWorkspace() from running more than once.
+ * The platform can only be initialised a single time per provider window,
+ * so a second call silently returns without doing anything.
+ */
 let isInitialized = false;
 
 /** The shared ConfigManager instance, created during platform init. */
 let configManager: ConfigManager | undefined;
 
-// ─── Cached init parameters ─────────────────────────────────────────
-// Stored at module level so that custom action handlers (reload-dock,
-// import-config) can re-register the dock with the same settings.
-let cachedPlatformSettings: PlatformSettings | undefined;
-let cachedCustomSettings: CustomSettings | undefined;
-let cachedDockIcon: string | undefined;
-let cachedThemeToggleDarkIcon: string | undefined;
-let cachedThemeToggleLightIcon: string | undefined;
-let cachedRoles: string[] | undefined;
 
 /**
  * Initialize the OpenFin workspace platform and all workspace components
@@ -77,15 +85,6 @@ export async function initWorkspace(config?: WorkspaceConfig): Promise<void> {
   // The "platform-api-ready" event fires after init() completes below.
   const platform = fin.Platform.getCurrentSync();
   await platform.once("platform-api-ready", async () => {
-    // Cache init params so action handlers (reload-dock, import-config)
-    // can re-register the dock with the same settings.
-    cachedPlatformSettings = settings.platformSettings;
-    cachedCustomSettings = settings.customSettings;
-    cachedDockIcon = config?.dockIcon;
-    cachedThemeToggleDarkIcon = config?.themeToggleDarkIcon;
-    cachedThemeToggleLightIcon = config?.themeToggleLightIcon;
-    cachedRoles = config?.roles;
-
     await initializeWorkspaceComponents(
       settings.platformSettings,
       settings.customSettings,
@@ -143,7 +142,9 @@ async function initializePlatform(
     ],
     customActions: {
       // ── Launch an app from a dock button or dropdown menu item ──
-      "launch-app": async (e): Promise<void> => {
+      // Note: computed property syntax [CONSTANT] is used throughout so
+      // the action IDs are defined once in dock.ts and shared here.
+      [ACTION_LAUNCH_APP]: async (e): Promise<void> => {
         if (
           e.callerType === CustomActionCallerType.CustomButton ||
           e.callerType === CustomActionCallerType.CustomDropdownItem
@@ -153,7 +154,7 @@ async function initializePlatform(
       },
 
       // ── Toggle between dark and light theme ──
-      "toggle-theme": async (e): Promise<void> => {
+      [ACTION_TOGGLE_THEME]: async (e): Promise<void> => {
         if (e.callerType !== CustomActionCallerType.CustomButton) {
           return;
         }
@@ -180,14 +181,15 @@ async function initializePlatform(
         //    Child windows run in separate processes and cannot call
         //    our functions directly, so we use InterApplicationBus.
         try {
-          await fin.InterApplicationBus.publish("theme-changed", { isDark });
-        } catch {
-          // IAB may not be available if no child windows are open
+          await fin.InterApplicationBus.publish(IAB_THEME_CHANGED, { isDark });
+        } catch (iabErr) {
+          // IAB publish can fail if no child windows are subscribed — safe to ignore
+          console.warn("Could not publish theme-changed event via IAB.", iabErr);
         }
       },
 
       // ── Open the dock editor window ──
-      "open-dock-editor": async (e): Promise<void> => {
+      [ACTION_OPEN_DOCK_EDITOR]: async (e): Promise<void> => {
         if (
           e.callerType !== CustomActionCallerType.CustomButton &&
           e.callerType !== CustomActionCallerType.CustomDropdownItem
@@ -206,11 +208,18 @@ async function initializePlatform(
           // Window doesn't exist yet — create a new one
           const app = await fin.Application.getCurrent();
           const manifest: Record<string, unknown> = await app.getManifest();
-          const platformConfig = manifest.platform as Record<string, string> | undefined;
-          const providerUrl = platformConfig?.providerUrl ?? "";
+          const platformConfig = manifest['platform'] as Record<string, string> | undefined;
+          const providerUrl = platformConfig?.['providerUrl'] ?? "";
 
-          // Use only the origin (e.g. http://localhost:5174), not the full path
-          const origin = new URL(providerUrl).origin;
+          // Extract just the origin (e.g. "http://localhost:5174") so we can
+          // build the correct URL for the dock editor route.
+          let origin: string;
+          try {
+            origin = new URL(providerUrl).origin;
+          } catch {
+            console.error("Could not determine app origin from providerUrl:", providerUrl);
+            return;
+          }
 
           await fin.Window.create({
             name: "dock-editor",
@@ -226,23 +235,14 @@ async function initializePlatform(
         }
       },
 
-      // ── Reload the dock (deregister and re-register) ──
-      "reload-dock": async (e): Promise<void> => {
+      // ── Reload the dock buttons from the saved config ──
+      [ACTION_RELOAD_DOCK]: async (e): Promise<void> => {
         if (e.callerType !== CustomActionCallerType.CustomDropdownItem) {
           return;
         }
         console.log("Reloading dock...");
         try {
-          await Dock.deregister();
-          await registerDock(
-            cachedPlatformSettings!,
-            cachedCustomSettings?.apps,
-            cachedDockIcon,
-            cachedThemeToggleDarkIcon,
-            cachedThemeToggleLightIcon,
-            cachedRoles,
-          );
-          await Dock.show();
+          await reloadDockFromConfig();
           console.log("Dock reloaded.");
         } catch (error) {
           console.error("Failed to reload dock.", error);
@@ -250,7 +250,7 @@ async function initializePlatform(
       },
 
       // ── Open DevTools for the provider window ──
-      "show-devtools": async (e): Promise<void> => {
+      [ACTION_SHOW_DEVTOOLS]: async (e): Promise<void> => {
         if (e.callerType !== CustomActionCallerType.CustomDropdownItem) {
           return;
         }
@@ -263,7 +263,7 @@ async function initializePlatform(
       },
 
       // ── Export all config from IndexedDB as a JSON download ──
-      "export-config": async (e): Promise<void> => {
+      [ACTION_EXPORT_CONFIG]: async (e): Promise<void> => {
         if (e.callerType !== CustomActionCallerType.CustomDropdownItem) {
           return;
         }
@@ -319,9 +319,8 @@ async function initializePlatform(
         }
       },
 
-      // ── Import config from a previously exported JSON file ──
       // ── Open the import config window ──
-      "import-config": async (e): Promise<void> => {
+      [ACTION_IMPORT_CONFIG]: async (e): Promise<void> => {
         if (e.callerType !== CustomActionCallerType.CustomDropdownItem) {
           return;
         }
@@ -339,9 +338,16 @@ async function initializePlatform(
           // Window doesn't exist yet — create it
           const app = await fin.Application.getCurrent();
           const manifest: Record<string, unknown> = await app.getManifest();
-          const platformConfig = manifest.platform as Record<string, string> | undefined;
-          const providerUrl = platformConfig?.providerUrl ?? "";
-          const origin = new URL(providerUrl).origin;
+          const platformConfig = manifest['platform'] as Record<string, string> | undefined;
+          const providerUrl = platformConfig?.['providerUrl'] ?? "";
+
+          let origin: string;
+          try {
+            origin = new URL(providerUrl).origin;
+          } catch {
+            console.error("Could not determine app origin from providerUrl:", providerUrl);
+            return;
+          }
 
           await fin.Window.create({
             name: "import-config",
@@ -358,7 +364,7 @@ async function initializePlatform(
       },
 
       // ── Toggle the provider window visibility ──
-      "toggle-provider-window": async (e): Promise<void> => {
+      [ACTION_TOGGLE_PROVIDER]: async (e): Promise<void> => {
         if (e.callerType !== CustomActionCallerType.CustomDropdownItem) {
           return;
         }
@@ -455,9 +461,9 @@ async function getManifestCustomSettings(): Promise<{
 
   return {
     platformSettings: {
-      id: manifest.platform?.uuid ?? "",
+      id: manifest['platform']?.uuid ?? "",
       title: manifest.shortcut?.name ?? "",
-      icon: manifest.platform?.icon ?? "",
+      icon: manifest['platform']?.icon ?? "",
     },
     customSettings: manifest.customSettings,
   };

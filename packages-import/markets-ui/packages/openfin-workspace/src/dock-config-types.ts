@@ -70,16 +70,16 @@ function convertMenuItem(item: DockMenuItemConfig): Record<string, unknown> {
   const result: Record<string, unknown> = {
     tooltip: item.tooltip,
   };
-  if (item.iconUrl) result.iconUrl = item.iconUrl;
-  if (item.iconColor) result.iconColor = item.iconColor;
+  if (item.iconUrl) result['iconUrl'] = item.iconUrl;
+  if (item.iconColor) result['iconColor'] = item.iconColor;
   if (item.actionId) {
-    result.action = {
+    result['action'] = {
       id: item.actionId,
       ...(item.customData != null ? { customData: item.customData } : {}),
     };
   }
   if (item.options?.length) {
-    result.options = item.options.map(convertMenuItem);
+    result['options'] = item.options.map(convertMenuItem);
   }
   return result;
 }

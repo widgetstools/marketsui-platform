@@ -9,5 +9,6 @@ export async function registerNotifications(): Promise<Notifications.Notificatio
     return metaInfo;
   } catch (err) {
     console.error("An error was encountered while trying to register the notifications provider", err);
+    return undefined;
   }
 }

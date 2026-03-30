@@ -28,13 +28,18 @@ import type {
   UserProfileRow,
 } from "./types";
 
-// How often to retry failed REST writes (in milliseconds)
+// How often to retry failed REST writes.
+// 10 seconds is a balance: short enough to recover quickly after a
+// network blip, long enough not to flood the server with retries.
 const PENDING_SYNC_INTERVAL_MS = 10_000;
 
-// Maximum number of retries before giving up on a pending sync entry
+// How many times to retry a failed REST write before giving up.
+// After MAX_SYNC_RETRIES, the row stays in PENDING_SYNC for manual
+// investigation — it is never automatically deleted on failure.
 const MAX_SYNC_RETRIES = 10;
 
-// Well-known configId used for the dock configuration
+// The fixed configId used to store dock button configuration.
+// Using a constant avoids typos when reading or writing the record.
 const DOCK_CONFIG_ID = "dock-config";
 
 /**
@@ -285,13 +290,19 @@ export class ConfigManager {
       return [];
     }
 
-    // Collect all permissionIds from the user's roles
+    // Collect all permissionIds from all of the user's roles.
+    //
+    // NOTE — N+1 query pattern: we make one DB call per role, then one
+    // per permission. For the typical case (a few roles, ~10 permissions)
+    // this is fast enough and much easier to read than a batched query.
+    // If performance becomes an issue with many roles, consider fetching
+    // all roles in one call using `.where("roleId").anyOf(user.roleIds)`.
     const allPermissionIds = new Set<string>();
     for (const roleId of user.roleIds) {
       const role = await this.db.roles.get(roleId);
       if (role) {
         for (const permId of role.permissionIds) {
-          allPermissionIds.add(permId);
+          allPermissionIds.add(permId); // Set deduplicates automatically
         }
       }
     }
@@ -469,8 +480,11 @@ export class ConfigManager {
     try {
       const response = await fetch(this.seedConfigUrl);
       if (!response.ok) {
+        // Log prominently — a developer starting the app for the first time
+        // needs to know that seeding failed (database will be empty).
         console.error(
-          `ConfigManager: Failed to fetch seed data (HTTP ${response.status}).`,
+          `ConfigManager: ⚠️ Failed to fetch seed data from ${this.seedConfigUrl} (HTTP ${response.status}). ` +
+          "The database will start empty. Check that the dev server is running and the seedConfigUrl is correct.",
         );
         return;
       }
@@ -593,6 +607,14 @@ export class ConfigManager {
     console.log(`ConfigManager: Draining ${pendingEntries.length} pending sync entries.`);
 
     for (const entry of pendingEntries) {
+      // `id` is auto-assigned by Dexie on insert (++id primary key).
+      // It should always be present on rows read from the database,
+      // but we guard here so a corrupt row doesn't crash the drain loop.
+      if (entry.id === undefined) {
+        console.warn("ConfigManager: Skipping pending sync entry with no id.", entry);
+        continue;
+      }
+
       // Skip entries that have exceeded the retry limit
       if (entry.retries >= MAX_SYNC_RETRIES) {
         console.error(
@@ -613,13 +635,13 @@ export class ConfigManager {
 
         if (response.ok) {
           // Success — remove from the queue
-          await this.db.pendingSync.delete(entry.id!);
+          await this.db.pendingSync.delete(entry.id);
         } else {
           throw new Error(`HTTP ${response.status}`);
         }
       } catch {
         // Failed again — increment the retry counter
-        await this.db.pendingSync.update(entry.id!, {
+        await this.db.pendingSync.update(entry.id, {
           retries: entry.retries + 1,
         });
       }

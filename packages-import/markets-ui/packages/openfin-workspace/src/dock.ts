@@ -14,19 +14,62 @@ import {
   toOpenFinDockButtons,
   type DockEditorConfig,
 } from "./dock-config-types";
+import {
+  TOOLS_SVG,
+  SETTINGS_SVG,
+  REFRESH_SVG,
+  CODE_SVG,
+  DOWNLOAD_SVG,
+  UPLOAD_SVG,
+  SUN_SVG,
+  MOON_SVG,
+  EYE_SVG,
+} from "@markets/icons-svg/dock-system";
 import { svgToDataUrl } from "./icons";
+import { marketIconToDataUrl } from "@markets/icons-svg/all-icons";
 import type { PlatformSettings } from "./types";
 
 // ─── Theme icon colors ──────────────────────────────────────────────
-// These colors are used for SVG icons in the dock.
-// White for dark backgrounds, dark navy for light backgrounds.
+// These hex colors are applied to SVG icons so they are visible on
+// the dock bar regardless of the current theme:
+//   - Dark theme → white icons on a dark bar
+//   - Light theme → dark navy icons on a light bar
 const ICON_COLOR_DARK_THEME = "#ffffff";
 const ICON_COLOR_LIGHT_THEME = "#1a1a2e";
 
+// ─── IAB topic names ────────────────────────────────────────────────
+// The InterApplicationBus (IAB) is OpenFin's messaging system between
+// windows. We use named constants here so that if a topic name ever
+// needs to change, you only update it in one place.
+/** Published by the dock editor when the user saves button changes. */
+export const IAB_DOCK_CONFIG_UPDATE = "dock-config-update";
+/** Published by the import-config window after a successful import. */
+export const IAB_RELOAD_AFTER_IMPORT = "reload-dock-after-import";
+/** Published by workspace.ts when the user toggles the theme. */
+export const IAB_THEME_CHANGED = "theme-changed";
+
+// ─── Action ID constants ─────────────────────────────────────────────
+// These strings are the "action IDs" that link a dock button to its
+// handler in workspace.ts. They must match exactly in both places.
+// Exported so workspace.ts can use the same values without repeating
+// the string literals.
+export const ACTION_LAUNCH_APP        = "launch-app";
+export const ACTION_TOGGLE_THEME      = "toggle-theme";
+export const ACTION_OPEN_DOCK_EDITOR  = "open-dock-editor";
+export const ACTION_RELOAD_DOCK       = "reload-dock";
+export const ACTION_SHOW_DEVTOOLS     = "show-devtools";
+export const ACTION_EXPORT_CONFIG     = "export-config";
+export const ACTION_IMPORT_CONFIG     = "import-config";
+export const ACTION_TOGGLE_PROVIDER   = "toggle-provider-window";
+
 // ─── Module-level state ──────────────────────────────────────────────
-// These variables persist for the lifetime of the provider window.
-// They are set during registerDock() and updated as the user changes
-// the dock configuration or toggles the theme.
+// These variables are initialised in registerDock() and then stay in
+// memory for the lifetime of the provider window. Think of them as the
+// "current state of the dock" — they are read and updated by other
+// functions in this file (recolorDockIcons, applyDockButtons, etc.).
+//
+// ⚠️ Never import or mutate these from outside this file.
+// Use the exported functions (registerDock, recolorDockIcons, etc.).
 
 /** The OpenFin dock registration handle, needed to push button updates. */
 let registration: DockProviderRegistration | undefined;
@@ -47,6 +90,13 @@ let lastUserButtons: DockButton[] = [];
 let currentIconColor = ICON_COLOR_DARK_THEME;
 
 /**
+ * Tracks whether IAB subscriptions have been set up.
+ * Subscriptions must only be created once — re-subscribing on dock
+ * reload would create duplicate listeners and can cause OpenFin errors.
+ */
+let iabSubscribed = false;
+
+/**
  * Theme toggle icon URLs — swapped when the theme changes.
  * darkIcon: shown while in dark mode (e.g. a sun — click to go light).
  * lightIcon: shown while in light mode (e.g. a moon — click to go dark).
@@ -54,30 +104,14 @@ let currentIconColor = ICON_COLOR_DARK_THEME;
 let themeToggleDarkIcon: string | undefined;
 let themeToggleLightIcon: string | undefined;
 
-// ─── SVG Icons (all use "currentColor" for theme support) ────────────
-// Each icon is a minimal 24x24 SVG. The "currentColor" value gets
-// replaced with the actual theme color by svgToDataUrl().
+// ─── SVG Icons ──────────────────────────────────────────────────────
+// All SVG icon strings are imported from @markets/icons-svg/dock-system.
+// The .svg source files live in packages/icons-svg/svg/dock-system/.
 
-/** Wrench icon — used for the Tools dropdown button. */
-const TOOLS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
-
-/** Gear icon — used for the Dock Editor menu item. */
-const SETTINGS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
-
-/** Refresh icon — used for "Reload Dock" menu item. */
-const REFRESH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`;
-
-/** Code/terminal icon — used for "Show Developer Tools" menu item. */
-const CODE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`;
-
-/** Download icon — used for "Export Config" menu item. */
-const DOWNLOAD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
-
-/** Upload icon — used for "Import Config" menu item. */
-const UPLOAD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
-
-/** Eye icon — used for "Show/Hide Provider" menu item. */
-const EYE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+// Pre-built theme toggle data URLs with fixed colors that work on both dock backgrounds.
+// Amber sun (#FFB300) is vivid on dark; black moon (#000000) is clear on light.
+const DEFAULT_DARK_THEME_ICON = svgToDataUrl(SUN_SVG, "#FFB300");
+const DEFAULT_LIGHT_THEME_ICON = svgToDataUrl(MOON_SVG, "#000000");
 
 // ─── Tools dropdown helpers ───────────────────────────────────────────
 // Menu item icons always use ICON_COLOR_DARK_THEME (#ffffff) because
@@ -93,32 +127,32 @@ function buildToolsMenuItems(): any[] {
     {
       tooltip: "Dock Editor",
       iconUrl: svgToDataUrl(SETTINGS_SVG, ICON_COLOR_DARK_THEME),
-      action: { id: "open-dock-editor" },
+      action: { id: ACTION_OPEN_DOCK_EDITOR },
     },
     {
       tooltip: "Reload Dock",
       iconUrl: svgToDataUrl(REFRESH_SVG, ICON_COLOR_DARK_THEME),
-      action: { id: "reload-dock" },
+      action: { id: ACTION_RELOAD_DOCK },
     },
     {
       tooltip: "Developer Tools",
       iconUrl: svgToDataUrl(CODE_SVG, ICON_COLOR_DARK_THEME),
-      action: { id: "show-devtools" },
+      action: { id: ACTION_SHOW_DEVTOOLS },
     },
     {
       tooltip: "Export Config",
       iconUrl: svgToDataUrl(DOWNLOAD_SVG, ICON_COLOR_DARK_THEME),
-      action: { id: "export-config" },
+      action: { id: ACTION_EXPORT_CONFIG },
     },
     {
       tooltip: "Import Config",
       iconUrl: svgToDataUrl(UPLOAD_SVG, ICON_COLOR_DARK_THEME),
-      action: { id: "import-config" },
+      action: { id: ACTION_IMPORT_CONFIG },
     },
     {
       tooltip: "Show/Hide Provider",
       iconUrl: svgToDataUrl(EYE_SVG, ICON_COLOR_DARK_THEME),
-      action: { id: "toggle-provider-window" },
+      action: { id: ACTION_TOGGLE_PROVIDER },
     },
   ];
 }
@@ -147,7 +181,7 @@ function buildToolsDropdown(buttonColor: string): DockButton {
  * User buttons come from IndexedDB (saved dock editor config) or fall
  * back to the app list from the manifest.
  *
- * Also subscribes to the "dock-config-update" IAB topic so the dock
+ * Also subscribes to the IAB_DOCK_CONFIG_UPDATE topic so the dock
  * editor can push live updates without a restart.
  */
 export async function registerDock(
@@ -163,22 +197,19 @@ export async function registerDock(
   // Cache settings for later use in applyDockButtons()
   storedPlatformSettings = platformSettings;
   storedIcon = dockIcon ?? platformSettings.icon;
-  themeToggleDarkIcon = darkIcon;
-  themeToggleLightIcon = lightIcon;
+  // Use provided icons or fall back to the built-in SVG defaults.
+  themeToggleDarkIcon = darkIcon ?? DEFAULT_DARK_THEME_ICON;
+  themeToggleLightIcon = lightIcon ?? DEFAULT_LIGHT_THEME_ICON;
 
   // --- 1. Build system buttons (always present at the end of the dock) ---
   systemButtons = [];
 
-  // Add the theme toggle button if at least one icon was provided.
-  // The icon shown depends on the current theme and is swapped in applyDockButtons().
-  const initialToggleIcon = darkIcon ?? lightIcon;
-  if (initialToggleIcon) {
-    systemButtons.push({
-      tooltip: "Toggle Theme",
-      iconUrl: initialToggleIcon,
-      action: { id: "toggle-theme" },
-    });
-  }
+  // Theme toggle is always present — uses built-in sun/moon SVGs by default.
+  systemButtons.push({
+    tooltip: "Toggle Theme",
+    iconUrl: themeToggleDarkIcon,
+    action: { id: ACTION_TOGGLE_THEME },
+  });
 
   // Tools dropdown with Dock Editor, Reload, DevTools, Export/Import, Provider toggle
   systemButtons.push(buildToolsDropdown(currentIconColor));
@@ -195,7 +226,7 @@ export async function registerDock(
     const appMenuItems = (apps ?? []).map((app) => ({
       tooltip: app.title,
       iconUrl: app.icons?.length ? app.icons[0].src : platformSettings.icon,
-      action: { id: "launch-app", customData: app },
+      action: { id: ACTION_LAUNCH_APP, customData: app },
     }));
 
     userButtons = [
@@ -218,49 +249,54 @@ export async function registerDock(
       id: platformSettings.id,
       title: platformSettings.title,
       icon: storedIcon,
-      workspaceComponents: ["home", "store", "notifications", "switchWorkspace"],
+      workspaceComponents: ["notifications", "switchWorkspace"],
+      // home and store are disabled via WorkspaceConfig.components
       disableUserRearrangement: true,
       buttons: allButtons,
     });
 
     console.log("Dock provider initialized.");
 
-    // --- 4. Listen for live config updates from the dock editor window ---
-    // The dock editor publishes on the "dock-config-update" IAB topic
-    // whenever the user saves changes.
-    try {
-      await fin.InterApplicationBus.subscribe(
-        { uuid: fin.me.identity.uuid },
-        "dock-config-update",
-        async (config: DockEditorConfig) => {
-          console.log("Received dock config update via IAB.");
-          await saveDockConfig(config);
-          const updatedUserButtons = toOpenFinDockButtons(config);
-          await applyDockButtons(updatedUserButtons);
-        },
-      );
-    } catch (iabError) {
-      console.warn("Could not subscribe to dock-config-update IAB topic.", iabError);
-    }
+    // --- 4 & 5. IAB subscriptions — set up once only ---
+    // On dock reload (deregister + register), registerDock() is called again.
+    // Re-subscribing to the same IAB topics creates duplicate listeners and
+    // can cause OpenFin errors that break the reload. Guard with iabSubscribed.
+    if (!iabSubscribed) {
+      iabSubscribed = true;
 
-    // --- 5. Listen for reload requests from the import config window ---
-    // After a successful config import the import window publishes this
-    // topic so the dock picks up the newly imported buttons.
-    try {
-      await fin.InterApplicationBus.subscribe(
-        { uuid: fin.me.identity.uuid },
-        "reload-dock-after-import",
-        async () => {
-          console.log("Reloading dock after config import.");
-          const savedConfig = await loadDockConfig();
-          if (savedConfig) {
-            const updatedUserButtons = toOpenFinDockButtons(savedConfig);
+      // Listen for live config updates from the dock editor window.
+      try {
+        await fin.InterApplicationBus.subscribe(
+          { uuid: fin.me.identity.uuid },
+          IAB_DOCK_CONFIG_UPDATE,
+          async (config: DockEditorConfig) => {
+            console.log("Received dock config update via IAB.");
+            await saveDockConfig(config);
+            const updatedUserButtons = toOpenFinDockButtons(config);
             await applyDockButtons(updatedUserButtons);
-          }
-        },
-      );
-    } catch (iabError) {
-      console.warn("Could not subscribe to reload-dock-after-import IAB topic.", iabError);
+          },
+        );
+      } catch (iabError) {
+        console.error("Could not subscribe to dock-config-update IAB topic.", iabError);
+      }
+
+      // Listen for reload requests from the import config window.
+      try {
+        await fin.InterApplicationBus.subscribe(
+          { uuid: fin.me.identity.uuid },
+          IAB_RELOAD_AFTER_IMPORT,
+          async () => {
+            console.log("Reloading dock after config import.");
+            const savedConfig = await loadDockConfig();
+            if (savedConfig) {
+              const updatedUserButtons = toOpenFinDockButtons(savedConfig);
+              await applyDockButtons(updatedUserButtons);
+            }
+          },
+        );
+      } catch (iabError) {
+        console.error("Could not subscribe to reload-dock-after-import IAB topic.", iabError);
+      }
     }
 
     return registration;
@@ -284,6 +320,27 @@ export async function recolorDockIcons(isDark: boolean): Promise<void> {
   const themeName = isDark ? "dark" : "light";
   console.log(`Recoloring dock icons for ${themeName} theme (${currentIconColor})`);
   await applyDockButtons(lastUserButtons);
+}
+
+/**
+ * Reload dock buttons from the saved config in IndexedDB.
+ *
+ * This is the correct way to "refresh" the dock at runtime — it reads
+ * the latest saved config and pushes it to the dock via updateDockProviderConfig.
+ *
+ * Note: full deregister/re-register is NOT supported at runtime — the
+ * OpenFin workspace channel closes on deregister and cannot reconnect.
+ */
+export async function reloadDockFromConfig(): Promise<void> {
+  const savedConfig = await loadDockConfig();
+  if (savedConfig) {
+    const userButtons = toOpenFinDockButtons(savedConfig);
+    await applyDockButtons(userButtons);
+  } else {
+    // No saved config — just re-apply the current buttons to refresh icons
+    await applyDockButtons(lastUserButtons);
+  }
+  console.log("Dock reloaded from config.");
 }
 
 /**
@@ -348,7 +405,21 @@ function recolorButtonIcons(button: DockButton, themeColor: string): DockButton 
 
   // Use the user's custom color if set, otherwise use the theme color
   const effectiveColor = copy.iconColor ?? themeColor;
-  copy.iconUrl = recolorIconifyUrl(copy.iconUrl ?? "", effectiveColor);
+
+  // If the button stores an iconId, regenerate the URL from source.
+  // This handles both "mkt:bond" (custom market icons) and "lucide:home" (Iconify CDN).
+  if (copy.iconId) {
+    const [prefix, name] = copy.iconId.split(":");
+    if (prefix === "mkt" && name) {
+      // Custom market icon — rebuild data URL from SVG string
+      copy.iconUrl = marketIconToDataUrl(name, effectiveColor);
+    } else {
+      // Iconify CDN icon — recolor the URL parameter
+      copy.iconUrl = recolorIconifyUrl(copy.iconUrl ?? "", effectiveColor);
+    }
+  } else {
+    copy.iconUrl = recolorIconifyUrl(copy.iconUrl ?? "", effectiveColor);
+  }
 
   // Menu item icons are NOT recolored — the dropdown is always dark,
   // so their iconUrls (baked in when the user configured them) remain correct.
@@ -385,13 +456,18 @@ async function applyDockButtons(userButtons: DockButton[]): Promise<void> {
   const isDarkTheme = currentIconColor === ICON_COLOR_DARK_THEME;
 
   const coloredSystemButtons = systemButtons.map((button) => {
+    // NOTE: OpenFin's DockButton type does not expose `id` or `action`
+    // directly in its TypeScript definitions, so we cast to `any` to
+    // read these fields. This is safe because we set them ourselves
+    // when building the system buttons above.
+
     // Tools dropdown — rebuild entirely with fresh SVG colors
     if ((button as any).id === "tools") {
       return buildToolsDropdown(currentIconColor);
     }
 
     // Theme toggle — swap icon based on current theme
-    if ((button as any).action?.id === "toggle-theme") {
+    if ((button as any).action?.id === ACTION_TOGGLE_THEME) {
       // In dark mode show the sun (darkIcon), in light mode show the moon (lightIcon)
       const toggleIcon = isDarkTheme ? themeToggleDarkIcon : themeToggleLightIcon;
       if (toggleIcon) {

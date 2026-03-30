@@ -15,6 +15,7 @@
   "dependencies": {
     "@finos/fdc3": "2.0.3",
     "@markets/dock-editor": "*",
+    "@markets/icons-svg": "*",
     "@markets/openfin-workspace": "*",
     "@openfin/core": "43.101.2",
     "@openfin/notifications": "2.13.1",
@@ -23,19 +24,21 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router-dom": "^7.1.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-router-dom": "^6.30.3",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
     "@openfin/node-adapter": "43.101.2",
-    "@tailwindcss/vite": "^4.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "tailwindcss": "^4.0.0",
-    "typescript": "~5.8.3",
-    "vite": "^6.2.0"
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.5.4",
+    "vite": "^6.2.0",
+    "vite-plugin-svgr": "^5.0.0"
   }
 }

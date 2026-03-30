@@ -6,15 +6,19 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "packages/react-tools/*",
+    "packages/angular-tools/*"
   ],
   "scripts": {
     "dev:reference": "npm run dev -w apps/react-reference-app",
+    "dev:angular": "npm run dev -w apps/angular-reference-app",
     "dev:container": "npm run dev -w apps/container",
     "dev:web": "npm run dev -w apps/web",
     "dev:wps": "npm run dev -w apps/workspace-platform-starter",
     "build": "npm run build --workspaces",
     "client:reference": "npm run client -w apps/react-reference-app",
+    "client:angular": "npm run client -w apps/angular-reference-app",
     "client:container": "npm run client -w apps/container",
     "preview:reference": "npm run preview -w apps/react-reference-app",
     "preview:container": "npm run preview -w apps/container",
