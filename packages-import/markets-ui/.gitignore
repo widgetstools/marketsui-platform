@@ -1,11 +1,31 @@
 node_modules/
 dist/
 .DS_Store
-.angular/
+Thumbs.db
 *.local
 .env
 .env.*
 !.env.example
+
+# Build caches
+.angular/
+.vite/
+.turbo/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Coverage & test output
+coverage/
+.nyc_output/
+
+# IDE
+.idea/
+*.swp
+*.swo
 
 # OpenFin WPS framework (external dependency)
 apps/workspace-platform-starter/openfin/framework/
