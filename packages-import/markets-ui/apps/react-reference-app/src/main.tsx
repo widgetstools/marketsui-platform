@@ -12,7 +12,8 @@ import "./index.css";
 const Provider    = React.lazy(() => import("./platform/Provider"));
 const View1       = React.lazy(() => import("./views/View1"));
 const View2       = React.lazy(() => import("./views/View2"));
-const DockEditor  = React.lazy(() => import("./views/DockEditor"));
+const DockEditor      = React.lazy(() => import("./views/DockEditor"));
+const RegistryEditor  = React.lazy(() => import("./views/RegistryEditor"));
 
 // ImportConfig lives in the @markets/dock-editor package (not a local view file).
 // The .then() unwraps the named export into the default export shape that
@@ -46,8 +47,9 @@ root.render(
         <Route path="/views/view2" element={<View2 />} />
 
         {/* Utility windows — opened by dock toolbar buttons */}
-        <Route path="/dock-editor"   element={<React.Suspense fallback={LOADING}><DockEditor /></React.Suspense>} />
-        <Route path="/import-config" element={<React.Suspense fallback={LOADING}><ImportConfig /></React.Suspense>} />
+        <Route path="/dock-editor"       element={<React.Suspense fallback={LOADING}><DockEditor /></React.Suspense>} />
+        <Route path="/registry-editor"  element={<React.Suspense fallback={LOADING}><RegistryEditor /></React.Suspense>} />
+        <Route path="/import-config"    element={<React.Suspense fallback={LOADING}><ImportConfig /></React.Suspense>} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,

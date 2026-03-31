@@ -47,6 +47,8 @@ export const IAB_DOCK_CONFIG_UPDATE = "dock-config-update";
 export const IAB_RELOAD_AFTER_IMPORT = "reload-dock-after-import";
 /** Published by workspace.ts when the user toggles the theme. */
 export const IAB_THEME_CHANGED = "theme-changed";
+/** Published by the registry editor when the user saves component entries. */
+export const IAB_REGISTRY_CONFIG_UPDATE = "registry-config-update";
 
 // ─── Action ID constants ─────────────────────────────────────────────
 // These strings are the "action IDs" that link a dock button to its
@@ -61,6 +63,7 @@ export const ACTION_SHOW_DEVTOOLS     = "show-devtools";
 export const ACTION_EXPORT_CONFIG     = "export-config";
 export const ACTION_IMPORT_CONFIG     = "import-config";
 export const ACTION_TOGGLE_PROVIDER   = "toggle-provider-window";
+export const ACTION_OPEN_REGISTRY_EDITOR = "open-registry-editor";
 
 // ─── Module-level state ──────────────────────────────────────────────
 // These variables are initialised in registerDock() and then stay in
@@ -128,6 +131,11 @@ function buildToolsMenuItems(): any[] {
       tooltip: "Dock Editor",
       iconUrl: svgToDataUrl(SETTINGS_SVG, ICON_COLOR_DARK_THEME),
       action: { id: ACTION_OPEN_DOCK_EDITOR },
+    },
+    {
+      tooltip: "Component Registry",
+      iconUrl: svgToDataUrl(SETTINGS_SVG, ICON_COLOR_DARK_THEME),
+      action: { id: ACTION_OPEN_REGISTRY_EDITOR },
     },
     {
       tooltip: "Reload Dock",

@@ -17,6 +17,7 @@ import {
   ACTION_EXPORT_CONFIG,
   ACTION_IMPORT_CONFIG,
   ACTION_TOGGLE_PROVIDER,
+  ACTION_OPEN_REGISTRY_EDITOR,
   IAB_THEME_CHANGED,
 } from "./dock";
 import { registerHome } from "./home";
@@ -226,6 +227,49 @@ async function initializePlatform(
             url: `${origin}/dock-editor`,
             defaultWidth: 720,
             defaultHeight: 800,
+            autoShow: true,
+            frame: true,
+            resizable: true,
+            saveWindowState: true,
+            contextMenu: true,
+          });
+        }
+      },
+
+      // ── Open the registry editor window ──
+      [ACTION_OPEN_REGISTRY_EDITOR]: async (e): Promise<void> => {
+        if (
+          e.callerType !== CustomActionCallerType.CustomButton &&
+          e.callerType !== CustomActionCallerType.CustomDropdownItem
+        ) {
+          return;
+        }
+
+        try {
+          const existingWindow = fin.Window.wrapSync({
+            uuid: fin.me.identity.uuid,
+            name: "registry-editor",
+          });
+          await existingWindow.setAsForeground();
+        } catch {
+          const app = await fin.Application.getCurrent();
+          const manifest: Record<string, unknown> = await app.getManifest();
+          const platformConfig = manifest['platform'] as Record<string, string> | undefined;
+          const providerUrl = platformConfig?.['providerUrl'] ?? "";
+
+          let origin: string;
+          try {
+            origin = new URL(providerUrl).origin;
+          } catch {
+            console.error("Could not determine app origin from providerUrl:", providerUrl);
+            return;
+          }
+
+          await fin.Window.create({
+            name: "registry-editor",
+            url: `${origin}/registry-editor`,
+            defaultWidth: 800,
+            defaultHeight: 700,
             autoShow: true,
             frame: true,
             resizable: true,

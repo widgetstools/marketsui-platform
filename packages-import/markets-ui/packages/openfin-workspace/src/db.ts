@@ -15,6 +15,7 @@
 
 import { createConfigManager, type ConfigManager } from "@marketsui/config-service";
 import type { DockEditorConfig } from "./dock-config-types";
+import type { RegistryEditorConfig } from "./registry-config-types";
 
 // ─── Singleton management ────────────────────────────────────────────
 
@@ -112,4 +113,45 @@ export async function loadDockConfig(): Promise<DockEditorConfig | null> {
 export async function clearDockConfig(): Promise<void> {
   const manager = await getConfigManager();
   await manager.clearDockConfig();
+}
+
+// ─── Registry config persistence ────────────────────────────────────
+
+/**
+ * Save the component registry configuration.
+ * Overwrites any previously saved registry config.
+ */
+export async function saveRegistryConfig(config: RegistryEditorConfig): Promise<void> {
+  const manager = await getConfigManager();
+  await manager.saveConfig({
+    configId: "component-registry",
+    appId: "system",
+    displayText: "Component Registry",
+    componentType: "REGISTRY",
+    componentSubType: "EDITOR",
+    isTemplate: false,
+    config,
+    createdBy: "registry-editor",
+    updatedBy: "registry-editor",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * Load the saved component registry configuration.
+ * Returns null if no registry has been saved yet.
+ */
+export async function loadRegistryConfig(): Promise<RegistryEditorConfig | null> {
+  const manager = await getConfigManager();
+  const row = await manager.getConfig("component-registry");
+  return row ? (row.config as RegistryEditorConfig) : null;
+}
+
+/**
+ * Clear the saved component registry configuration.
+ */
+export async function clearRegistryConfig(): Promise<void> {
+  const manager = await getConfigManager();
+  await manager.deleteConfig("component-registry");
 }

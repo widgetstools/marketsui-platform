@@ -37,6 +37,11 @@ export const routes: Routes = [
       import('./views/dock-editor-page.component').then((m) => m.DockEditorPageComponent),
   },
   {
+    path: 'registry-editor',
+    loadComponent: () =>
+      import('./views/registry-editor-page.component').then((m) => m.RegistryEditorPageComponent),
+  },
+  {
     path: 'import-config',
     loadComponent: () =>
       import('./views/import-config-page.component').then((m) => m.ImportConfigPageComponent),

@@ -12,10 +12,20 @@ export {
   IAB_DOCK_CONFIG_UPDATE,
   IAB_RELOAD_AFTER_IMPORT,
   IAB_THEME_CHANGED,
+  IAB_REGISTRY_CONFIG_UPDATE,
+  ACTION_OPEN_REGISTRY_EDITOR,
 } from "./dock";
 
 // ─── Persistence (config service) ────────────────────────────────────
 export { saveDockConfig, loadDockConfig, clearDockConfig } from "./db";
+export { saveRegistryConfig, loadRegistryConfig, clearRegistryConfig } from "./db";
+
+// ─── Registry config types ──────────────────────────────────────────
+export {
+  generateTemplateConfigId,
+  type RegistryEditorConfig,
+  type RegistryEntry,
+} from "./registry-config-types";
 
 // Re-export config service types for convenience
 export { createConfigManager, type ConfigManager } from "@marketsui/config-service";
