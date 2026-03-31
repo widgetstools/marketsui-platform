@@ -9,13 +9,13 @@
     "client": "node launch.mjs http://localhost:4200/platform/manifest.fin.json"
   },
   "dependencies": {
-    "@angular/animations": "21.2.3",
-    "@angular/common": "21.2.3",
-    "@angular/compiler": "21.2.3",
-    "@angular/core": "21.2.3",
-    "@angular/forms": "21.2.3",
-    "@angular/platform-browser": "21.2.3",
-    "@angular/router": "21.2.3",
+    "@angular/animations": "^21.1.0",
+    "@angular/common": "^21.1.0",
+    "@angular/compiler": "^21.1.0",
+    "@angular/core": "^21.1.0",
+    "@angular/forms": "^21.1.0",
+    "@angular/platform-browser": "^21.1.0",
+    "@angular/router": "^21.1.0",
     "@markets/angular-dock-editor": "*",
     "@markets/angular-registry-editor": "*",
     "@markets/icons-svg": "*",
@@ -32,9 +32,9 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@angular/build": "21.2.3",
-    "@angular/cli": "21.2.3",
-    "@angular/compiler-cli": "21.2.3",
+    "@angular/build": "^21.1.0",
+    "@angular/cli": "^21.1.0",
+    "@angular/compiler-cli": "^21.1.0",
     "@openfin/node-adapter": "43.101.2",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",

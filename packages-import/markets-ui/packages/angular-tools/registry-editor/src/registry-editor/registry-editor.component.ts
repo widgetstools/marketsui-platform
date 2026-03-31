@@ -143,7 +143,7 @@ const EMPTY_FORM: FormData = {
         </button>
         <button pButton [disabled]="!svc.isDirty()" (click)="svc.save()" label="Save"
           [style.font-size]="'12px'" [style.padding]="'6px 16px'"
-          [severity]="svc.isDirty() ? 'warn' : 'secondary'" size="small" />
+          [severity]="svc.isDirty() ? 'warn' : 'secondary'" size="small"></button>
       </div>
 
       <!-- Body -->
@@ -157,7 +157,7 @@ const EMPTY_FORM: FormData = {
             <div [style.font-size]="'13px'" [style.color]="'var(--de-text-tertiary)'">
               No components registered yet
             </div>
-            <button pButton (click)="openAddDialog()" label="Add Component" severity="warn" size="small" />
+            <button pButton (click)="openAddDialog()" label="Add Component" severity="warn" size="small"></button>
           </div>
         } @else {
           @for (entry of svc.entries(); track entry.id) {
@@ -196,7 +196,7 @@ const EMPTY_FORM: FormData = {
         <div [style.padding]="'12px 20px'" [style.border-top]="'1px solid var(--de-border)'"
           [style.background]="'var(--de-bg)'" [style.display]="'flex'" [style.justify-content]="'center'">
           <button pButton (click)="openAddDialog()" label="Add Component" icon="pi pi-plus"
-            severity="secondary" size="small" />
+            severity="secondary" size="small"></button>
         </div>
       }
 
@@ -257,8 +257,8 @@ const EMPTY_FORM: FormData = {
         </div>
 
         <ng-template #footer>
-          <button pButton (click)="dialogVisible = false" label="Cancel" severity="secondary" size="small" />
-          <button pButton (click)="handleSave()" label="Save" severity="warn" size="small" />
+          <button pButton (click)="dialogVisible = false" label="Cancel" severity="secondary" size="small"></button>
+          <button pButton (click)="handleSave()" label="Save" severity="warn" size="small"></button>
         </ng-template>
       </p-dialog>
     </div>
