@@ -10,6 +10,9 @@
     "packages/react-tools/*",
     "packages/angular-tools/*"
   ],
+  "overrides": {
+    "zod-to-json-schema": "3.25.1"
+  },
   "scripts": {
     "dev:reference": "npm run dev -w apps/react-reference-app",
     "dev:angular": "npm run dev -w apps/angular-reference-app",

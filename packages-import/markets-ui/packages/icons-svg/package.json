@@ -22,8 +22,8 @@
   },
   "peerDependencies": {
     "react": ">=19.0.0",
-    "@angular/common": ">=21.1.0",
-    "@angular/core": ">=21.1.0"
+    "@angular/common": ">=21.0.0",
+    "@angular/core": ">=21.0.0"
   },
   "peerDependenciesMeta": {
     "react": { "optional": true },
