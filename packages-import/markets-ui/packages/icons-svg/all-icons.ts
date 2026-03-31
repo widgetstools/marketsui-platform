@@ -883,12 +883,14 @@ export const MARKET_ICON_SVGS: Record<string, string> = {
 };
 
 /**
- * Convert a custom market icon SVG string to a data URL with a specific color.
- * Replaces "currentColor" in the SVG with the provided hex color.
+ * Convert any SVG string to a data URL with a specific color.
+ * Replaces "currentColor" with the provided hex color.
  * Strips HTML comments and normalizes whitespace for clean base64 encoding.
+ *
+ * This is the SINGLE implementation — all icon-to-data-URL conversion
+ * should go through this function.
  */
-export function marketIconToDataUrl(iconKey: string, color: string = '#ffffff'): string {
-  const svg = MARKET_ICON_SVGS[iconKey];
+export function svgToDataUrl(svg: string, color: string = '#ffffff'): string {
   if (!svg) return '';
   const clean = svg
     .replace(/currentColor/g, color)
@@ -897,3 +899,36 @@ export function marketIconToDataUrl(iconKey: string, color: string = '#ffffff'):
     .trim();
   return `data:image/svg+xml;base64,${btoa(clean)}`;
 }
+
+/**
+ * Convert a custom market icon (by key name) to a data URL with a specific color.
+ * Looks up the SVG string from MARKET_ICON_SVGS and delegates to svgToDataUrl.
+ */
+export function marketIconToDataUrl(iconKey: string, color: string = '#ffffff'): string {
+  const svg = MARKET_ICON_SVGS[iconKey];
+  if (!svg) return '';
+  return svgToDataUrl(svg, color);
+}
+
+// ─── Dock system button convenience exports ────────────────────────
+// Named re-exports for the 9 system icons used by dock.ts.
+// Keeps dock.ts imports clean without needing a separate module.
+
+/** Wrench icon — used for the Tools dropdown button. */
+export const TOOLS_SVG = MARKET_ICON_SVGS["wrench"];
+/** Gear icon — used for the Dock Editor menu item. */
+export const SETTINGS_SVG = MARKET_ICON_SVGS["settings"];
+/** Refresh icon — used for "Reload Dock" menu item. */
+export const REFRESH_SVG = MARKET_ICON_SVGS["refresh"];
+/** Code/terminal icon — used for "Developer Tools" menu item. */
+export const CODE_SVG = MARKET_ICON_SVGS["code"];
+/** Download icon — used for "Export Config" menu item. */
+export const DOWNLOAD_SVG = MARKET_ICON_SVGS["download"];
+/** Upload icon — used for "Import Config" menu item. */
+export const UPLOAD_SVG = MARKET_ICON_SVGS["upload"];
+/** Sun icon — default theme toggle icon for dark mode. */
+export const SUN_SVG = MARKET_ICON_SVGS["sun"];
+/** Moon icon — default theme toggle icon for light mode. */
+export const MOON_SVG = MARKET_ICON_SVGS["moon"];
+/** Eye icon — used for "Show/Hide Provider" menu item. */
+export const EYE_SVG = MARKET_ICON_SVGS["eye"];

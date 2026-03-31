@@ -3,7 +3,7 @@ declare const fin: any;
 
 import { useState, useRef } from "react";
 import { saveDockConfig, IAB_RELOAD_AFTER_IMPORT } from "@markets/openfin-workspace";
-import { UPLOAD_SVG } from "@markets/icons-svg/dock-system";
+import { UPLOAD_SVG } from "@markets/icons-svg/all-icons";
 
 // ─── Types ───────────────────────────────────────────────────────────
 

@@ -3,13 +3,14 @@
 /**
  * IconPicker — searchable grid of icons for selecting dock button icons.
  *
- * Displays curated Lucide icons + trading icons from @markets/openfin-workspace.
- * Uses DynamicIcon from @markets/icons-svg/react for rendering (no Iconify CDN).
+ * Displays curated Lucide icons + market icons from @markets/icons-svg.
+ * Uses DynamicIcon from @markets/icons-svg/react for rendering.
  */
 
 import { useState, useMemo } from "react";
 import { DynamicIcon as Icon } from "@markets/icons-svg/react";
-import { TRADING_ICONS, svgToDataUrl } from "@markets/openfin-workspace";
+import { MARKET_ICON_SVGS, svgToDataUrl } from "@markets/icons-svg/all-icons";
+import { ICON_META, type MarketIconName } from "@markets/icons-svg";
 import { ICON_OPTIONS } from "./dock-editor/icons";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
@@ -27,7 +28,7 @@ interface IconPickerProps {
 interface IconEntry {
   id: string;
   name: string;
-  source: "lucide" | "trading";
+  source: "lucide" | "market";
 }
 
 // ─── Build the full icon list ────────────────────────────────────────
@@ -35,21 +36,23 @@ interface IconEntry {
 function buildIconList(): IconEntry[] {
   const icons: IconEntry[] = [];
 
+  // Market icons from the single source of truth
+  for (const [key, meta] of Object.entries(ICON_META)) {
+    // Skip system icons (wrench, code, etc.) — those aren't user-selectable
+    if (meta.category === "system") continue;
+    icons.push({
+      id: `mkt:${key}`,
+      name: meta.name,
+      source: "market",
+    });
+  }
+
   // Lucide icons from the curated list
   for (const opt of ICON_OPTIONS) {
     icons.push({
       id: opt.icon,
       name: opt.name,
       source: "lucide",
-    });
-  }
-
-  // Trading icons from @markets/openfin-workspace
-  for (const [key, tradingIcon] of Object.entries(TRADING_ICONS)) {
-    icons.push({
-      id: `trading:${key}`,
-      name: tradingIcon.name,
-      source: "trading",
     });
   }
 
@@ -71,12 +74,11 @@ export function IconPicker({ onSelect, selectedIcon, color = "#ffffff" }: IconPi
   }, [search]);
 
   function handleSelect(icon: IconEntry) {
-    if (icon.source === "trading") {
-      // Trading icons use svgToDataUrl — pass the SVG key
-      const tradingKey = icon.id.replace("trading:", "");
-      const tradingIcon = TRADING_ICONS[tradingKey];
-      if (tradingIcon) {
-        onSelect(icon.name, svgToDataUrl(tradingIcon.svg, color));
+    if (icon.source === "market") {
+      const key = icon.id.replace("mkt:", "");
+      const svg = MARKET_ICON_SVGS[key];
+      if (svg) {
+        onSelect(icon.name, svgToDataUrl(svg, color));
       }
     } else {
       // Lucide icons — build an Iconify CDN URL
@@ -122,13 +124,13 @@ export function IconPicker({ onSelect, selectedIcon, color = "#ffffff" }: IconPi
               )}
               style={{ background: "var(--de-bg-surface, var(--card))", borderColor: "var(--de-border, var(--border))" }}
             >
-              {icon.source === "trading" ? (
+              {icon.source === "market" ? (
                 <span
                   className="text-foreground"
                   style={{ width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}
                   dangerouslySetInnerHTML={{
-                    __html: TRADING_ICONS[icon.id.replace("trading:", "")]?.svg
-                      .replace(/width="24"/g, 'width="16"')
+                    __html: MARKET_ICON_SVGS[icon.id.replace("mkt:", "")]
+                      ?.replace(/width="24"/g, 'width="16"')
                       .replace(/height="24"/g, 'height="16"') ?? "",
                   }}
                 />

@@ -12,8 +12,6 @@
     ".": "./index.ts",
     "./react": "./react/index.ts",
     "./angular": "./angular/index.ts",
-    "./dock-system": "./dock-system.ts",
-    "./dock-icons": "./dock-icons.ts",
     "./all-icons": "./all-icons.ts",
     "./svg/*": "./svg/*"
   },

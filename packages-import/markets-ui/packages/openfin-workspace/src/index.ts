@@ -39,10 +39,20 @@ export {
 
 // ─── Icon library ────────────────────────────────────────────────────
 export {
-  TRADING_ICONS,
-  getIconCategories,
+  MARKET_ICON_SVGS,
   svgToDataUrl,
-  type TradingIcon,
+  marketIconToDataUrl,
+} from "./icons";
+
+export {
+  ICON_META,
+  ICON_NAMES,
+  ICON_CATEGORIES,
+  ICON_CATEGORY_NAMES,
+  getIconsByCategory,
+  type MarketIconName,
+  type IconCategory,
+  type IconMeta,
 } from "./icons";
 
 // ─── Types ───────────────────────────────────────────────────────────

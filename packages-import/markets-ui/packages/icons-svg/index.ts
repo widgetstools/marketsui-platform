@@ -187,7 +187,7 @@ export const ICON_META: Record<MarketIconName, IconMeta> = {
   // Charts
   'area-chart': { name: 'Area Chart', category: 'charts' },
   'bar-chart': { name: 'Bar Chart', category: 'charts' },
-  'blotter': { name: 'Blotter', category: 'charts' },
+  'blotter': { name: 'Blotter', category: 'blotters' },
   'heatmap': { name: 'Heatmap', category: 'charts' },
   'line-chart': { name: 'Line Chart', category: 'charts' },
   'waterfall': { name: 'Waterfall', category: 'charts' },

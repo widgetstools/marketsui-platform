@@ -12,7 +12,6 @@
     "@openfin/workspace": "23.0.20",
     "@openfin/workspace-platform": "23.0.20",
     "@markets/icons-svg": "*",
-    "@marketsui/config-service": "*",
-    "dexie": "^4.4.1"
+    "@marketsui/config-service": "*"
   }
 }

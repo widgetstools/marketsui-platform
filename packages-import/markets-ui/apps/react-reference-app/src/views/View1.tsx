@@ -7,15 +7,25 @@ function View1() {
   const [notificationActionMessage, setNotificationActionMessage] = useState("");
 
   useEffect(() => {
+    let handler: ((event: Notifications.NotificationActionEvent) => void) | undefined;
+
     Notifications.register().then(() => {
-      Notifications.addEventListener("notification-action", (event) => {
+      handler = (event: Notifications.NotificationActionEvent) => {
         console.log("Notification clicked:", event.result["customData"]);
         setNotificationActionMessage(event.result["customData"]);
-      });
+      };
+      Notifications.addEventListener("notification-action", handler);
     });
+
+    return () => {
+      if (handler) {
+        Notifications.removeEventListener("notification-action", handler);
+      }
+    };
   }, []);
 
   async function showNotification() {
+    if (typeof fin === "undefined") return;
     await Notifications.create({
       platform: fin.me.identity.uuid,
       title: "Simple Notification",
@@ -35,32 +45,26 @@ function View1() {
   }
 
   async function broadcastFDC3Context() {
-    if (fdc3) {
-      await fdc3.broadcast({
-        type: "fdc3.instrument",
-        name: "Microsoft Corporation",
-        id: {
-          ticker: "MSFT",
-        },
-      });
-    } else {
-      console.error("FDC3 is not available");
-    }
+    if (typeof fdc3 === "undefined") return;
+    await fdc3.broadcast({
+      type: "fdc3.instrument",
+      name: "Microsoft Corporation",
+      id: {
+        ticker: "MSFT",
+      },
+    });
   }
 
   async function broadcastFDC3ContextAppChannel() {
-    if (fdc3) {
-      const appChannel = await fdc3.getOrCreateChannel("CUSTOM-APP-CHANNEL");
-      await appChannel.broadcast({
-        type: "fdc3.instrument",
-        name: "Apple Inc.",
-        id: {
-          ticker: "AAPL",
-        },
-      });
-    } else {
-      console.error("FDC3 is not available");
-    }
+    if (typeof fdc3 === "undefined") return;
+    const appChannel = await fdc3.getOrCreateChannel("CUSTOM-APP-CHANNEL");
+    await appChannel.broadcast({
+      type: "fdc3.instrument",
+      name: "Apple Inc.",
+      id: {
+        ticker: "AAPL",
+      },
+    });
   }
 
   return (

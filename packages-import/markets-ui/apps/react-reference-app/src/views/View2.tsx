@@ -1,37 +1,41 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 
 function View2() {
   const [message, setMessage] = useState("");
+  const listenersRef = useRef<Array<{ unsubscribe: () => void }>>([]);
 
   useEffect(() => {
-    (async function () {
-      await listenForFDC3Context();
-      await listenForFDC3ContextAppChannel();
-    })();
-  }, []);
+    let cancelled = false;
 
-  async function listenForFDC3Context() {
-    if (fdc3) {
-      await fdc3.addContextListener((context) => {
-        setMessage(JSON.stringify(context, undefined, "  "));
+    async function setupListeners() {
+      if (typeof fdc3 === "undefined") return;
+
+      // System channel listener
+      const systemListener = await fdc3.addContextListener((context) => {
+        if (!cancelled) setMessage(JSON.stringify(context, undefined, "  "));
       });
-    } else {
-      console.error("FDC3 is not available");
-    }
-  }
+      listenersRef.current.push(systemListener);
 
-  async function listenForFDC3ContextAppChannel() {
-    if (fdc3) {
+      // App channel listener
       const appChannel = await fdc3.getOrCreateChannel("CUSTOM-APP-CHANNEL");
-      await appChannel.addContextListener((context) => {
-        setMessage(JSON.stringify(context, undefined, "  "));
+      const appListener = await appChannel.addContextListener((context) => {
+        if (!cancelled) setMessage(JSON.stringify(context, undefined, "  "));
       });
-    } else {
-      console.error("FDC3 is not available");
+      listenersRef.current.push(appListener);
     }
-  }
+
+    setupListeners();
+
+    return () => {
+      cancelled = true;
+      for (const listener of listenersRef.current) {
+        listener.unsubscribe();
+      }
+      listenersRef.current = [];
+    };
+  }, []);
 
   return (
     <div className="flex flex-col flex-1 gap-5">

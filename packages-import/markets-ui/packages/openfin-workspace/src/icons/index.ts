@@ -1,13 +1,21 @@
-// ─── Trading Icon Registry ───────────────────────────────────────────
+// ─── Icon Registry ──────────────────────────────────────────────────
 //
-// Re-exports from @markets/icons-svg/dock-icons which holds the SVG
-// strings extracted from individual .svg files in packages/icons-svg/svg/dock/.
-//
-// All icons use "currentColor" so they adapt to light and dark themes.
+// Re-exports from @markets/icons-svg — the single source of truth
+// for all market icon SVG strings, metadata, and utilities.
 
 export {
-  type TradingIcon,
-  TRADING_ICONS,
-  getIconCategories,
+  MARKET_ICON_SVGS,
   svgToDataUrl,
-} from "@markets/icons-svg/dock-icons";
+  marketIconToDataUrl,
+} from "@markets/icons-svg/all-icons";
+
+export {
+  ICON_META,
+  ICON_NAMES,
+  ICON_CATEGORIES,
+  ICON_CATEGORY_NAMES,
+  getIconsByCategory,
+  type MarketIconName,
+  type IconCategory,
+  type IconMeta,
+} from "@markets/icons-svg";

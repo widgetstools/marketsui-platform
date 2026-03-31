@@ -24,9 +24,9 @@ import {
   SUN_SVG,
   MOON_SVG,
   EYE_SVG,
-} from "@markets/icons-svg/dock-system";
-import { svgToDataUrl } from "./icons";
-import { marketIconToDataUrl } from "@markets/icons-svg/all-icons";
+  svgToDataUrl,
+  marketIconToDataUrl,
+} from "@markets/icons-svg/all-icons";
 import type { PlatformSettings } from "./types";
 
 // ─── Theme icon colors ──────────────────────────────────────────────
@@ -105,8 +105,8 @@ let themeToggleDarkIcon: string | undefined;
 let themeToggleLightIcon: string | undefined;
 
 // ─── SVG Icons ──────────────────────────────────────────────────────
-// All SVG icon strings are imported from @markets/icons-svg/dock-system.
-// The .svg source files live in packages/icons-svg/svg/dock-system/.
+// All SVG icon strings are imported from @markets/icons-svg/all-icons.
+// The .svg source files live in packages/icons-svg/svg/.
 
 // Pre-built theme toggle data URLs with fixed colors that work on both dock backgrounds.
 // Amber sun (#FFB300) is vivid on dark; black moon (#000000) is clear on light.

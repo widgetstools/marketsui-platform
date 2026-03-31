@@ -198,7 +198,7 @@ function findMenuItemById(
               </span>
             </div>
             <mkt-tree-item
-              *ngFor="let item of treeData(); let i = index"
+              *ngFor="let item of treeData(); let i = index; trackBy: trackById"
               [item]="item"
               [index]="i"
               [total]="treeData().length"
@@ -234,7 +234,7 @@ function findMenuItemById(
                   class="text-xs text-muted-foreground/50 py-1"
                 >No buttons configured</span>
                 <div
-                  *ngFor="let item of treeData()"
+                  *ngFor="let item of treeData(); trackBy: trackById"
                   class="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-border
                          bg-muted text-xs text-foreground"
                 >
@@ -261,7 +261,7 @@ function findMenuItemById(
                 >
                   <span class="text-xs text-muted-foreground/50">Empty</span>
                 </div>
-                <ng-container *ngFor="let item of treeData()">
+                <ng-container *ngFor="let item of treeData(); trackBy: trackById">
                   <ng-container *ngTemplateOutlet="previewNode; context: { $implicit: item, depth: 0 }" />
                 </ng-container>
               </div>
@@ -300,7 +300,7 @@ function findMenuItemById(
         >{{ item.children.length }}</span>
       </div>
       <ng-container *ngIf="item.children?.length">
-        <ng-container *ngFor="let child of item.children">
+        <ng-container *ngFor="let child of item.children; trackBy: trackById">
           <ng-container *ngTemplateOutlet="previewNode; context: { $implicit: child, depth: depth + 1 }" />
         </ng-container>
       </ng-container>
@@ -343,6 +343,9 @@ export class DockEditorComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.unsubscribeFromThemeChanges();
   }
+
+  // ─── TrackBy ────────────────────────────────────────────────────────
+  protected trackById(_: number, item: TreeItemData): string { return item.id; }
 
   // ─── Icon URL helper ──────────────────────────────────────────────
   protected iconUrl(iconId: string): string {
