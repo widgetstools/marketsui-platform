@@ -79,7 +79,7 @@ export class RegistryEditorService {
       // Pass customData so the component-host can resolve identity.
       // The launched view reads this via readCustomData() to load its config.
       const instanceId = crypto.randomUUID();
-      const templateId = generateTemplateConfigId(
+      const templateId = entry.configId || generateTemplateConfigId(
         entry.componentType,
         entry.componentSubType,
       );

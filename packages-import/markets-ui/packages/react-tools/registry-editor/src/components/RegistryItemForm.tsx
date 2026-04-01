@@ -5,12 +5,11 @@ import { generateTemplateConfigId } from "@markets/openfin-workspace";
 
 export interface RegistryFormData {
   displayName: string;
-  framework: "react" | "angular";
   hostUrl: string;
   iconId: string;
   componentType: string;
   componentSubType: string;
-  isTemplate: boolean;
+  configId: string;
 }
 
 interface RegistryItemFormProps {
@@ -21,19 +20,14 @@ interface RegistryItemFormProps {
   onCancel: () => void;
 }
 
-const FRAMEWORK_OPTIONS = [
-  { label: "React", value: "react" as const },
-  { label: "Angular", value: "angular" as const },
-];
-
 export function RegistryItemForm({ open, title, initial, onSave, onCancel }: RegistryItemFormProps) {
   const [displayName, setDisplayName] = useState(initial?.displayName ?? "");
-  const [framework, setFramework] = useState<"react" | "angular">(initial?.framework ?? "react");
   const [hostUrl, setHostUrl] = useState(initial?.hostUrl ?? "");
   const [iconId, setIconId] = useState(initial?.iconId ?? "lucide:box");
   const [componentType, setComponentType] = useState(initial?.componentType ?? "");
   const [componentSubType, setComponentSubType] = useState(initial?.componentSubType ?? "");
-  const [isTemplate, setIsTemplate] = useState(initial?.isTemplate ?? true);
+  const [configId, setConfigId] = useState(initial?.configId ?? "");
+  const [configIdEdited, setConfigIdEdited] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearch, setIconSearch] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,17 +35,24 @@ export function RegistryItemForm({ open, title, initial, onSave, onCancel }: Reg
   useEffect(() => {
     if (open) {
       setDisplayName(initial?.displayName ?? "");
-      setFramework(initial?.framework ?? "react");
       setHostUrl(initial?.hostUrl ?? "");
       setIconId(initial?.iconId ?? "lucide:box");
       setComponentType(initial?.componentType ?? "");
       setComponentSubType(initial?.componentSubType ?? "");
-      setIsTemplate(initial?.isTemplate ?? true);
+      setConfigId(initial?.configId ?? "");
+      setConfigIdEdited(!!initial?.configId);
       setErrors({});
       setIconPickerOpen(false);
       setIconSearch("");
     }
   }, [open, initial]);
+
+  // Auto-populate configId when type/subtype change and user hasn't manually edited
+  useEffect(() => {
+    if (!configIdEdited && componentType.trim() && componentSubType.trim()) {
+      setConfigId(generateTemplateConfigId(componentType.toUpperCase(), componentSubType.toUpperCase()));
+    }
+  }, [componentType, componentSubType, configIdEdited]);
 
   if (!open) return null;
 
@@ -73,10 +74,9 @@ export function RegistryItemForm({ open, title, initial, onSave, onCancel }: Reg
 
   function handleSave() {
     if (!validate()) return;
-    onSave({ displayName, framework, hostUrl, iconId, componentType: componentType.toUpperCase(), componentSubType: componentSubType.toUpperCase(), isTemplate });
+    const finalConfigId = configId || generateTemplateConfigId(componentType.toUpperCase(), componentSubType.toUpperCase());
+    onSave({ displayName, hostUrl, iconId, componentType: componentType.toUpperCase(), componentSubType: componentSubType.toUpperCase(), configId: finalConfigId });
   }
-
-  const generatedId = isTemplate ? generateTemplateConfigId(componentType.toUpperCase(), componentSubType.toUpperCase()) : null;
 
   return (
     <>
@@ -101,23 +101,6 @@ export function RegistryItemForm({ open, title, initial, onSave, onCancel }: Reg
         <FieldGroup label="Display Name" error={errors.displayName}>
           <input value={displayName} onChange={(e) => setDisplayName(e.target.value)}
             placeholder="e.g., Credit Blotter" style={inputStyle} />
-        </FieldGroup>
-
-        {/* Framework */}
-        <FieldGroup label="Framework">
-          <div style={{ display: "flex", gap: 8 }}>
-            {FRAMEWORK_OPTIONS.map((opt) => (
-              <button key={opt.value} onClick={() => setFramework(opt.value)}
-                style={{
-                  ...chipStyle,
-                  background: framework === opt.value ? "var(--de-accent-dim)" : "var(--de-bg-surface)",
-                  color: framework === opt.value ? "var(--de-accent)" : "var(--de-text-secondary)",
-                  borderColor: framework === opt.value ? "var(--de-accent)" : "var(--de-border)",
-                }}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
         </FieldGroup>
 
         {/* Host URL */}
@@ -172,41 +155,15 @@ export function RegistryItemForm({ open, title, initial, onSave, onCancel }: Reg
           </FieldGroup>
         </div>
 
-        {/* Template toggle */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 500, color: "var(--de-text)" }}>Template Component</div>
-            <div style={{ fontSize: 11, color: "var(--de-text-tertiary)" }}>
-              Creates a template config in APP_CONFIG
-            </div>
-          </div>
-          <button onClick={() => setIsTemplate(!isTemplate)} style={{
-            width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer",
-            background: isTemplate ? "var(--de-accent)" : "var(--de-bg-active)",
-            position: "relative", transition: "background 0.2s ease",
-          }}>
-            <div style={{
-              width: 16, height: 16, borderRadius: "50%", background: "#fff",
-              position: "absolute", top: 2,
-              left: isTemplate ? 18 : 2, transition: "left 0.2s ease",
-            }} />
-          </button>
-        </div>
-
-        {/* Generated Config ID preview */}
-        {isTemplate && componentType && componentSubType && (
-          <div style={{
-            padding: "8px 12px", background: "var(--de-bg-surface)",
-            borderRadius: "var(--de-radius-sm)", border: "1px solid var(--de-border)",
-          }}>
-            <div style={{ fontSize: 10, color: "var(--de-text-tertiary)", marginBottom: 2 }}>
-              Generated Config ID
-            </div>
-            <div style={{ fontSize: 12, fontFamily: "var(--de-mono)", color: "var(--de-accent)" }}>
-              {generatedId}
-            </div>
-          </div>
-        )}
+        {/* Config ID */}
+        <FieldGroup label="Config ID">
+          <input
+            value={configId}
+            onChange={(e) => { setConfigId(e.target.value); setConfigIdEdited(true); }}
+            placeholder="Auto-generated from type/subtype"
+            style={{ ...inputStyle, fontFamily: "var(--de-mono)" }}
+          />
+        </FieldGroup>
 
         {/* Actions */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
@@ -234,13 +191,6 @@ const inputStyle: React.CSSProperties = {
   background: "var(--de-bg-surface)", color: "var(--de-text)",
   border: "1px solid var(--de-border)", borderRadius: "var(--de-radius-sm)",
   outline: "none", fontFamily: "inherit", boxSizing: "border-box",
-};
-
-const chipStyle: React.CSSProperties = {
-  padding: "6px 14px", borderRadius: "var(--de-radius-sm)",
-  fontSize: 12, fontWeight: 500, cursor: "pointer",
-  border: "1px solid var(--de-border)", background: "var(--de-bg-surface)",
-  color: "var(--de-text-secondary)", transition: "all 0.15s ease",
 };
 
 const cancelBtnStyle: React.CSSProperties = {

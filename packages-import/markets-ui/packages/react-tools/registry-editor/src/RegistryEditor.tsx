@@ -83,12 +83,11 @@ export function RegistryEditorPanel() {
       id: entry.id,
       data: {
         displayName: entry.displayName,
-        framework: entry.framework,
         hostUrl: entry.hostUrl,
         iconId: entry.iconId,
         componentType: entry.componentType,
         componentSubType: entry.componentSubType,
-        isTemplate: entry.isTemplate,
+        configId: entry.configId,
       },
     });
     setDialogTitle("Edit Component");

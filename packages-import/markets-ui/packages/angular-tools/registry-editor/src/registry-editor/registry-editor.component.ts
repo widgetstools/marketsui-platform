@@ -21,8 +21,7 @@ import { iconIdToSvgUrl } from '@markets/angular-dock-editor';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
+
 
 /** Inject the shared --de-* design system CSS at runtime. */
 const EDITOR_CSS = `
@@ -60,10 +59,11 @@ const EDITOR_CSS = `
 
 /* PrimeNG dialog portal — renders outside the [data-dock-editor] container,
    so we style the overlay mask and dialog panel globally to match the theme. */
-.p-dialog-mask {
+/* Scoped to .registry-editor-dialog to avoid polluting other PrimeNG dialogs */
+.p-dialog-mask:has(.registry-editor-dialog) {
   background: rgba(0, 0, 0, 0.5) !important;
 }
-.p-dialog {
+.registry-editor-dialog.p-dialog {
   background: #18181c !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   border-radius: 10px !important;
@@ -71,46 +71,46 @@ const EDITOR_CSS = `
   font-family: 'DM Sans', system-ui, sans-serif !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
 }
-.p-dialog .p-dialog-header {
+.registry-editor-dialog.p-dialog .p-dialog-header {
   background: transparent !important;
   color: #e8e8ec !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
   padding: 16px 20px !important;
 }
-.p-dialog .p-dialog-header .p-dialog-title {
+.registry-editor-dialog.p-dialog .p-dialog-header .p-dialog-title {
   font-size: 14px !important;
   font-weight: 600 !important;
 }
-.p-dialog .p-dialog-content {
+.registry-editor-dialog.p-dialog .p-dialog-content {
   background: transparent !important;
   color: #e8e8ec !important;
   padding: 16px 20px !important;
 }
-.p-dialog .p-dialog-footer {
+.registry-editor-dialog.p-dialog .p-dialog-footer {
   background: transparent !important;
   border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
   padding: 12px 20px !important;
 }
 
 /* Light theme dialog — when the editor is in light mode, override dialog colors */
-[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .p-dialog,
-body.light-registry-editor .p-dialog {
+[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .registry-editor-dialog.p-dialog,
+body.light-registry-editor .registry-editor-dialog.p-dialog {
   background: #ffffff !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
   color: #1a1a2e !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
 }
-[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .p-dialog .p-dialog-header,
-body.light-registry-editor .p-dialog .p-dialog-header {
+[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .registry-editor-dialog.p-dialog .p-dialog-header,
+body.light-registry-editor .registry-editor-dialog.p-dialog .p-dialog-header {
   color: #1a1a2e !important;
   border-bottom-color: rgba(0, 0, 0, 0.08) !important;
 }
-[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .p-dialog .p-dialog-content,
-body.light-registry-editor .p-dialog .p-dialog-content {
+[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .registry-editor-dialog.p-dialog .p-dialog-content,
+body.light-registry-editor .registry-editor-dialog.p-dialog .p-dialog-content {
   color: #1a1a2e !important;
 }
-[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .p-dialog .p-dialog-footer,
-body.light-registry-editor .p-dialog .p-dialog-footer {
+[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .registry-editor-dialog.p-dialog .p-dialog-footer,
+body.light-registry-editor .registry-editor-dialog.p-dialog .p-dialog-footer {
   border-top-color: rgba(0, 0, 0, 0.08) !important;
 }
 `;
@@ -127,18 +127,17 @@ function injectStyles(): void {
 
 interface FormData {
   displayName: string;
-  framework: 'react' | 'angular';
   hostUrl: string;
   iconId: string;
   componentType: string;
   componentSubType: string;
-  isTemplate: boolean;
+  configId: string;
 }
 
 const EMPTY_FORM: FormData = {
-  displayName: '', framework: 'react', hostUrl: '',
+  displayName: '', hostUrl: '',
   iconId: 'lucide:box', componentType: '', componentSubType: '',
-  isTemplate: true,
+  configId: '',
 };
 
 @Component({
@@ -148,7 +147,6 @@ const EMPTY_FORM: FormData = {
   imports: [
     CommonModule, FormsModule,
     ButtonModule, DialogModule, InputTextModule,
-    SelectModule, ToggleSwitchModule,
   ],
   providers: [RegistryEditorService],
   styles: [`
@@ -165,10 +163,6 @@ const EMPTY_FORM: FormData = {
       overflow: hidden; text-overflow: ellipsis; }
     .reg-tag { padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;
       text-transform: uppercase; letter-spacing: 0.04em; }
-    .fw-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
-      border-radius: 4px; font-size: 11px; font-weight: 500; }
-    .fw-react { background: rgba(97,218,251,0.15); color: #61dafb; }
-    .fw-angular { background: rgba(221,0,49,0.15); color: #dd0031; }
     .action-btn { background: var(--de-bg-surface); border: 1px solid var(--de-border);
       border-radius: var(--de-radius-sm); padding: 4px; cursor: pointer;
       color: var(--de-text-secondary); display: flex; align-items: center; justify-content: center; }
@@ -225,19 +219,17 @@ const EMPTY_FORM: FormData = {
               <div [style.flex]="'1'" [style.min-width]="'0'">
                 <div class="reg-name">{{ entry.displayName }}</div>
                 <div class="reg-url">{{ entry.hostUrl }}</div>
+                @if (entry.configId) {
+                  <div [style.font-size]="'10px'" [style.font-family]="'var(--de-mono)'"
+                    [style.color]="'var(--de-text-tertiary)'" [style.margin-top]="'2px'">
+                    {{ entry.configId }}
+                  </div>
+                }
               </div>
-              <span class="fw-badge" [class.fw-react]="entry.framework === 'react'"
-                [class.fw-angular]="entry.framework === 'angular'">
-                {{ entry.framework === 'react' ? 'React' : 'Angular' }}
-              </span>
               <span class="reg-tag" [style.background]="'var(--de-accent-dim)'"
                 [style.color]="'var(--de-accent)'">{{ entry.componentType }}</span>
               <span class="reg-tag" [style.background]="'var(--de-bg-surface)'"
                 [style.color]="'var(--de-text-secondary)'">{{ entry.componentSubType }}</span>
-              @if (entry.isTemplate) {
-                <span class="reg-tag" [style.background]="'rgba(63,185,80,0.12)'"
-                  [style.color]="'#3fb950'">TPL</span>
-              }
               <div class="reg-actions">
                 <button class="action-btn" (click)="openEditDialog(entry)" title="Edit">✎</button>
                 <button class="action-btn" (click)="svc.testComponent(entry)" title="Test">▶</button>
@@ -259,19 +251,13 @@ const EMPTY_FORM: FormData = {
 
       <!-- Dialog -->
       <p-dialog [visible]="dialogVisible()" (visibleChange)="dialogVisible.set($event)" [header]="dialogTitle()" [modal]="true"
-        [style]="{ width: '480px' }" [closable]="true">
+        [style]="{ width: '480px' }" [closable]="true" styleClass="registry-editor-dialog">
         <div [style.display]="'flex'" [style.flex-direction]="'column'" [style.gap]="'14px'"
           [style.padding]="'8px 0'">
 
           <div>
             <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Display Name *</label>
             <input pInputText [(ngModel)]="form.displayName" [style.width]="'100%'" />
-          </div>
-
-          <div>
-            <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Framework</label>
-            <p-select [(ngModel)]="form.framework" [options]="frameworkOptions"
-              optionLabel="label" optionValue="value" [style.width]="'100%'" />
           </div>
 
           <div>
@@ -283,34 +269,55 @@ const EMPTY_FORM: FormData = {
           <div [style.display]="'grid'" [style.grid-template-columns]="'1fr 1fr'" [style.gap]="'12px'">
             <div>
               <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Component Type *</label>
-              <input pInputText [(ngModel)]="form.componentType" placeholder="GRID" [style.width]="'100%'" />
+              <input pInputText [(ngModel)]="form.componentType" placeholder="GRID"
+                [style.width]="'100%'" (ngModelChange)="onTypeSubTypeChange()" />
             </div>
             <div>
               <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Component SubType *</label>
-              <input pInputText [(ngModel)]="form.componentSubType" placeholder="CREDIT" [style.width]="'100%'" />
+              <input pInputText [(ngModel)]="form.componentSubType" placeholder="CREDIT"
+                [style.width]="'100%'" (ngModelChange)="onTypeSubTypeChange()" />
             </div>
           </div>
 
-          <div [style.display]="'flex'" [style.align-items]="'center'" [style.justify-content]="'space-between'">
-            <div>
-              <div [style.font-size]="'12px'" [style.font-weight]="'500'">Template Component</div>
-              <div [style.font-size]="'11px'" [style.color]="'var(--de-text-tertiary)'">
-                Creates a template config in APP_CONFIG
-              </div>
-            </div>
-            <p-toggleswitch [(ngModel)]="form.isTemplate" />
+          <div>
+            <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Config ID</label>
+            <input pInputText [(ngModel)]="form.configId" [style.width]="'100%'"
+              [style.font-family]="'var(--de-mono)'" [style.color]="'var(--de-accent)'"
+              [style.font-size]="'12px'"
+              (ngModelChange)="configIdEdited.set(true)" />
           </div>
 
-          @if (form.isTemplate && form.componentType && form.componentSubType) {
-            <div [style.padding]="'8px 12px'" [style.background]="'var(--de-bg-surface)'"
-              [style.border-radius]="'var(--de-radius-sm)'" [style.border]="'1px solid var(--de-border)'">
-              <div [style.font-size]="'10px'" [style.color]="'var(--de-text-tertiary)'">Generated Config ID</div>
-              <div [style.font-size]="'12px'" [style.font-family]="'var(--de-mono)'"
-                [style.color]="'var(--de-accent)'">
-                {{ getGeneratedId() }}
-              </div>
+          <!-- Icon Picker -->
+          <div>
+            <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Icon</label>
+            <input pInputText [(ngModel)]="iconSearchValue" [style.width]="'100%'"
+              placeholder="Search icons..." [style.margin-bottom]="'8px'"
+              (ngModelChange)="iconSearch.set($event)" />
+            <div [style.max-height]="'160px'" [style.overflow-y]="'auto'"
+              [style.display]="'grid'" [style.grid-template-columns]="'repeat(auto-fill, minmax(32px, 1fr))'"
+              [style.gap]="'4px'" [style.padding]="'4px'"
+              [style.background]="'var(--de-bg-surface)'" [style.border-radius]="'var(--de-radius-sm)'"
+              [style.border]="'1px solid var(--de-border)'">
+              @for (iconId of filteredIcons(); track iconId) {
+                <div (click)="form.iconId = 'mkt:' + iconId"
+                  [style.width]="'32px'" [style.height]="'32px'"
+                  [style.display]="'flex'" [style.align-items]="'center'" [style.justify-content]="'center'"
+                  [style.border-radius]="'4px'" [style.cursor]="'pointer'"
+                  [style.border]="form.iconId === 'mkt:' + iconId ? '1px solid var(--de-accent)' : '1px solid transparent'"
+                  [style.background]="form.iconId === 'mkt:' + iconId ? 'var(--de-accent-dim)' : 'transparent'"
+                  [title]="iconId">
+                  <img [src]="getIconUrl('mkt:' + iconId)" width="16" height="16" [alt]="iconId" />
+                </div>
+              }
             </div>
-          }
+            @if (form.iconId) {
+              <div [style.display]="'flex'" [style.align-items]="'center'" [style.gap]="'8px'"
+                [style.margin-top]="'6px'" [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">
+                <img [src]="getIconUrl(form.iconId)" width="14" height="14" alt="" />
+                {{ form.iconId }}
+              </div>
+            }
+          </div>
         </div>
 
         <ng-template #footer>
@@ -330,13 +337,21 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
   readonly editingId = signal<string | null>(null);
 
   form: FormData = { ...EMPTY_FORM };
+  iconSearchValue = '';
 
-  readonly frameworkOptions = [
-    { label: 'React', value: 'react' },
-    { label: 'Angular', value: 'angular' },
-  ];
+  readonly configIdEdited = signal(false);
+  readonly iconSearch = signal('');
+  readonly filteredIcons = computed(() => {
+    const q = this.iconSearch().toLowerCase();
+    if (!q) return ICON_NAMES;
+    return ICON_NAMES.filter((name) => {
+      const meta = ICON_META[name];
+      return name.includes(q) || meta?.name?.toLowerCase().includes(q) || meta?.category?.toLowerCase().includes(q);
+    });
+  });
 
   private themeHandler: ((data: { isDark: boolean }) => void) | null = null;
+  private destroyed = false;
 
   ngOnInit(): void {
     injectStyles();
@@ -345,6 +360,7 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     // Unsubscribe IAB theme listener
     if (this.themeHandler) {
       try {
@@ -360,10 +376,12 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
   private syncTheme(): void {
     if (typeof fin === 'undefined') return;
 
+    // Guard async work against component destruction
     (async () => {
       try {
         const platform = fin.Platform.getCurrentSync();
         const scheme = await platform.Theme.getSelectedScheme();
+        if (this.destroyed) return; // Component destroyed while awaiting
         const t = scheme === 'dark' ? 'dark' : 'light';
         this.theme.set(t);
         document.body.classList.toggle('light-registry-editor', t === 'light');
@@ -401,16 +419,20 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
     }`;
   }
 
-  getGeneratedId(): string {
-    return generateTemplateConfigId(
-      this.form.componentType.toUpperCase(),
-      this.form.componentSubType.toUpperCase(),
-    );
+  onTypeSubTypeChange(): void {
+    if (!this.configIdEdited()) {
+      this.form.configId = this.form.componentType && this.form.componentSubType
+        ? generateTemplateConfigId(this.form.componentType.toUpperCase(), this.form.componentSubType.toUpperCase())
+        : '';
+    }
   }
 
   openAddDialog(): void {
     this.editingId.set(null);
     this.form = { ...EMPTY_FORM };
+    this.configIdEdited.set(false);
+    this.iconSearch.set('');
+    this.iconSearchValue = '';
     this.dialogTitle.set('Add Component');
     this.dialogVisible.set(true);
   }
@@ -419,13 +441,15 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
     this.editingId.set(entry.id);
     this.form = {
       displayName: entry.displayName,
-      framework: entry.framework,
       hostUrl: entry.hostUrl,
       iconId: entry.iconId,
       componentType: entry.componentType,
       componentSubType: entry.componentSubType,
-      isTemplate: entry.isTemplate,
+      configId: entry.configId ?? '',
     };
+    this.configIdEdited.set(true);
+    this.iconSearch.set('');
+    this.iconSearchValue = '';
     this.dialogTitle.set('Edit Component');
     this.dialogVisible.set(true);
   }
@@ -440,12 +464,14 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
     const entry: RegistryEntry = {
       id: currentEditingId ?? crypto.randomUUID(),
       displayName: this.form.displayName,
-      framework: this.form.framework,
       hostUrl: this.form.hostUrl,
       iconId: this.form.iconId,
       componentType: this.form.componentType.toUpperCase(),
       componentSubType: this.form.componentSubType.toUpperCase(),
-      isTemplate: this.form.isTemplate,
+      configId: this.form.configId || generateTemplateConfigId(
+        this.form.componentType.toUpperCase(),
+        this.form.componentSubType.toUpperCase(),
+      ),
       createdAt: currentEditingId
         ? (this.svc.entries().find((e) => e.id === currentEditingId)?.createdAt ?? new Date().toISOString())
         : new Date().toISOString(),
