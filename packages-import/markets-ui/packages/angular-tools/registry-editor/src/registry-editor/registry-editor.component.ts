@@ -57,6 +57,62 @@ const EDITOR_CSS = `
   --de-shadow-sm: 0 1px 2px rgba(0,0,0,0.06); --de-shadow-md: 0 4px 12px rgba(0,0,0,0.08);
   --de-shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
 }
+
+/* PrimeNG dialog portal — renders outside the [data-dock-editor] container,
+   so we style the overlay mask and dialog panel globally to match the theme. */
+.p-dialog-mask {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+.p-dialog {
+  background: #18181c !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 10px !important;
+  color: #e8e8ec !important;
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+.p-dialog .p-dialog-header {
+  background: transparent !important;
+  color: #e8e8ec !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding: 16px 20px !important;
+}
+.p-dialog .p-dialog-header .p-dialog-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+.p-dialog .p-dialog-content {
+  background: transparent !important;
+  color: #e8e8ec !important;
+  padding: 16px 20px !important;
+}
+.p-dialog .p-dialog-footer {
+  background: transparent !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding: 12px 20px !important;
+}
+
+/* Light theme dialog — when the editor is in light mode, override dialog colors */
+[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .p-dialog,
+body.light-registry-editor .p-dialog {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #1a1a2e !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+}
+[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .p-dialog .p-dialog-header,
+body.light-registry-editor .p-dialog .p-dialog-header {
+  color: #1a1a2e !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .p-dialog .p-dialog-content,
+body.light-registry-editor .p-dialog .p-dialog-content {
+  color: #1a1a2e !important;
+}
+[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .p-dialog .p-dialog-footer,
+body.light-registry-editor .p-dialog .p-dialog-footer {
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
 `;
 
 let cssInjected = false;
@@ -289,6 +345,7 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Unsubscribe IAB theme listener
     if (this.themeHandler) {
       try {
         fin.InterApplicationBus.unsubscribe(
@@ -296,6 +353,8 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
         );
       } catch { /* cleanup */ }
     }
+    // Remove body class used by PrimeNG dialog portal
+    document.body.classList.remove('light-registry-editor');
   }
 
   private syncTheme(): void {
@@ -305,12 +364,16 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
       try {
         const platform = fin.Platform.getCurrentSync();
         const scheme = await platform.Theme.getSelectedScheme();
-        this.theme.set(scheme === 'dark' ? 'dark' : 'light');
+        const t = scheme === 'dark' ? 'dark' : 'light';
+        this.theme.set(t);
+        document.body.classList.toggle('light-registry-editor', t === 'light');
       } catch { /* keep default */ }
     })();
 
     this.themeHandler = (data: { isDark: boolean }) => {
-      this.theme.set(data.isDark ? 'dark' : 'light');
+      const t = data.isDark ? 'dark' : 'light';
+      this.theme.set(t);
+      document.body.classList.toggle('light-registry-editor', t === 'light');
     };
 
     try {
@@ -321,7 +384,11 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
   }
 
   toggleTheme(): void {
-    this.theme.set(this.theme() === 'dark' ? 'light' : 'dark');
+    const next = this.theme() === 'dark' ? 'light' : 'dark';
+    this.theme.set(next);
+    // Toggle body class so PrimeNG dialog portal (outside component tree)
+    // can pick up the light theme via CSS selectors
+    document.body.classList.toggle('light-registry-editor', next === 'light');
   }
 
   getIconUrl(iconId: string): string {
