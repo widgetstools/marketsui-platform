@@ -183,21 +183,21 @@ export function ItemFormDialog({ open, onOpenChange, title, initial, onSave }: I
                   title="Custom color"
                   style={{
                     width: 28, height: 28, borderRadius: "var(--de-radius-sm)", cursor: "pointer",
-                    border: iconColor && !isCustomColor(iconColor)
+                    border: iconColor && isCustomColor(iconColor)
                       ? "2px solid var(--de-accent)"
                       : "1px solid var(--de-border-strong)",
-                    background: iconColor && !isCustomColor(iconColor)
+                    background: iconColor && isCustomColor(iconColor)
                       ? iconColor
                       : "var(--de-bg-surface)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     transition: "all 0.12s", flexShrink: 0, overflow: "hidden",
-                    boxShadow: iconColor && !isCustomColor(iconColor)
+                    boxShadow: iconColor && isCustomColor(iconColor)
                       ? "0 0 0 2px var(--de-accent-dim)"
                       : "none",
                   }}
                 >
                   {/* Show a palette icon when no custom color is active */}
-                  {(!iconColor || isCustomColor(iconColor)) && (
+                  {(!iconColor || !isCustomColor(iconColor)) && (
                     <Icon icon="lucide:pipette" style={{ width: 14, height: 14, color: "var(--de-text-secondary)", pointerEvents: "none" }} />
                   )}
                   <input

@@ -67,6 +67,10 @@ let currentIconColor = ICON_COLOR_DARK_THEME;
 /** Tracks whether IAB subscriptions have been set up. */
 let iabSubscribed = false;
 
+/** Stored IAB subscription handlers for cleanup. */
+let iabConfigHandler: ((config: any) => void) | null = null;
+let iabReloadHandler: (() => void) | null = null;
+
 /** Theme toggle icons. */
 let themeToggleDarkIcon: string | undefined;
 let themeToggleLightIcon: string | undefined;
@@ -269,6 +273,9 @@ export async function registerDock(
 ): Promise<any> {
   console.log("Initializing the Dock3 provider.");
 
+  // Reset module-level state before re-initializing
+  resetDockState();
+
   // Cache settings
   storedPlatformSettings = platformSettings;
   storedIcon = dockIcon ?? platformSettings.icon;
@@ -346,32 +353,34 @@ export async function registerDock(
       iabSubscribed = true;
 
       try {
+        iabConfigHandler = async (config: DockEditorConfig) => {
+          console.log("Received dock config update via IAB.");
+          await saveDockConfig(config);
+          lastEditorConfig = config;
+          await applyDock3Config();
+        };
         await fin.InterApplicationBus.subscribe(
           { uuid: fin.me.identity.uuid },
           IAB_DOCK_CONFIG_UPDATE,
-          async (config: DockEditorConfig) => {
-            console.log("Received dock config update via IAB.");
-            await saveDockConfig(config);
-            lastEditorConfig = config;
-            await applyDock3Config();
-          },
+          iabConfigHandler,
         );
       } catch (iabError) {
         console.error("Could not subscribe to dock-config-update IAB topic.", iabError);
       }
 
       try {
+        iabReloadHandler = async () => {
+          console.log("Reloading dock after config import.");
+          const saved = await loadDockConfig();
+          if (saved) {
+            lastEditorConfig = saved;
+          }
+          await applyDock3Config();
+        };
         await fin.InterApplicationBus.subscribe(
           { uuid: fin.me.identity.uuid },
           IAB_RELOAD_AFTER_IMPORT,
-          async () => {
-            console.log("Reloading dock after config import.");
-            const saved = await loadDockConfig();
-            if (saved) {
-              lastEditorConfig = saved;
-            }
-            await applyDock3Config();
-          },
+          iabReloadHandler,
         );
       } catch (iabError) {
         console.error("Could not subscribe to reload-dock-after-import IAB topic.", iabError);
@@ -428,6 +437,31 @@ export function getDefaultEditorConfig(apps: App[], fallbackIcon: string): DockE
  * Gracefully shut down the Dock3 provider.
  */
 export async function shutdownDock(): Promise<void> {
+  // Unsubscribe IAB handlers
+  if (iabSubscribed) {
+    try {
+      if (iabConfigHandler) {
+        await fin.InterApplicationBus.unsubscribe(
+          { uuid: fin.me.identity.uuid },
+          IAB_DOCK_CONFIG_UPDATE,
+          iabConfigHandler,
+        );
+      }
+      if (iabReloadHandler) {
+        await fin.InterApplicationBus.unsubscribe(
+          { uuid: fin.me.identity.uuid },
+          IAB_RELOAD_AFTER_IMPORT,
+          iabReloadHandler,
+        );
+      }
+    } catch (iabError) {
+      console.error("Error unsubscribing IAB handlers.", iabError);
+    }
+    iabSubscribed = false;
+    iabConfigHandler = null;
+    iabReloadHandler = null;
+  }
+
   if (dockProvider) {
     try {
       await dockProvider.shutdown();
@@ -436,6 +470,24 @@ export async function shutdownDock(): Promise<void> {
       console.error("Error shutting down Dock3 provider.", error);
     }
   }
+}
+
+/**
+ * Reset all module-level state to initial values.
+ * Called at the top of registerDock() to ensure a clean slate.
+ */
+function resetDockState(): void {
+  dockProvider = undefined;
+  storedPlatformSettings = undefined;
+  storedIcon = undefined;
+  lastEditorConfig = undefined;
+  currentIconColor = ICON_COLOR_DARK_THEME;
+  iabSubscribed = false;
+  iabConfigHandler = null;
+  iabReloadHandler = null;
+  themeToggleDarkIcon = undefined;
+  themeToggleLightIcon = undefined;
+  actionDispatcher = undefined;
 }
 
 // ─── Internal helpers ────────────────────────────────────────────────

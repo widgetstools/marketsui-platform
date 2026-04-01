@@ -20,6 +20,7 @@ import {
   signal,
   OnInit,
   OnChanges,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -30,6 +31,7 @@ import { iconIdToSvgUrl } from '../icon-utils';
 @Component({
   selector: 'mkt-icon-select',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, SelectModule],
   template: `
     <p-select

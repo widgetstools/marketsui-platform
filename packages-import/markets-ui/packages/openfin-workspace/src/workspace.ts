@@ -87,21 +87,61 @@ export async function initWorkspace(config?: WorkspaceConfig): Promise<void> {
   // The "platform-api-ready" event fires after init() completes below.
   const platform = fin.Platform.getCurrentSync();
   await platform.once("platform-api-ready", async () => {
-    await initializeWorkspaceComponents(
-      settings.platformSettings,
-      settings.customSettings,
-      components,
-      log,
-      config?.dockIcon,
-      config?.themeToggleDarkIcon,
-      config?.themeToggleLightIcon,
-      config?.roles,
-    );
-    log("Workspace platform initialized");
+    try {
+      await initializeWorkspaceComponents(
+        settings.platformSettings,
+        settings.customSettings,
+        components,
+        log,
+        config?.dockIcon,
+        config?.themeToggleDarkIcon,
+        config?.themeToggleLightIcon,
+        config?.roles,
+      );
+      log("Workspace platform initialized");
+    } catch (err) {
+      console.error("Failed to initialize workspace components:", err);
+    }
   });
 
   // init() starts the platform and triggers "platform-api-ready" above
   await initializePlatform(settings.platformSettings, config?.theme);
+}
+
+// ─── Export config helper ─────────────────────────────────────────────
+
+/**
+ * Gather all config data from the config service and trigger a JSON download.
+ * Shared between the customActions handler and the dockActionHandlers.
+ */
+async function exportAllConfig(cm: ConfigManager): Promise<void> {
+  const allApps = await cm.getAllApps();
+  const allConfigs: any[] = [];
+  for (const app of allApps) {
+    const configs = await cm.getConfigsByApp(app.appId);
+    allConfigs.push(...configs);
+  }
+  const dockConfig = await cm.loadDockConfig();
+  if (dockConfig) {
+    allConfigs.push({ configId: "dock-config", appId: "", componentType: "DOCK", config: dockConfig });
+  }
+  const exportData = {
+    appRegistry: allApps,
+    appConfig: allConfigs,
+    userProfiles: [] as any[],
+    roles: await cm.getAllRoles(),
+    permissions: await cm.getAllPermissions(),
+    exportedAt: new Date().toISOString(),
+  };
+  const json = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `config-export-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  console.log("Config exported.");
 }
 
 // ─── Platform initialization ─────────────────────────────────────────
@@ -317,48 +357,7 @@ async function initializePlatform(
             console.error("ConfigManager not initialized.");
             return;
           }
-
-          // Gather all data from the config service tables
-          const exportData = {
-            appRegistry: await configManager.getAllApps(),
-            appConfig: await configManager.getConfigsByApp(""),
-            userProfiles: [] as any[],
-            roles: await configManager.getAllRoles(),
-            permissions: await configManager.getAllPermissions(),
-            exportedAt: new Date().toISOString(),
-          };
-
-          // Also get all app configs (not just one appId)
-          // Use a broad query — get everything in the appConfig table
-          const allApps = await configManager.getAllApps();
-          const allConfigs: any[] = [];
-          for (const app of allApps) {
-            const configs = await configManager.getConfigsByApp(app.appId);
-            allConfigs.push(...configs);
-          }
-          // Also get configs with empty appId (like dock-config)
-          const dockConfig = await configManager.loadDockConfig();
-          if (dockConfig) {
-            allConfigs.push({
-              configId: "dock-config",
-              appId: "",
-              componentType: "DOCK",
-              config: dockConfig,
-            });
-          }
-          exportData.appConfig = allConfigs;
-
-          // Trigger a file download
-          const json = JSON.stringify(exportData, null, 2);
-          const blob = new Blob([json], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `config-export-${new Date().toISOString().slice(0, 10)}.json`;
-          link.click();
-          URL.revokeObjectURL(url);
-
-          console.log("Config exported.");
+          await exportAllConfig(configManager);
         } catch (error) {
           console.error("Failed to export config.", error);
         }
@@ -492,33 +491,7 @@ const dockActionHandlers: Record<string, (customData?: any) => Promise<void>> = 
         console.error("ConfigManager not initialized.");
         return;
       }
-      const allApps = await configManager.getAllApps();
-      const allConfigs: any[] = [];
-      for (const app of allApps) {
-        const configs = await configManager.getConfigsByApp(app.appId);
-        allConfigs.push(...configs);
-      }
-      const dockConfig = await configManager.loadDockConfig();
-      if (dockConfig) {
-        allConfigs.push({ configId: "dock-config", appId: "", componentType: "DOCK", config: dockConfig });
-      }
-      const exportData = {
-        appRegistry: allApps,
-        appConfig: allConfigs,
-        userProfiles: [] as any[],
-        roles: await configManager.getAllRoles(),
-        permissions: await configManager.getAllPermissions(),
-        exportedAt: new Date().toISOString(),
-      };
-      const json = JSON.stringify(exportData, null, 2);
-      const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `config-export-${new Date().toISOString().slice(0, 10)}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-      console.log("Config exported.");
+      await exportAllConfig(configManager);
     } catch (error) {
       console.error("Failed to export config.", error);
     }

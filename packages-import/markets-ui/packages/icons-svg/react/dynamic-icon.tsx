@@ -191,7 +191,10 @@ interface DynamicIconProps {
  * Iconify CDN.
  */
 export function DynamicIcon({ icon, style, className }: DynamicIconProps) {
-  const size = (style?.width as number) ?? (style?.height as number) ?? 16;
+  // Extract numeric size — guard against CSS string values like "100%" or "1.5rem"
+  const rawW = style?.width;
+  const rawH = style?.height;
+  const size = (typeof rawW === "number" ? rawW : typeof rawH === "number" ? rawH : 16);
   const color = style?.color as string | undefined;
 
   // 1. Lucide icons — render as inline React SVG components

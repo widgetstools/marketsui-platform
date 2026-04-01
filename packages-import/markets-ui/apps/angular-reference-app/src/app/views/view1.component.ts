@@ -3,12 +3,13 @@
  * Angular equivalent of the React View1.
  */
 
-import { Component } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-view1',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
     <div class="flex flex-col gap-4 p-4">
@@ -24,12 +25,12 @@ import { CommonModule } from '@angular/common';
       >
         Broadcast FDC3 Context
       </button>
-      <p class="text-xs text-muted-foreground">{{ status }}</p>
+      <p class="text-xs text-muted-foreground">{{ status() }}</p>
     </div>
   `,
 })
 export class View1Component {
-  status = '';
+  readonly status = signal('');
 
   async broadcastContext(): Promise<void> {
     try {
@@ -40,12 +41,12 @@ export class View1Component {
           name: 'Apple',
           id: { ticker: 'AAPL' },
         });
-        this.status = 'Context broadcast: AAPL';
+        this.status.set('Context broadcast: AAPL');
       } else {
-        this.status = 'FDC3 API not available';
+        this.status.set('FDC3 API not available');
       }
     } catch (err) {
-      this.status = 'Broadcast failed';
+      this.status.set('Broadcast failed');
       console.error(err);
     }
   }

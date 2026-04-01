@@ -897,7 +897,8 @@ export function svgToDataUrl(svg: string, color: string = '#ffffff'): string {
     .replace(/<!--[\s\S]*?-->/g, '')   // strip HTML comments
     .replace(/\s+/g, ' ')              // collapse whitespace
     .trim();
-  return `data:image/svg+xml;base64,${btoa(clean)}`;
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(clean)))}`;
+
 }
 
 /**

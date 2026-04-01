@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare const fin: any;
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { saveDockConfig, IAB_RELOAD_AFTER_IMPORT } from "@markets/openfin-workspace";
 import { UPLOAD_SVG } from "@markets/icons-svg/all-icons";
 
@@ -41,6 +41,14 @@ export default function ImportConfig() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup: clear the auto-close timer if component unmounts early
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
 
   // ── Handle file selection ─────────────────────────────────────────
 
@@ -89,7 +97,7 @@ export default function ImportConfig() {
       setMessage("Config imported successfully. The dock has been reloaded.");
 
       // Auto-close after 1.5 s so the user can read the success message
-      setTimeout(async () => {
+      closeTimerRef.current = setTimeout(async () => {
         if (isInOpenFin) {
           await (window as any).fin.Window.getCurrentSync().close();
         }

@@ -432,7 +432,7 @@ export class ConfigManager {
       row.createdAt = existing.createdAt;
     }
 
-    await this.db.appConfig.put(row);
+    await this.saveConfig(row);
   }
 
   /**
@@ -639,8 +639,9 @@ export class ConfigManager {
         } else {
           throw new Error(`HTTP ${response.status}`);
         }
-      } catch {
+      } catch (err) {
         // Failed again — increment the retry counter
+        console.warn("Pending sync retry failed for entry", entry.id, err);
         await this.db.pendingSync.update(entry.id, {
           retries: entry.retries + 1,
         });

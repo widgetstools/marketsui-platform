@@ -15,6 +15,8 @@ function View1() {
         setNotificationActionMessage(event.result["customData"]);
       };
       Notifications.addEventListener("notification-action", handler);
+    }).catch((err) => {
+      console.warn("Notifications registration failed:", err);
     });
 
     return () => {

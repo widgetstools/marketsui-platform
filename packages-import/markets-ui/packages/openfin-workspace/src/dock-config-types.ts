@@ -79,6 +79,7 @@ export interface Dock3FolderEntry {
   id: string;
   label: string;
   icon?: DockEntryIcon;
+  children: Dock3Entry[];
 }
 
 export type Dock3Entry = Dock3ItemEntry | Dock3FolderEntry;
