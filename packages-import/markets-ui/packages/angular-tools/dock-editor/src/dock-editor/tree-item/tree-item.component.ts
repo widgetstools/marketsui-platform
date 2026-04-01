@@ -197,17 +197,19 @@ export class TreeItemComponent {
   protected readonly hovered  = signal(false);
   protected readonly INDENT_STEP = INDENT_STEP;
 
-  // Chrome icon colors per theme
+  // Icon colors per theme — values match --de-* token definitions in editor.css.
+  // SVG data URLs require literal hex colors (CSS variables don't work in SVG strings).
   private get secondaryColor(): string { return this.theme === 'dark' ? '#8b8b9e' : '#5c5c72'; }
   private get tertiaryColor(): string { return this.theme === 'dark' ? '#5c5c6e' : '#8e8ea0'; }
   private get ghostColor(): string { return this.theme === 'dark' ? '#3a3a4a' : '#b8b8c8'; }
+  private get dangerColor(): string { return this.theme === 'dark' ? '#e5534b' : '#cf4844'; }
 
   protected get chevronDownUrl(): string  { return iconIdToSvgUrl('lucide:chevron-down',  this.tertiaryColor); }
   protected get chevronRightUrl(): string { return iconIdToSvgUrl('lucide:chevron-right', this.tertiaryColor); }
   protected get chevronUpUrl(): string    { return iconIdToSvgUrl('lucide:chevron-up',    this.secondaryColor); }
   protected get gripUrl(): string         { return iconIdToSvgUrl('lucide:grip-vertical', this.ghostColor); }
   protected get pencilUrl(): string       { return iconIdToSvgUrl('lucide:pencil',        this.secondaryColor); }
-  protected get trashUrl(): string        { return iconIdToSvgUrl('lucide:trash-2',       '#e5534b'); }
+  protected get trashUrl(): string        { return iconIdToSvgUrl('lucide:trash-2',       this.dangerColor); }
   protected get plusUrl(): string          { return iconIdToSvgUrl('lucide:plus',           this.ghostColor); }
 
   get hasChildren(): boolean {

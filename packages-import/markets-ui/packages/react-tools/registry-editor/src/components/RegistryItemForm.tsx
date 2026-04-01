@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { DynamicIcon as Icon } from "@markets/icons-svg/react";
 import { ICON_NAMES, ICON_META } from "@markets/icons-svg";
 import { generateTemplateConfigId } from "@markets/openfin-workspace";
@@ -54,13 +54,18 @@ export function RegistryItemForm({ open, title, initial, onSave, onCancel }: Reg
     }
   }, [componentType, componentSubType, configIdEdited]);
 
-  if (!open) return null;
+  // Memoize icon filtering — only recalculates when search term changes
+  const filteredIcons = useMemo(() =>
+    ICON_NAMES.filter((name) => {
+      if (!iconSearch) return true;
+      const q = iconSearch.toLowerCase();
+      const meta = ICON_META[name];
+      return name.includes(q) || meta?.category.includes(q);
+    }),
+    [iconSearch],
+  );
 
-  const filteredIcons = ICON_NAMES.filter((name) => {
-    if (!iconSearch) return true;
-    const meta = ICON_META[name];
-    return name.includes(iconSearch.toLowerCase()) || meta?.category.includes(iconSearch.toLowerCase());
-  });
+  if (!open) return null;
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};

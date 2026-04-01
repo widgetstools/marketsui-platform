@@ -121,6 +121,9 @@
   /* Trading tokens (dark) */
   --mdl-bid: 210 100% 55%;
   --mdl-ask: 0 85% 60%;
+  --mdl-flash-up: 142 71% 45%;
+  --mdl-flash-down: 0 84% 60%;
   --mdl-pnl-positive: 142 71% 45%;
   --mdl-pnl-negative: 0 84% 60%;
+  --mdl-success: 142 71% 45%;
 }

@@ -392,7 +392,7 @@ export class RegistryEditorComponent implements OnInit {
 
   ngOnInit(): void {
     injectStyles();
-    this.svc.init();
+    this.svc.init().catch(err => console.error('RegistryEditor: init failed', err));
     this.syncTheme();
   }
 
@@ -423,8 +423,9 @@ export class RegistryEditorComponent implements OnInit {
       } catch { /* keep default */ }
     })();
 
-    // Listen for theme changes
+    // Listen for theme changes — guarded against post-destroy writes
     this.themeHandler = (data: { isDark: boolean }) => {
+      if (!active) return;
       this.theme.set(data.isDark ? 'dark' : 'light');
     };
     try {
