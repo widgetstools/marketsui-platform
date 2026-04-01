@@ -39,7 +39,7 @@ export function IconSelect({ value, onChange }: IconSelectProps) {
       }}>
         <span style={{
           width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
-          borderRadius: 5, background: "var(--de-bg-surface)", border: "1px solid var(--de-border-subtle)", flexShrink: 0,
+          borderRadius: "var(--de-radius-sm)", background: "var(--de-bg-surface)", border: "1px solid var(--de-border-subtle)", flexShrink: 0,
         }}>
           <Icon icon={selected.icon} style={{ width: 14, height: 14, color: "var(--de-text-secondary)" }} />
         </span>
@@ -99,7 +99,7 @@ export function IconSelect({ value, onChange }: IconSelectProps) {
               return (
                 <button key={item.name} type="button" title={item.name} onClick={() => { onChange(item.name, item.icon); setOpen(false); }} style={{
                   width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
-                  border: "none", borderRadius: 5, cursor: "pointer", padding: 0, transition: "all 0.1s",
+                  border: "none", borderRadius: "var(--de-radius-sm)", cursor: "pointer", padding: 0, transition: "all 0.1s",
                   background: isSelected ? "var(--de-accent-dim)" : "transparent",
                   color: isSelected ? "var(--de-accent)" : "var(--de-text-secondary)",
                   outline: isSelected ? "1px solid var(--de-accent)" : "none", outlineOffset: -1,

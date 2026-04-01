@@ -155,7 +155,7 @@ export function RegistryEditorPanel() {
         </span>
         <span style={{
           fontSize: 11, fontWeight: 500, padding: "2px 8px",
-          borderRadius: 10, background: "var(--de-accent-dim)",
+          borderRadius: "var(--de-radius-md)", background: "var(--de-accent-dim)",
           color: "var(--de-accent)",
         }}>
           {entries.length} {entries.length === 1 ? "component" : "components"}
@@ -199,7 +199,7 @@ export function RegistryEditorPanel() {
               No components registered yet
             </div>
             <button onClick={handleAdd} style={{
-              background: "var(--de-accent)", color: "#000", border: "none",
+              background: "var(--de-accent)", color: "var(--de-bg-deep)", border: "none",
               borderRadius: "var(--de-radius-sm)", padding: "8px 20px",
               fontSize: 12, fontWeight: 600, cursor: "pointer",
             }}>

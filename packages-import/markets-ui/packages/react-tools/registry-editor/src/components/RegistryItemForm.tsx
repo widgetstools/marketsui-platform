@@ -132,7 +132,7 @@ export function RegistryItemForm({ open, title, initial, onSave, onCancel }: Reg
                     style={{
                       width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
                       background: iconId === `mkt:${name}` ? "var(--de-accent-dim)" : "transparent",
-                      border: "1px solid transparent", borderRadius: 4, cursor: "pointer",
+                      border: "1px solid transparent", borderRadius: "var(--de-radius-sm)", cursor: "pointer",
                       color: "var(--de-text-secondary)",
                     }}>
                     <Icon icon={`mkt:${name}`} style={{ width: 16, height: 16 }} />
@@ -204,5 +204,5 @@ const saveBtnStyle: React.CSSProperties = {
   padding: "8px 20px", borderRadius: "var(--de-radius-sm)",
   fontSize: 12, fontWeight: 600, cursor: "pointer",
   border: "none", background: "var(--de-accent)",
-  color: "#000",
+  color: "var(--de-bg-deep)",
 };

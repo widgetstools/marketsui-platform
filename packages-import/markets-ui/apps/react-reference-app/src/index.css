@@ -1,64 +1,10 @@
-/* Tailwind v3 directives — must appear in this order */
+/* MarketsUI Design Tokens — single source of truth */
+@import '@marketsui/tokens/css';
+
+/* Tailwind v3 directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/*
- * Design tokens — CSS custom properties consumed by Tailwind's theme
- * extension (see tailwind.config.js) and by Shadcn/ui components.
- *
- * Values are in HSL channel format (no hsl() wrapper) so Tailwind can
- * compose them with an alpha channel: hsl(var(--primary) / 50%)
- *
- * This is the standard Shadcn zinc colour palette.
- */
-
-/* ── Light theme (default) ────────────────────────────────────────── */
-:root {
-  --background:             0 0% 100%;
-  --foreground:             240 10% 3.9%;
-  --card:                   0 0% 100%;
-  --card-foreground:        240 10% 3.9%;
-  --popover:                0 0% 100%;
-  --popover-foreground:     240 10% 3.9%;
-  --primary:                240 5.9% 10%;
-  --primary-foreground:     0 0% 98%;
-  --secondary:              240 4.8% 95.9%;
-  --secondary-foreground:   240 5.9% 10%;
-  --muted:                  240 4.8% 95.9%;
-  --muted-foreground:       240 3.8% 46.1%;
-  --accent:                 240 4.8% 95.9%;
-  --accent-foreground:      240 5.9% 10%;
-  --destructive:            0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border:                 240 5.9% 90%;
-  --input:                  240 5.9% 90%;
-  --ring:                   240 5.9% 10%;
-  --radius:                 0.5rem;
-}
-
-/* ── Dark theme ───────────────────────────────────────────────────── */
-.dark {
-  --background:             240 10% 3.9%;
-  --foreground:             0 0% 98%;
-  --card:                   240 10% 3.9%;
-  --card-foreground:        0 0% 98%;
-  --popover:                240 10% 3.9%;
-  --popover-foreground:     0 0% 98%;
-  --primary:                0 0% 98%;
-  --primary-foreground:     240 5.9% 10%;
-  --secondary:              240 3.7% 15.9%;
-  --secondary-foreground:   0 0% 98%;
-  --muted:                  240 3.7% 15.9%;
-  --muted-foreground:       240 5% 64.9%;
-  --accent:                 240 3.7% 15.9%;
-  --accent-foreground:      0 0% 98%;
-  --destructive:            0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border:                 240 3.7% 15.9%;
-  --input:                  240 3.7% 15.9%;
-  --ring:                   240 4.9% 83.9%;
-}
 
 /* ── Base styles ──────────────────────────────────────────────────── */
 @layer base {
@@ -67,15 +13,13 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: var(--mdl-font-family);
     margin: 0;
     padding: 10px;
   }
 }
 
 /* ── OpenFin theme variable bridge ───────────────────────────────── */
-/* These map OpenFin's injected CSS variables to our design tokens so
-   OpenFin-themed windows use the correct colours automatically. */
 :root {
   --of-bg: var(--theme-background-primary, hsl(var(--background)));
   --of-fg: var(--theme-text-default, hsl(var(--foreground)));

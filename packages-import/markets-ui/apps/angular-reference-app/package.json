@@ -21,6 +21,7 @@
     "@markets/angular-registry-editor": "*",
     "@markets/icons-svg": "*",
     "@markets/openfin-workspace": "*",
+    "@marketsui/tokens": "*",
     "@openfin/core": "43.101.2",
     "@openfin/notifications": "2.13.1",
     "@openfin/workspace": "23.0.20",

@@ -61,14 +61,14 @@ export function RegistryItemRow({ entry, onEdit, onTest, onDelete }: RegistryIte
       {/* Type tags */}
       <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
         <span style={{
-          padding: "2px 6px", borderRadius: 3, fontSize: 10, fontWeight: 500,
+          padding: "2px 6px", borderRadius: "var(--de-radius-sm)", fontSize: 10, fontWeight: 500,
           background: "var(--de-accent-dim)", color: "var(--de-accent)",
           textTransform: "uppercase", letterSpacing: "0.04em",
         }}>
           {entry.componentType}
         </span>
         <span style={{
-          padding: "2px 6px", borderRadius: 3, fontSize: 10, fontWeight: 500,
+          padding: "2px 6px", borderRadius: "var(--de-radius-sm)", fontSize: 10, fontWeight: 500,
           background: "var(--de-bg-surface)", color: "var(--de-text-secondary)",
           textTransform: "uppercase", letterSpacing: "0.04em",
         }}>

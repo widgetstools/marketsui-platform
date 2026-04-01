@@ -243,12 +243,12 @@ export function ItemFormDialog({ open, onOpenChange, title, initial, onSave }: I
             transition: "all 0.15s",
           }}>
             <div style={{
-              width: 18, height: 18, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center",
+              width: 18, height: 18, borderRadius: "var(--de-radius-sm)", display: "flex", alignItems: "center", justifyContent: "center",
               background: hasChildren ? "var(--de-accent)" : "transparent",
               border: hasChildren ? "none" : "1.5px solid var(--de-border-strong)",
               transition: "all 0.15s", flexShrink: 0,
             }}>
-              {hasChildren && <Icon icon="lucide:check" style={{ width: 12, height: 12, color: "#0c0c0e" }} />}
+              {hasChildren && <Icon icon="lucide:check" style={{ width: 12, height: 12, color: "var(--de-bg-deep)" }} />}
             </div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 500, color: "var(--de-text)" }}>Has Children</div>
@@ -276,7 +276,7 @@ export function ItemFormDialog({ open, onOpenChange, title, initial, onSave }: I
             display: "flex", alignItems: "center", gap: 6, padding: "7px 18px",
             fontSize: 12, fontWeight: 600, fontFamily: "var(--de-font)",
             border: "none", borderRadius: "var(--de-radius-sm)",
-            background: "var(--de-accent)", color: "#0c0c0e", cursor: "pointer",
+            background: "var(--de-accent)", color: "var(--de-bg-deep)", cursor: "pointer",
             transition: "all 0.12s", boxShadow: "var(--de-shadow-glow)",
           }} onMouseEnter={e => { e.currentTarget.style.filter = "brightness(1.1)"; }}
              onMouseLeave={e => { e.currentTarget.style.filter = "none"; }}>

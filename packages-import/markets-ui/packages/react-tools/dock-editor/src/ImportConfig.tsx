@@ -10,17 +10,17 @@ import { UPLOAD_SVG } from "@markets/icons-svg/all-icons";
 type ImportStatus = "idle" | "success" | "error";
 
 // ─── Design tokens ───────────────────────────────────────────────────
-// This window has its own dark theme regardless of the platform theme,
-// because it is a utility dialog that is always shown briefly.
+// Maps to the --de-* editor design system from @marketsui/tokens.
+// This component always renders in dark mode (utility dialog).
 const COLORS = {
-  accent:      "#2196F3",  // electric blue — buttons, highlights
-  danger:      "#EF5350",  // red — error messages
-  success:     "#00E5A0",  // mint — success messages
-  bg:          "#0D1117",  // near-black — window background
-  surface:     "#161B22",  // dark gray — card/input background
-  border:      "#30363D",  // subtle border
-  textPrimary: "#E6EDF3",  // bright white — headings
-  textSecondary: "#8B949E", // muted gray — labels, hints
+  accent:        "var(--de-accent)",
+  danger:        "var(--de-danger)",
+  success:       "var(--de-success)",
+  bg:            "var(--de-bg-deep)",
+  surface:       "var(--de-bg-surface)",
+  border:        "var(--de-border-strong)",
+  textPrimary:   "var(--de-text)",
+  textSecondary: "var(--de-text-secondary)",
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ export default function ImportConfig() {
     }}>
       {/* Icon */}
       <div style={{
-        width: 56, height: 56, borderRadius: 14,
+        width: 56, height: 56, borderRadius: "var(--de-radius-lg)",
         background: surface, border: `1px solid ${border}`,
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
@@ -156,7 +156,7 @@ export default function ImportConfig() {
         style={{
           width: "100%", maxWidth: 320,
           border: `1.5px dashed ${fileName ? accentColor : border}`,
-          borderRadius: 10, padding: "20px 16px",
+          borderRadius: "var(--de-radius-md)", padding: "20px 16px",
           textAlign: "center", cursor: "pointer",
           background: fileName ? `${accentColor}10` : surface,
           transition: "all 0.15s",
@@ -207,7 +207,7 @@ export default function ImportConfig() {
         }}
         style={{
           padding: "8px 24px", fontSize: 13, fontWeight: 500,
-          border: `1px solid ${border}`, borderRadius: 7,
+          border: `1px solid ${border}`, borderRadius: "var(--de-radius-sm)",
           background: "transparent", color: textSecondary,
           cursor: "pointer", transition: "all 0.12s",
         }}
