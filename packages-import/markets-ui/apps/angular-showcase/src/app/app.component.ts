@@ -355,16 +355,50 @@ const SEVERITIES: Option[] = [
     :host ::ng-deep .p-select .p-select-label { color: hsl(var(--foreground)); font-size: 14px; }
     :host ::ng-deep .p-select-dropdown { color: hsl(var(--muted-foreground)); }
 
+    /* Select dropdown panel — dark background, neutral hover (not amber) */
+    :host ::ng-deep .p-select-overlay {
+      background: hsl(var(--popover));
+      border: 1px solid hsl(var(--border));
+      border-radius: calc(var(--mdl-radius) - 2px);
+      color: hsl(var(--popover-foreground));
+    }
+    :host ::ng-deep .p-select-option {
+      color: hsl(var(--popover-foreground));
+      font-size: 14px;
+    }
+    :host ::ng-deep .p-select-option.p-focus,
+    :host ::ng-deep .p-select-option:hover {
+      background: hsl(var(--secondary)) !important;
+      color: hsl(var(--secondary-foreground)) !important;
+    }
+    :host ::ng-deep .p-select-option.p-selected {
+      background: hsl(var(--secondary)) !important;
+      color: hsl(var(--secondary-foreground)) !important;
+    }
+    :host ::ng-deep .p-select-option.p-selected.p-focus {
+      background: hsl(var(--secondary)) !important;
+    }
+
     /* PrimeNG Button overrides — match shadcn Button h-9 */
     :host ::ng-deep .p-button {
       border-radius: calc(var(--mdl-radius) - 2px);
       font-size: 14px;
       font-weight: 500;
       height: 36px;
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-color: hsl(var(--primary));
+    }
+    :host ::ng-deep .p-button:hover {
+      background: hsl(var(--primary) / 0.9);
     }
     :host ::ng-deep .p-button.p-button-outlined {
+      background: transparent;
       border-color: hsl(var(--input));
       color: hsl(var(--foreground));
+    }
+    :host ::ng-deep .p-button.p-button-outlined:hover {
+      background: hsl(var(--secondary));
     }
 
     /* ToggleSwitch — match shadcn Switch */
