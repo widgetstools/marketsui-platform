@@ -139,7 +139,7 @@ export class IconUrlPipe implements PipeTransform {
       box-shadow: var(--de-shadow-lg); font-family: var(--de-font); }
     .form-title { font-size: 18px; font-weight: 700; color: var(--de-text); margin-bottom: 24px; }
     .form-field { margin-bottom: 18px; }
-    .form-label { display: block; font-size: 12px; font-weight: 500; color: var(--de-accent);
+    .form-label { display: block; font-size: 12px; font-weight: 500; color: var(--de-text-secondary);
       margin-bottom: 6px; letter-spacing: 0.01em; }
     .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
