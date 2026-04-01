@@ -7,6 +7,7 @@ import {
   saveRegistryConfig,
   clearRegistryConfig,
   IAB_REGISTRY_CONFIG_UPDATE,
+  generateTemplateConfigId,
   type RegistryEditorConfig,
   type RegistryEntry,
 } from "@markets/openfin-workspace";
@@ -145,11 +146,25 @@ export function useRegistryEditor(): UseRegistryEditorReturn {
         window.open(entry.hostUrl, "_blank");
         return;
       }
-      const platform = openFinApi.Platform.getCurrentSync();
-      await platform.createView(
-        { url: entry.hostUrl },
-        { defaultWidth: 1024, defaultHeight: 768 },
+
+      // Pass customData so the component-host can resolve identity.
+      // The launched view reads this via readCustomData() to load its config.
+      const instanceId = crypto.randomUUID();
+      const templateId = generateTemplateConfigId(
+        entry.componentType,
+        entry.componentSubType,
       );
+
+      const platform = openFinApi.Platform.getCurrentSync();
+      await platform.createView({
+        url: entry.hostUrl,
+        customData: {
+          instanceId,
+          templateId,
+          componentType: entry.componentType,
+          componentSubType: entry.componentSubType,
+        },
+      });
     } catch (err) {
       console.warn("Failed to launch test component:", err);
     }
