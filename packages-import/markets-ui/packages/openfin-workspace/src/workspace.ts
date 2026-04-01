@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare const fin: any;
 import type OpenFin from "@openfin/core";
-import { Dock, Home, Storefront, type App } from "@openfin/workspace";
+import { Home, Storefront, type App } from "@openfin/workspace";
 import { ColorSchemeOptionType, CustomActionCallerType, getCurrentSync, init } from "@openfin/workspace-platform";
 import { createConfigManager, type ConfigManager } from "@marketsui/config-service";
-import { setConfigManager } from "./db";
+import { setConfigManager } from './db';
 import {
   registerDock,
   recolorDockIcons,
@@ -19,12 +19,13 @@ import {
   ACTION_TOGGLE_PROVIDER,
   ACTION_OPEN_REGISTRY_EDITOR,
   IAB_THEME_CHANGED,
-} from "./dock";
-import { registerHome } from "./home";
-import { launchApp } from "./launch";
-import { registerNotifications } from "./notifications";
-import { registerStore } from "./store";
-import type { CustomSettings, PlatformSettings, WorkspaceConfig } from "./types";
+  shutdownDock,
+} from './dock';
+import { registerHome } from './home';
+import { launchApp } from './launch';
+import { registerNotifications } from './notifications';
+import { registerStore } from './store';
+import type { CustomSettings, PlatformSettings, WorkspaceConfig } from './types';
 
 /**
  * Prevents initWorkspace() from running more than once.
@@ -86,21 +87,61 @@ export async function initWorkspace(config?: WorkspaceConfig): Promise<void> {
   // The "platform-api-ready" event fires after init() completes below.
   const platform = fin.Platform.getCurrentSync();
   await platform.once("platform-api-ready", async () => {
-    await initializeWorkspaceComponents(
-      settings.platformSettings,
-      settings.customSettings,
-      components,
-      log,
-      config?.dockIcon,
-      config?.themeToggleDarkIcon,
-      config?.themeToggleLightIcon,
-      config?.roles,
-    );
-    log("Workspace platform initialized");
+    try {
+      await initializeWorkspaceComponents(
+        settings.platformSettings,
+        settings.customSettings,
+        components,
+        log,
+        config?.dockIcon,
+        config?.themeToggleDarkIcon,
+        config?.themeToggleLightIcon,
+        config?.roles,
+      );
+      log("Workspace platform initialized");
+    } catch (err) {
+      console.error("Failed to initialize workspace components:", err);
+    }
   });
 
   // init() starts the platform and triggers "platform-api-ready" above
   await initializePlatform(settings.platformSettings, config?.theme);
+}
+
+// ─── Export config helper ─────────────────────────────────────────────
+
+/**
+ * Gather all config data from the config service and trigger a JSON download.
+ * Shared between the customActions handler and the dockActionHandlers.
+ */
+async function exportAllConfig(cm: ConfigManager): Promise<void> {
+  const allApps = await cm.getAllApps();
+  const allConfigs: any[] = [];
+  for (const app of allApps) {
+    const configs = await cm.getConfigsByApp(app.appId);
+    allConfigs.push(...configs);
+  }
+  const dockConfig = await cm.loadDockConfig();
+  if (dockConfig) {
+    allConfigs.push({ configId: "dock-config", appId: "", componentType: "DOCK", config: dockConfig });
+  }
+  const exportData = {
+    appRegistry: allApps,
+    appConfig: allConfigs,
+    userProfiles: [] as any[],
+    roles: await cm.getAllRoles(),
+    permissions: await cm.getAllPermissions(),
+    exportedAt: new Date().toISOString(),
+  };
+  const json = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `config-export-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  console.log("Config exported.");
 }
 
 // ─── Platform initialization ─────────────────────────────────────────
@@ -316,48 +357,7 @@ async function initializePlatform(
             console.error("ConfigManager not initialized.");
             return;
           }
-
-          // Gather all data from the config service tables
-          const exportData = {
-            appRegistry: await configManager.getAllApps(),
-            appConfig: await configManager.getConfigsByApp(""),
-            userProfiles: [] as any[],
-            roles: await configManager.getAllRoles(),
-            permissions: await configManager.getAllPermissions(),
-            exportedAt: new Date().toISOString(),
-          };
-
-          // Also get all app configs (not just one appId)
-          // Use a broad query — get everything in the appConfig table
-          const allApps = await configManager.getAllApps();
-          const allConfigs: any[] = [];
-          for (const app of allApps) {
-            const configs = await configManager.getConfigsByApp(app.appId);
-            allConfigs.push(...configs);
-          }
-          // Also get configs with empty appId (like dock-config)
-          const dockConfig = await configManager.loadDockConfig();
-          if (dockConfig) {
-            allConfigs.push({
-              configId: "dock-config",
-              appId: "",
-              componentType: "DOCK",
-              config: dockConfig,
-            });
-          }
-          exportData.appConfig = allConfigs;
-
-          // Trigger a file download
-          const json = JSON.stringify(exportData, null, 2);
-          const blob = new Blob([json], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `config-export-${new Date().toISOString().slice(0, 10)}.json`;
-          link.click();
-          URL.revokeObjectURL(url);
-
-          console.log("Config exported.");
+          await exportAllConfig(configManager);
         } catch (error) {
           console.error("Failed to export config.", error);
         }
@@ -431,6 +431,133 @@ async function initializePlatform(
   });
 }
 
+// ─── Dock3 action dispatcher ──────────────────────────────────────────
+// Maps action IDs to handler functions for Dock3's launchEntry callback.
+// These mirror the customActions handlers above but without the callerType
+// guard (Dock3 calls launchEntry directly from favorites/content menu).
+
+const dockActionHandlers: Record<string, (customData?: any) => Promise<void>> = {
+  [ACTION_LAUNCH_APP]: async (customData) => {
+    await launchApp(customData as App);
+  },
+
+  [ACTION_TOGGLE_THEME]: async () => {
+    const platform = getCurrentSync();
+    const currentScheme = await platform.Theme.getSelectedScheme();
+    const newScheme =
+      currentScheme === ColorSchemeOptionType.Dark
+        ? ColorSchemeOptionType.Light
+        : ColorSchemeOptionType.Dark;
+    platform.Theme.setSelectedScheme(newScheme);
+    const isDark = newScheme === ColorSchemeOptionType.Dark;
+    await recolorDockIcons(isDark);
+    try {
+      await fin.InterApplicationBus.publish(IAB_THEME_CHANGED, { isDark });
+    } catch (iabErr) {
+      console.warn("Could not publish theme-changed event via IAB.", iabErr);
+    }
+  },
+
+  [ACTION_OPEN_DOCK_EDITOR]: async () => {
+    await openChildWindow("dock-editor", "/dock-editor", 720, 800);
+  },
+
+  [ACTION_OPEN_REGISTRY_EDITOR]: async () => {
+    await openChildWindow("registry-editor", "/registry-editor", 800, 700);
+  },
+
+  [ACTION_RELOAD_DOCK]: async () => {
+    console.log("Reloading dock...");
+    try {
+      await reloadDockFromConfig();
+      console.log("Dock reloaded.");
+    } catch (error) {
+      console.error("Failed to reload dock.", error);
+    }
+  },
+
+  [ACTION_SHOW_DEVTOOLS]: async () => {
+    try {
+      const providerWindow = fin.Window.getCurrentSync();
+      await providerWindow.showDeveloperTools();
+    } catch (error) {
+      console.error("Failed to open developer tools.", error);
+    }
+  },
+
+  [ACTION_EXPORT_CONFIG]: async () => {
+    try {
+      if (!configManager) {
+        console.error("ConfigManager not initialized.");
+        return;
+      }
+      await exportAllConfig(configManager);
+    } catch (error) {
+      console.error("Failed to export config.", error);
+    }
+  },
+
+  [ACTION_IMPORT_CONFIG]: async () => {
+    await openChildWindow("import-config", "/import-config", 400, 320, { resizable: false, saveWindowState: false, contextMenu: false });
+  },
+
+  [ACTION_TOGGLE_PROVIDER]: async () => {
+    try {
+      const providerWindow = fin.Window.getCurrentSync();
+      const isVisible = await providerWindow.isShowing();
+      if (isVisible) {
+        await providerWindow.hide();
+        console.log("Provider window hidden.");
+      } else {
+        await providerWindow.show();
+        console.log("Provider window shown.");
+      }
+    } catch (error) {
+      console.error("Failed to toggle provider window.", error);
+    }
+  },
+};
+
+/**
+ * Open or bring-to-front a child window (dock editor, registry editor, import config).
+ */
+async function openChildWindow(
+  name: string,
+  path: string,
+  width: number,
+  height: number,
+  extraOptions?: Record<string, any>,
+): Promise<void> {
+  try {
+    const existing = fin.Window.wrapSync({ uuid: fin.me.identity.uuid, name });
+    await existing.setAsForeground();
+  } catch {
+    const app = await fin.Application.getCurrent();
+    const manifest: Record<string, unknown> = await app.getManifest();
+    const platformConfig = manifest["platform"] as Record<string, string> | undefined;
+    const providerUrl = platformConfig?.["providerUrl"] ?? "";
+    let origin: string;
+    try {
+      origin = new URL(providerUrl).origin;
+    } catch {
+      console.error("Could not determine app origin from providerUrl:", providerUrl);
+      return;
+    }
+    await fin.Window.create({
+      name,
+      url: `${origin}${path}`,
+      defaultWidth: width,
+      defaultHeight: height,
+      autoShow: true,
+      frame: true,
+      resizable: true,
+      saveWindowState: true,
+      contextMenu: true,
+      ...extraOptions,
+    });
+  }
+}
+
 // ─── Workspace component registration ────────────────────────────────
 
 /**
@@ -462,8 +589,19 @@ async function initializeWorkspaceComponents(
 
   if (components.dock) {
     log("Initializing workspace components: dock");
-    await registerDock(platformSettings, customSettings?.apps, dockIcon, themeToggleDarkIcon, themeToggleLightIcon, roles);
-    await Dock.show();
+    // Build an action dispatcher that Dock3 can call from launchEntry().
+    // This routes action IDs from dock favorites/content menu items to
+    // the same handlers defined in customActions above.
+    const dockActionDispatcher = async (actionId: string, customData?: any): Promise<void> => {
+      const handler = dockActionHandlers[actionId];
+      if (handler) {
+        await handler(customData);
+      } else {
+        console.warn(`Unknown dock action: ${actionId}`);
+      }
+    };
+
+    await registerDock(platformSettings, customSettings?.apps, dockIcon, themeToggleDarkIcon, themeToggleLightIcon, roles, dockActionDispatcher);
   }
 
   if (components.notifications) {
@@ -476,7 +614,7 @@ async function initializeWorkspaceComponents(
   await providerWindow.once("close-requested", async () => {
     if (components.home) await Home.deregister(platformSettings.id);
     if (components.store) await Storefront.deregister(platformSettings.id);
-    if (components.dock) await Dock.deregister();
+    if (components.dock) await shutdownDock();
 
     // Clean up the config service (stops the sync drain loop)
     if (configManager) {

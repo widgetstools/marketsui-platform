@@ -6,7 +6,7 @@
  * Lets the user upload a JSON config exported via "Export Config".
  */
 
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { saveDockConfig, IAB_RELOAD_AFTER_IMPORT } from '@markets/openfin-workspace';
@@ -18,6 +18,7 @@ const isInOpenFin = typeof (window as any).fin !== 'undefined';
 @Component({
   selector: 'mkt-import-config',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ButtonModule],
   template: `
     <div
@@ -78,9 +79,21 @@ const isInOpenFin = typeof (window as any).fin !== 'undefined';
   `,
 })
 export class ImportConfigComponent {
+  private readonly destroyRef = inject(DestroyRef);
+
   protected readonly status   = signal<ImportStatus>('idle');
   protected readonly fileName = signal<string | null>(null);
   protected readonly message  = signal('');
+
+  private closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.closeTimer !== null) {
+        clearTimeout(this.closeTimer);
+      }
+    });
+  }
 
   protected async onFileChange(event: Event): Promise<void> {
     const file = (event.target as HTMLInputElement).files?.[0];
@@ -121,7 +134,7 @@ export class ImportConfigComponent {
       this.status.set('success');
       this.message.set('Config imported successfully. The dock has been reloaded.');
 
-      setTimeout(() => this.close(), 1500);
+      this.closeTimer = setTimeout(() => this.close(), 1500);
     } catch (err) {
       console.error('ImportConfigComponent: Import failed.', err);
       this.status.set('error');

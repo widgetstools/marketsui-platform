@@ -12,6 +12,7 @@ import {
   Output,
   EventEmitter,
   signal,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
@@ -35,6 +36,7 @@ export interface TreeItemData {
 @Component({
   selector: 'mkt-tree-item',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ButtonModule, TooltipModule, BadgeModule],
   template: `
     <!-- Indent guide -->
@@ -148,7 +150,7 @@ export interface TreeItemData {
     <!-- Children -->
     <ng-container *ngIf="hasChildren && expanded()">
       <mkt-tree-item
-        *ngFor="let child of item.children; let i = index"
+        *ngFor="let child of item.children; let i = index; trackBy: trackById"
         [item]="child"
         [index]="i"
         [total]="item.children?.length ?? 0"
@@ -213,5 +215,9 @@ export class TreeItemComponent {
 
   protected getItemIconUrl(): string {
     return iconIdToSvgUrl(this.item.iconId, this.secondaryColor);
+  }
+
+  protected trackById(_: number, item: TreeItemData): string {
+    return item.id;
   }
 }

@@ -5,6 +5,7 @@ import {
   Component,
   OnInit,
   OnDestroy,
+  inject,
   signal,
   computed,
   ChangeDetectionStrategy,
@@ -201,7 +202,7 @@ const EMPTY_FORM: FormData = {
       }
 
       <!-- Dialog -->
-      <p-dialog [(visible)]="dialogVisible" [header]="dialogTitle" [modal]="true"
+      <p-dialog [visible]="dialogVisible()" (visibleChange)="dialogVisible.set($event)" [header]="dialogTitle()" [modal]="true"
         [style]="{ width: '480px' }" [closable]="true">
         <div [style.display]="'flex'" [style.flex-direction]="'column'" [style.gap]="'14px'"
           [style.padding]="'8px 0'">
@@ -257,7 +258,7 @@ const EMPTY_FORM: FormData = {
         </div>
 
         <ng-template #footer>
-          <button pButton (click)="dialogVisible = false" label="Cancel" severity="secondary" size="small"></button>
+          <button pButton (click)="dialogVisible.set(false)" label="Cancel" severity="secondary" size="small"></button>
           <button pButton (click)="handleSave()" label="Save" severity="warn" size="small"></button>
         </ng-template>
       </p-dialog>
@@ -265,12 +266,12 @@ const EMPTY_FORM: FormData = {
   `,
 })
 export class RegistryEditorComponent implements OnInit, OnDestroy {
-  readonly svc: RegistryEditorService;
+  readonly svc = inject(RegistryEditorService);
   readonly theme = signal<'dark' | 'light'>('dark');
 
-  dialogVisible = false;
-  dialogTitle = 'Add Component';
-  editingId: string | null = null;
+  readonly dialogVisible = signal(false);
+  readonly dialogTitle = signal('Add Component');
+  readonly editingId = signal<string | null>(null);
 
   form: FormData = { ...EMPTY_FORM };
 
@@ -280,10 +281,6 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
   ];
 
   private themeHandler: ((data: { isDark: boolean }) => void) | null = null;
-
-  constructor() {
-    this.svc = new RegistryEditorService();
-  }
 
   ngOnInit(): void {
     injectStyles();
@@ -345,14 +342,14 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
   }
 
   openAddDialog(): void {
-    this.editingId = null;
+    this.editingId.set(null);
     this.form = { ...EMPTY_FORM };
-    this.dialogTitle = 'Add Component';
-    this.dialogVisible = true;
+    this.dialogTitle.set('Add Component');
+    this.dialogVisible.set(true);
   }
 
   openEditDialog(entry: RegistryEntry): void {
-    this.editingId = entry.id;
+    this.editingId.set(entry.id);
     this.form = {
       displayName: entry.displayName,
       framework: entry.framework,
@@ -362,8 +359,8 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
       componentSubType: entry.componentSubType,
       isTemplate: entry.isTemplate,
     };
-    this.dialogTitle = 'Edit Component';
-    this.dialogVisible = true;
+    this.dialogTitle.set('Edit Component');
+    this.dialogVisible.set(true);
   }
 
   handleSave(): void {
@@ -371,8 +368,10 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const currentEditingId = this.editingId();
+
     const entry: RegistryEntry = {
-      id: this.editingId ?? crypto.randomUUID(),
+      id: currentEditingId ?? crypto.randomUUID(),
       displayName: this.form.displayName,
       framework: this.form.framework,
       hostUrl: this.form.hostUrl,
@@ -380,21 +379,17 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
       componentType: this.form.componentType.toUpperCase(),
       componentSubType: this.form.componentSubType.toUpperCase(),
       isTemplate: this.form.isTemplate,
-      createdAt: this.editingId
-        ? (this.svc.entries().find((e) => e.id === this.editingId)?.createdAt ?? new Date().toISOString())
+      createdAt: currentEditingId
+        ? (this.svc.entries().find((e) => e.id === currentEditingId)?.createdAt ?? new Date().toISOString())
         : new Date().toISOString(),
     };
 
-    if (this.editingId) {
-      this.svc.updateEntry(this.editingId, entry);
+    if (currentEditingId) {
+      this.svc.updateEntry(currentEditingId, entry);
     } else {
       this.svc.addEntry(entry);
     }
 
-    this.dialogVisible = false;
-  }
-
-  protected trackById(_: number, entry: RegistryEntry): string {
-    return entry.id;
+    this.dialogVisible.set(false);
   }
 }

@@ -20,7 +20,7 @@ import type {
   PendingSyncRow,
   RoleRow,
   UserProfileRow,
-} from "./types";
+} from './types';
 
 /**
  * The Dexie database for the config service.

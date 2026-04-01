@@ -13,6 +13,7 @@ import {
   signal,
   computed,
   effect,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
@@ -85,6 +86,7 @@ function findMenuItemById(
 @Component({
   selector: 'mkt-dock-editor',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [DockEditorService],
   imports: [CommonModule, TreeItemComponent, ItemFormComponent, ButtonModule, TooltipModule],
   template: `
@@ -99,7 +101,7 @@ function findMenuItemById(
         <div class="flex items-center gap-3.5">
           <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
             <img
-              [src]="iconUrl('lucide:layout-grid')"
+              [src]="layoutGridIcon()"
               width="18" height="18" alt="icon"
               class="hue-rotate-15 saturate-150 sepia"
             />
@@ -129,7 +131,7 @@ function findMenuItemById(
             tooltipPosition="bottom"
           >
             <img
-              [src]="theme() === 'dark' ? iconUrl('lucide:sun') : iconUrl('lucide:moon')"
+              [src]="themeToggleIcon()"
               width="15" height="15" alt="theme"
             />
           </p-button>
@@ -144,7 +146,7 @@ function findMenuItemById(
           <!-- Section header -->
           <div class="flex items-center justify-between px-5 py-3.5 border-b border-border flex-shrink-0">
             <div class="flex items-center gap-2.5">
-              <img [src]="iconUrl('lucide:list-tree')" width="14" height="14" alt="" />
+              <img [src]="listTreeIcon()" width="14" height="14" alt="" />
               <span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
                 Structure
               </span>
@@ -157,7 +159,7 @@ function findMenuItemById(
                 pTooltip="Import"
                 tooltipPosition="top"
               >
-                <img [src]="iconUrl('lucide:upload')" width="12" height="12" alt="" class="mr-1" />
+                <img [src]="uploadIcon()" width="12" height="12" alt="" class="mr-1" />
                 Import
               </p-button>
               <p-button
@@ -167,7 +169,7 @@ function findMenuItemById(
                 pTooltip="Export"
                 tooltipPosition="top"
               >
-                <img [src]="iconUrl('lucide:download')" width="12" height="12" alt="" class="mr-1" />
+                <img [src]="downloadIcon()" width="12" height="12" alt="" class="mr-1" />
                 Export
               </p-button>
             </div>
@@ -181,7 +183,7 @@ function findMenuItemById(
               styleClass="w-full justify-center"
               (onClick)="openAddDialog()"
             >
-              <img [src]="iconUrl('lucide:plus')" width="14" height="14" alt="" class="mr-2" />
+              <img [src]="plusIcon()" width="14" height="14" alt="" class="mr-2" />
               Add Toolbar Button
             </p-button>
           </div>
@@ -216,7 +218,7 @@ function findMenuItemById(
         <!-- Right: Preview -->
         <div class="w-[340px] flex-shrink-0 flex flex-col bg-card overflow-hidden">
           <div class="px-5 py-3.5 border-b border-border flex-shrink-0 flex items-center gap-2.5">
-            <img [src]="iconUrl('lucide:eye')" width="14" height="14" alt="" />
+            <img [src]="eyeIcon()" width="14" height="14" alt="" />
             <span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
               Preview
             </span>
@@ -242,7 +244,7 @@ function findMenuItemById(
                   <span class="font-medium">{{ item.label }}</span>
                   <img
                     *ngIf="item.isContainer"
-                    [src]="iconUrl('lucide:chevron-down')"
+                    [src]="chevronDownIcon()"
                     width="11" height="11" alt=""
                   />
                 </div>
@@ -288,7 +290,7 @@ function findMenuItemById(
       >
         <img
           *ngIf="item.isContainer"
-          [src]="iconUrl('lucide:chevron-down')"
+          [src]="chevronDownIcon()"
           width="12" height="12" alt="" class="text-muted-foreground flex-shrink-0"
         />
         <span *ngIf="!item.isContainer" class="w-3 flex-shrink-0"></span>
@@ -319,6 +321,22 @@ export class DockEditorComponent implements OnInit, OnDestroy {
     this.service.buttons().map(buttonToTree),
   );
 
+  // ─── Static icon URLs computed once per theme change ─────────────
+  private readonly iconColor = computed(() => this.theme() === 'dark' ? '#8b8b9e' : '#5c5c72');
+
+  protected readonly layoutGridIcon  = computed(() => iconIdToSvgUrl('lucide:layout-grid', this.iconColor()));
+  protected readonly listTreeIcon    = computed(() => iconIdToSvgUrl('lucide:list-tree', this.iconColor()));
+  protected readonly uploadIcon      = computed(() => iconIdToSvgUrl('lucide:upload', this.iconColor()));
+  protected readonly downloadIcon    = computed(() => iconIdToSvgUrl('lucide:download', this.iconColor()));
+  protected readonly plusIcon        = computed(() => iconIdToSvgUrl('lucide:plus', this.iconColor()));
+  protected readonly eyeIcon         = computed(() => iconIdToSvgUrl('lucide:eye', this.iconColor()));
+  protected readonly chevronDownIcon = computed(() => iconIdToSvgUrl('lucide:chevron-down', this.iconColor()));
+  protected readonly themeToggleIcon = computed(() =>
+    this.theme() === 'dark'
+      ? iconIdToSvgUrl('lucide:sun', this.iconColor())
+      : iconIdToSvgUrl('lucide:moon', this.iconColor()),
+  );
+
   private editTargetId: string | null = null;
   private addChildParent: { buttonId: string; parentItemId?: string } | null = null;
   private openFinApi: any = (window as any).fin;
@@ -347,9 +365,9 @@ export class DockEditorComponent implements OnInit, OnDestroy {
   // ─── TrackBy ────────────────────────────────────────────────────────
   protected trackById(_: number, item: TreeItemData): string { return item.id; }
 
-  // ─── Icon URL helper ──────────────────────────────────────────────
+  // ─── Icon URL helper (for dynamic per-item icons) ──────────────────
   protected iconUrl(iconId: string): string {
-    return iconIdToSvgUrl(iconId, this.theme() === 'dark' ? '#8b8b9e' : '#5c5c72');
+    return iconIdToSvgUrl(iconId, this.iconColor());
   }
 
   // ─── Theme ──────────────────────────────────────────────────────

@@ -16,7 +16,7 @@
 // empty, the ConfigManager fetches the seed file and populates the
 // APP_REGISTRY, USER_PROFILE, and ROLES tables.
 
-import { ConfigDatabase } from "./db";
+import { ConfigDatabase } from './db';
 import type {
   AppConfigRow,
   AppRegistryRow,
@@ -26,7 +26,7 @@ import type {
   RoleRow,
   SeedData,
   UserProfileRow,
-} from "./types";
+} from './types';
 
 // How often to retry failed REST writes.
 // 10 seconds is a balance: short enough to recover quickly after a
@@ -432,7 +432,7 @@ export class ConfigManager {
       row.createdAt = existing.createdAt;
     }
 
-    await this.db.appConfig.put(row);
+    await this.saveConfig(row);
   }
 
   /**
@@ -639,8 +639,9 @@ export class ConfigManager {
         } else {
           throw new Error(`HTTP ${response.status}`);
         }
-      } catch {
+      } catch (err) {
         // Failed again — increment the retry counter
+        console.warn("Pending sync retry failed for entry", entry.id, err);
         await this.db.pendingSync.update(entry.id, {
           retries: entry.retries + 1,
         });

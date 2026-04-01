@@ -10,8 +10,8 @@ import {
   type HomeSearchResponse,
   type HomeSearchResult
 } from "@openfin/workspace";
-import { launchApp } from "./launch";
-import type { PlatformSettings } from "./types";
+import { launchApp } from './launch';
+import type { PlatformSettings } from './types';
 
 export async function registerHome(
   platformSettings: PlatformSettings,

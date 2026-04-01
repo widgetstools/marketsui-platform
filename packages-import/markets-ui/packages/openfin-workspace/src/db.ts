@@ -14,8 +14,8 @@
 // to the provider's ConfigManager instance).
 
 import { createConfigManager, type ConfigManager } from "@marketsui/config-service";
-import type { DockEditorConfig } from "./dock-config-types";
-import type { RegistryEditorConfig } from "./registry-config-types";
+import type { DockEditorConfig } from './dock-config-types';
+import type { RegistryEditorConfig } from './registry-config-types';
 
 // ─── Singleton management ────────────────────────────────────────────
 

@@ -16,7 +16,10 @@
     "module": "preserve",
     "paths": {
       "@markets/angular-dock-editor": ["../../packages/angular-tools/dock-editor/src/index.ts"],
+      "@markets/angular-registry-editor": ["../../packages/angular-tools/registry-editor/src/index.ts"],
       "@markets/openfin-workspace": ["../../packages/openfin-workspace/src/index.ts"],
+      "@markets/icons-svg": ["../../packages/icons-svg/index.ts"],
+      "@markets/icons-svg/*": ["../../packages/icons-svg/*"],
       "@marketsui/config-service": ["../../packages/config-service/src/index.ts"]
     }
   },

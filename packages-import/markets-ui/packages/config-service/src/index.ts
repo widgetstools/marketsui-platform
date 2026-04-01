@@ -18,10 +18,10 @@
 //   const config = await configManager.getConfig("my-component-1");
 
 // ─── Factory function ───────────────────────────────────────────────
-export { createConfigManager, ConfigManager } from "./config-manager";
+export { createConfigManager, ConfigManager } from './config-manager';
 
 // ─── Database (for advanced use cases only) ──────────────────────────
-export { ConfigDatabase } from "./db";
+export { ConfigDatabase } from './db';
 
 // ─── Types ───────────────────────────────────────────────────────────
 export type {
@@ -33,4 +33,4 @@ export type {
   RoleRow,
   SeedData,
   UserProfileRow,
-} from "./types";
+} from './types';
