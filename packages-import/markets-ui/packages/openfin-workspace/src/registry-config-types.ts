@@ -5,12 +5,11 @@
  * (React or Angular) and manage their template configurations.
  */
 
-/** A single registered component entry. */
+/** A single registered component entry.
+ *  All registered components are template components by design. */
 export interface RegistryEntry {
   /** Unique identifier (UUID). */
   id: string;
-  /** Framework the component is built with. */
-  framework: "react" | "angular";
   /** Route or URL where the component is hosted. */
   hostUrl: string;
   /** Icon identifier (e.g., "mkt:bond", "lucide:home"). */
@@ -19,8 +18,8 @@ export interface RegistryEntry {
   componentType: string;
   /** Component sub-classification (e.g., "CREDIT", "RATES", "MBS"). */
   componentSubType: string;
-  /** Whether to create a template APP_CONFIG row for this component. */
-  isTemplate: boolean;
+  /** Config ID for the template APP_CONFIG row. Defaults to generateTemplateConfigId() output but user can override. */
+  configId: string;
   /** Human-readable display name. */
   displayName: string;
   /** ISO 8601 timestamp of when this entry was created. */

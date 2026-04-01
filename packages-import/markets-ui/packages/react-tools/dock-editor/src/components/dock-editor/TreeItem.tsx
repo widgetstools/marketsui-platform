@@ -65,7 +65,7 @@ export function TreeItem({ item, index, total, depth, onEdit, onRemove, onMoveUp
           <button onClick={() => setExpanded(!expanded)} style={{
             width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center",
             border: "none", background: "none", cursor: "pointer", color: "var(--de-text-tertiary)",
-            borderRadius: 4, padding: 0, flexShrink: 0, transition: "color 0.1s",
+            borderRadius: "var(--de-radius-sm)", padding: 0, flexShrink: 0, transition: "color 0.1s",
           }} onMouseEnter={e => { e.currentTarget.style.color = "var(--de-text)"; }}
              onMouseLeave={e => { e.currentTarget.style.color = "var(--de-text-tertiary)"; }}>
             <Icon icon={expanded ? "lucide:chevron-down" : "lucide:chevron-right"} style={{ width: 13, height: 13 }} />
@@ -80,7 +80,7 @@ export function TreeItem({ item, index, total, depth, onEdit, onRemove, onMoveUp
         {/* Icon chip */}
         <span style={{
           width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center",
-          borderRadius: 5, background: "var(--de-bg-surface)", flexShrink: 0,
+          borderRadius: "var(--de-radius-sm)", background: "var(--de-bg-surface)", flexShrink: 0,
           border: "1px solid var(--de-border-subtle)",
         }}>
           <Icon icon={item.iconId} style={{ width: 13, height: 13, color: "var(--de-text-secondary)" }} />
@@ -99,7 +99,7 @@ export function TreeItem({ item, index, total, depth, onEdit, onRemove, onMoveUp
         {hasChildren && (
           <span style={{
             minWidth: 20, height: 18, display: "flex", alignItems: "center", justifyContent: "center",
-            borderRadius: 9, background: "var(--de-bg-surface)", border: "1px solid var(--de-border-subtle)",
+            borderRadius: "var(--de-radius-md)", background: "var(--de-bg-surface)", border: "1px solid var(--de-border-subtle)",
             fontSize: 10, fontWeight: 600, color: "var(--de-text-tertiary)",
             paddingLeft: 5, paddingRight: 5, flexShrink: 0,
           }}>
@@ -148,7 +148,7 @@ function ActionBtn({ icon, onClick, disabled, title, danger }: {
   return (
     <button onClick={onClick} disabled={disabled} title={title} style={{
       width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
-      border: "none", borderRadius: 4, cursor: disabled ? "default" : "pointer",
+      border: "none", borderRadius: "var(--de-radius-sm)", cursor: disabled ? "default" : "pointer",
       background: "none", padding: 0, transition: "all 0.1s",
       color: disabled ? "var(--de-text-ghost)" : danger ? "var(--de-danger)" : "var(--de-text-secondary)",
       opacity: disabled ? 0.35 : 1,

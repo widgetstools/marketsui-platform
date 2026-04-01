@@ -20,6 +20,7 @@ export {
 // ─── Persistence (config service) ────────────────────────────────────
 export { saveDockConfig, loadDockConfig, clearDockConfig } from './db';
 export { saveRegistryConfig, loadRegistryConfig, clearRegistryConfig } from './db';
+export { getConfigManager } from './db';
 
 // ─── Registry config types ──────────────────────────────────────────
 export {

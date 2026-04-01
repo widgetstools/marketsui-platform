@@ -16,6 +16,8 @@
   "scripts": {
     "dev:reference": "npm run dev -w apps/react-reference-app",
     "dev:angular": "npm run dev -w apps/angular-reference-app",
+    "dev:react-showcase": "npm run dev -w apps/react-showcase",
+    "dev:angular-showcase": "npm run dev -w apps/angular-showcase",
     "dev:container": "npm run dev -w apps/container",
     "dev:web": "npm run dev -w apps/web",
     "dev:wps": "npm run dev -w apps/workspace-platform-starter",

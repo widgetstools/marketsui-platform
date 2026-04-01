@@ -21,34 +21,36 @@ const isInOpenFin = typeof (window as any).fin !== 'undefined';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ButtonModule],
   template: `
-    <div
+    <div data-dock-editor
       class="fixed inset-0 flex flex-col items-center justify-center gap-6 p-8"
-      style="background: #0D1117; color: #E6EDF3; font-family: system-ui, sans-serif;"
+      style="background: var(--de-bg-deep); color: var(--de-text); font-family: var(--de-font);"
     >
       <!-- Icon -->
       <div
-        class="w-14 h-14 rounded-xl flex items-center justify-center"
-        style="background: #161B22; border: 1px solid #30363D;"
+        class="w-14 h-14 flex items-center justify-center"
+        style="background: var(--de-bg-surface); border: 1px solid var(--de-border-strong);
+               border-radius: var(--de-radius-lg);"
       >
-        <i class="pi pi-upload" style="font-size: 24px; color: #2196F3;"></i>
+        <i class="pi pi-upload" style="font-size: 24px; color: var(--de-accent);"></i>
       </div>
 
       <!-- Title -->
       <div class="text-center">
-        <h1 class="text-lg font-semibold m-0">Import Config</h1>
-        <p class="text-sm m-0 mt-1" style="color: #8B949E;">
+        <h1 class="text-lg font-semibold m-0" style="color: var(--de-text);">Import Config</h1>
+        <p class="m-0 mt-1" style="color: var(--de-text-secondary); font-size: 13px;">
           Select a previously exported config JSON file
         </p>
       </div>
 
-      <!-- Drop zone -->
+      <!-- Drop zone — max-width 320px to match React -->
       <div
-        class="w-full max-w-xs rounded-xl p-5 text-center cursor-pointer transition-all"
-        [style.border]="'1.5px dashed ' + (fileName() ? '#2196F3' : '#30363D')"
-        [style.background]="fileName() ? 'rgba(33,150,243,0.07)' : '#161B22'"
+        class="w-full p-5 text-center cursor-pointer transition-all"
+        [style.border]="'1.5px dashed ' + (fileName() ? 'var(--de-accent)' : 'var(--de-border-strong)')"
+        [style.background]="fileName() ? 'var(--de-accent-dim)' : 'var(--de-bg-surface)'"
+        style="border-radius: var(--de-radius-md); max-width: 320px;"
         (click)="fileInput.click()"
       >
-        <span class="text-sm" [style.color]="fileName() ? '#2196F3' : '#8B949E'">
+        <span style="font-size: 13px;" [style.color]="fileName() ? 'var(--de-accent)' : 'var(--de-text-secondary)'">
           {{ fileName() ?? 'Click to select a .json file' }}
         </span>
       </div>
@@ -63,8 +65,9 @@ const isInOpenFin = typeof (window as any).fin !== 'undefined';
       <!-- Status message -->
       <p
         *ngIf="message()"
-        class="text-sm text-center m-0"
-        [style.color]="status() === 'success' ? '#00E5A0' : '#EF5350'"
+        class="text-center m-0"
+        style="font-size: 13px;"
+        [style.color]="status() === 'success' ? 'var(--de-success)' : 'var(--de-danger)'"
       >
         {{ message() }}
       </p>

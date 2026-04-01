@@ -20,7 +20,9 @@
       "@markets/openfin-workspace": ["../../packages/openfin-workspace/src/index.ts"],
       "@markets/icons-svg": ["../../packages/icons-svg/index.ts"],
       "@markets/icons-svg/*": ["../../packages/icons-svg/*"],
-      "@marketsui/config-service": ["../../packages/config-service/src/index.ts"]
+      "@marketsui/config-service": ["../../packages/config-service/src/index.ts"],
+      "@marketsui/tokens": ["../../packages/tokens/index.ts"],
+      "@marketsui/tokens/*": ["../../packages/tokens/*"]
     }
   },
   "angularCompilerOptions": {

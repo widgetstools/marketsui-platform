@@ -316,7 +316,7 @@ export function DockEditorPanel() {
           {isDirty && (
             <button onClick={save} style={{
               display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
-              background: "var(--de-accent)", color: "#0c0c0e", border: "none",
+              background: "var(--de-accent)", color: "var(--de-bg-deep)", border: "none",
               borderRadius: "var(--de-radius-sm)", fontSize: 12, fontWeight: 600,
               fontFamily: "var(--de-font)", cursor: "pointer", letterSpacing: "0.01em",
               boxShadow: "var(--de-shadow-glow)",

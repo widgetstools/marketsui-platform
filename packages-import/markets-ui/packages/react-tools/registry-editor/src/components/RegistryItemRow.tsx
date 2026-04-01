@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { DynamicIcon as Icon } from "@markets/icons-svg/react";
 import type { RegistryEntry } from "@markets/openfin-workspace";
-import { FrameworkBadge } from "./FrameworkBadge";
 
 interface RegistryItemRowProps {
   entry: RegistryEntry;
@@ -37,7 +36,7 @@ export function RegistryItemRow({ entry, onEdit, onTest, onDelete }: RegistryIte
         <Icon icon={entry.iconId} style={{ width: 14, height: 14, color: "var(--de-accent)" }} />
       </div>
 
-      {/* Name + URL */}
+      {/* Name + URL + Config ID */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 500, color: "var(--de-text)", lineHeight: 1.3 }}>
           {entry.displayName}
@@ -48,38 +47,34 @@ export function RegistryItemRow({ entry, onEdit, onTest, onDelete }: RegistryIte
         }}>
           {entry.hostUrl}
         </div>
+        {entry.configId && (
+          <div style={{
+            fontSize: 10, fontFamily: "var(--de-mono)", color: "var(--de-text-tertiary)",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            marginTop: 1,
+          }}>
+            {entry.configId}
+          </div>
+        )}
       </div>
-
-      {/* Framework badge */}
-      <FrameworkBadge framework={entry.framework} />
 
       {/* Type tags */}
       <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
         <span style={{
-          padding: "2px 6px", borderRadius: 3, fontSize: 10, fontWeight: 500,
+          padding: "2px 6px", borderRadius: "var(--de-radius-sm)", fontSize: 10, fontWeight: 500,
           background: "var(--de-accent-dim)", color: "var(--de-accent)",
           textTransform: "uppercase", letterSpacing: "0.04em",
         }}>
           {entry.componentType}
         </span>
         <span style={{
-          padding: "2px 6px", borderRadius: 3, fontSize: 10, fontWeight: 500,
+          padding: "2px 6px", borderRadius: "var(--de-radius-sm)", fontSize: 10, fontWeight: 500,
           background: "var(--de-bg-surface)", color: "var(--de-text-secondary)",
           textTransform: "uppercase", letterSpacing: "0.04em",
         }}>
           {entry.componentSubType}
         </span>
       </div>
-
-      {/* Template indicator */}
-      {entry.isTemplate && (
-        <span style={{
-          padding: "2px 6px", borderRadius: 3, fontSize: 10, fontWeight: 500,
-          background: "rgba(63, 185, 80, 0.12)", color: "#3fb950",
-        }}>
-          TPL
-        </span>
-      )}
 
       {/* Actions (visible on hover) */}
       <div style={{

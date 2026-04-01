@@ -65,7 +65,7 @@ export function setConfigManager(manager: ConfigManager): void {
  * is called multiple times before the first init completes, only one
  * ConfigManager is ever created.
  */
-async function getConfigManager(): Promise<ConfigManager> {
+export async function getConfigManager(): Promise<ConfigManager> {
   // Fast path: instance already exists
   if (configManagerInstance) {
     return configManagerInstance;

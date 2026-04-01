@@ -2,7 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeuix/themes/aura';
+import { marketsPreset } from '@marketsui/tokens/primeng-preset';
 
 import { routes } from './app.routes';
 
@@ -10,12 +10,11 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    // PrimeNG animations (required for dialogs, dropdowns, etc.)
     provideAnimationsAsync(),
-    // PrimeNG theme configuration — Aura is the modern default theme
+    // PrimeNG theme — uses MarketsUI shared preset (zinc palette matching shadcn)
     providePrimeNG({
       theme: {
-        preset: Aura,
+        preset: marketsPreset,
         options: {
           darkModeSelector: '.dark',
         },
