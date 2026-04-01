@@ -131,18 +131,22 @@ export class IconUrlPipe implements PipeTransform {
     .action-btn:hover { background: var(--de-bg-hover); }
     .action-btn.danger { color: var(--de-danger); }
 
-    /* Dialog overlay + container */
+    /* Dialog overlay + container — fixed height, scrollable body, pinned footer */
     .form-overlay { position: fixed; inset: 0; z-index: 1000;
       background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; }
     .form-dialog { background: var(--de-bg-raised); border: 1px solid var(--de-border-strong);
-      border-radius: var(--de-radius-lg); padding: 28px 32px; width: 480px; max-width: 90vw;
-      box-shadow: var(--de-shadow-lg); font-family: var(--de-font); }
-    .form-title { font-size: 18px; font-weight: 700; color: var(--de-text); margin-bottom: 24px; }
+      border-radius: var(--de-radius-lg); width: 480px; max-width: 90vw; max-height: 85vh;
+      box-shadow: var(--de-shadow-lg); font-family: var(--de-font);
+      display: flex; flex-direction: column; overflow: hidden; }
+    .form-header { padding: 24px 28px 0; flex-shrink: 0; }
+    .form-title { font-size: 18px; font-weight: 700; color: var(--de-text); margin-bottom: 0; }
+    .form-body { flex: 1; overflow-y: auto; padding: 20px 28px; }
     .form-field { margin-bottom: 18px; }
     .form-label { display: block; font-size: 12px; font-weight: 500; color: var(--de-text-secondary);
       margin-bottom: 6px; letter-spacing: 0.01em; }
     .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px;
+      padding: 12px 28px; border-top: 1px solid var(--de-border); flex-shrink: 0; }
 
     /* PrimeNG input overrides — match dock theme + React shadcn sizing */
     :host ::ng-deep .form-dialog .p-inputtext {
@@ -275,73 +279,79 @@ export class IconUrlPipe implements PipeTransform {
       @if (dialogVisible()) {
         <div class="form-overlay" (click)="dialogVisible.set(false)">
           <div class="form-dialog" (click)="$event.stopPropagation()">
-            <div class="form-title">{{ dialogTitle() }}</div>
-
-            <!-- Display Name -->
-            <div class="form-field">
-              <label class="form-label">Display Name</label>
-              <input pInputText [ngModel]="form().displayName"
-                (ngModelChange)="updateForm('displayName', $event)"
-                placeholder="e.g., Credit Blotter" />
+            <!-- Header — pinned -->
+            <div class="form-header">
+              <div class="form-title">{{ dialogTitle() }}</div>
             </div>
 
-            <!-- Host URL -->
-            <div class="form-field">
-              <label class="form-label">Host URL</label>
-              <input pInputText [ngModel]="form().hostUrl"
-                (ngModelChange)="updateForm('hostUrl', $event)"
-                placeholder="e.g., http://localhost:5174/views/credit-blotter" />
-            </div>
-
-            <!-- Icon — click to toggle picker -->
-            <div class="form-field">
-              <label class="form-label">Icon</label>
-              <div class="form-icon-display" (click)="iconPickerOpen.set(!iconPickerOpen())">
-                <img [src]="form().iconId | iconUrl : theme()" width="16" height="16" alt="" />
-                <span>{{ form().iconId }}</span>
+            <!-- Scrollable body -->
+            <div class="form-body">
+              <!-- Display Name -->
+              <div class="form-field">
+                <label class="form-label">Display Name</label>
+                <input pInputText [ngModel]="form().displayName"
+                  (ngModelChange)="updateForm('displayName', $event)"
+                  placeholder="e.g., Credit Blotter" />
               </div>
-              @if (iconPickerOpen()) {
-                <input pInputText [ngModel]="iconSearch()"
-                  (ngModelChange)="iconSearch.set($event)"
-                  placeholder="Search icons..." [style.margin-top]="'8px'" />
-                <div class="form-icon-grid">
-                  @for (name of filteredIcons(); track name) {
-                    <div class="form-icon-cell"
-                      [class.selected]="form().iconId === 'mkt:' + name"
-                      (click)="updateForm('iconId', 'mkt:' + name); iconPickerOpen.set(false)"
-                      [title]="name">
-                      <img [src]="'mkt:' + name | iconUrl : theme()" width="16" height="16" [alt]="name" />
-                    </div>
-                  }
+
+              <!-- Host URL -->
+              <div class="form-field">
+                <label class="form-label">Host URL</label>
+                <input pInputText [ngModel]="form().hostUrl"
+                  (ngModelChange)="updateForm('hostUrl', $event)"
+                  placeholder="e.g., http://localhost:5174/views/credit-blotter" />
+              </div>
+
+              <!-- Icon — click to toggle picker -->
+              <div class="form-field">
+                <label class="form-label">Icon</label>
+                <div class="form-icon-display" (click)="iconPickerOpen.set(!iconPickerOpen())">
+                  <img [src]="form().iconId | iconUrl : theme()" width="16" height="16" alt="" />
+                  <span>{{ form().iconId }}</span>
                 </div>
-              }
-            </div>
-
-            <!-- Component Type / SubType — two columns -->
-            <div class="form-row-2col">
-              <div class="form-field">
-                <label class="form-label">Component Type</label>
-                <input pInputText [ngModel]="form().componentType"
-                  (ngModelChange)="updateForm('componentType', $event); onTypeSubTypeChange()"
-                  placeholder="e.g., GRID" />
+                @if (iconPickerOpen()) {
+                  <input pInputText [ngModel]="iconSearch()"
+                    (ngModelChange)="iconSearch.set($event)"
+                    placeholder="Search icons..." [style.margin-top]="'8px'" />
+                  <div class="form-icon-grid" style="height: 160px;">
+                    @for (name of filteredIcons(); track name) {
+                      <div class="form-icon-cell"
+                        [class.selected]="form().iconId === 'mkt:' + name"
+                        (click)="updateForm('iconId', 'mkt:' + name); iconPickerOpen.set(false)"
+                        [title]="name">
+                        <img [src]="'mkt:' + name | iconUrl : theme()" width="16" height="16" [alt]="name" />
+                      </div>
+                    }
+                  </div>
+                }
               </div>
+
+              <!-- Component Type / SubType — two columns -->
+              <div class="form-row-2col">
+                <div class="form-field">
+                  <label class="form-label">Component Type</label>
+                  <input pInputText [ngModel]="form().componentType"
+                    (ngModelChange)="updateForm('componentType', $event); onTypeSubTypeChange()"
+                    placeholder="e.g., GRID" />
+                </div>
+                <div class="form-field">
+                  <label class="form-label">Component SubType</label>
+                  <input pInputText [ngModel]="form().componentSubType"
+                    (ngModelChange)="updateForm('componentSubType', $event); onTypeSubTypeChange()"
+                    placeholder="e.g., CREDIT" />
+                </div>
+              </div>
+
+              <!-- Config ID -->
               <div class="form-field">
-                <label class="form-label">Component SubType</label>
-                <input pInputText [ngModel]="form().componentSubType"
-                  (ngModelChange)="updateForm('componentSubType', $event); onTypeSubTypeChange()"
-                  placeholder="e.g., CREDIT" />
+                <label class="form-label">Config ID</label>
+                <input pInputText class="mono" [ngModel]="form().configId"
+                  (ngModelChange)="updateForm('configId', $event); configIdEdited.set(true)"
+                  placeholder="Auto-generated from type/subtype" />
               </div>
             </div>
 
-            <!-- Config ID -->
-            <div class="form-field">
-              <label class="form-label">Config ID</label>
-              <input pInputText class="mono" [ngModel]="form().configId"
-                (ngModelChange)="updateForm('configId', $event); configIdEdited.set(true)"
-                placeholder="Auto-generated from type/subtype" />
-            </div>
-
-            <!-- Actions -->
+            <!-- Footer — pinned at bottom -->
             <div class="form-actions">
               <button pButton (click)="dialogVisible.set(false)" label="Cancel"
                 severity="secondary" size="small"></button>

@@ -86,87 +86,97 @@ export function RegistryItemForm({ open, title, initial, onSave, onCancel }: Reg
         zIndex: 1000, animation: "de-fade-in 0.15s ease",
       }} />
 
-      {/* Dialog */}
+      {/* Dialog — fixed height, scrollable body, pinned footer */}
       <div style={{
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-        width: 480, maxHeight: "85vh", overflow: "auto",
+        width: 480, maxHeight: "85vh",
         background: "var(--de-bg-raised)", border: "1px solid var(--de-border)",
         borderRadius: "var(--de-radius-lg)", boxShadow: "var(--de-shadow-lg)",
         zIndex: 1001, animation: "de-scale-in 0.2s ease",
-        padding: 24, display: "flex", flexDirection: "column", gap: 16,
+        display: "flex", flexDirection: "column", overflow: "hidden",
       }}>
-        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--de-text)" }}>{title}</div>
+        {/* Header — pinned */}
+        <div style={{ padding: "20px 24px 0", flexShrink: 0 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--de-text)" }}>{title}</div>
+        </div>
 
-        {/* Display Name */}
-        <FieldGroup label="Display Name" error={errors.displayName}>
-          <input value={displayName} onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="e.g., Credit Blotter" style={inputStyle} />
-        </FieldGroup>
-
-        {/* Host URL */}
-        <FieldGroup label="Host URL" error={errors.hostUrl}>
-          <input value={hostUrl} onChange={(e) => setHostUrl(e.target.value)}
-            placeholder="e.g., http://localhost:5174/views/credit-blotter" style={inputStyle} />
-        </FieldGroup>
-
-        {/* Icon */}
-        <FieldGroup label="Icon">
-          <button onClick={() => setIconPickerOpen(!iconPickerOpen)} style={{
-            ...inputStyle, display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
-          }}>
-            <Icon icon={iconId} style={{ width: 16, height: 16, color: "var(--de-accent)" }} />
-            <span style={{ fontSize: 12, color: "var(--de-text-secondary)" }}>{iconId}</span>
-          </button>
-          {iconPickerOpen && (
-            <div style={{
-              marginTop: 6, padding: 8, background: "var(--de-bg-surface)",
-              border: "1px solid var(--de-border)", borderRadius: "var(--de-radius-sm)",
-              maxHeight: 200, overflow: "auto",
-            }}>
-              <input value={iconSearch} onChange={(e) => setIconSearch(e.target.value)}
-                placeholder="Search icons..." style={{ ...inputStyle, marginBottom: 8, fontSize: 11 }} />
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 32px)", gap: 4 }}>
-                {filteredIcons.slice(0, 80).map((name) => (
-                  <button key={name} title={name}
-                    onClick={() => { setIconId(`mkt:${name}`); setIconPickerOpen(false); }}
-                    style={{
-                      width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
-                      background: iconId === `mkt:${name}` ? "var(--de-accent-dim)" : "transparent",
-                      border: "1px solid transparent", borderRadius: "var(--de-radius-sm)", cursor: "pointer",
-                      color: "var(--de-text-secondary)",
-                    }}>
-                    <Icon icon={`mkt:${name}`} style={{ width: 16, height: 16 }} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </FieldGroup>
-
-        {/* Component Type + SubType */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <FieldGroup label="Component Type" error={errors.componentType}>
-            <input value={componentType} onChange={(e) => setComponentType(e.target.value)}
-              placeholder="e.g., GRID" style={inputStyle} />
+        {/* Scrollable body */}
+        <div style={{ flex: 1, overflow: "auto", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Display Name */}
+          <FieldGroup label="Display Name" error={errors.displayName}>
+            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="e.g., Credit Blotter" style={inputStyle} />
           </FieldGroup>
-          <FieldGroup label="Component SubType" error={errors.componentSubType}>
-            <input value={componentSubType} onChange={(e) => setComponentSubType(e.target.value)}
-              placeholder="e.g., CREDIT" style={inputStyle} />
+
+          {/* Host URL */}
+          <FieldGroup label="Host URL" error={errors.hostUrl}>
+            <input value={hostUrl} onChange={(e) => setHostUrl(e.target.value)}
+              placeholder="e.g., http://localhost:5174/views/credit-blotter" style={inputStyle} />
+          </FieldGroup>
+
+          {/* Icon */}
+          <FieldGroup label="Icon">
+            <button onClick={() => setIconPickerOpen(!iconPickerOpen)} style={{
+              ...inputStyle, display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+            }}>
+              <Icon icon={iconId} style={{ width: 16, height: 16, color: "var(--de-accent)" }} />
+              <span style={{ fontSize: 12, color: "var(--de-text-secondary)" }}>{iconId}</span>
+            </button>
+            {iconPickerOpen && (
+              <div style={{
+                marginTop: 6, padding: 8, background: "var(--de-bg-surface)",
+                border: "1px solid var(--de-border)", borderRadius: "var(--de-radius-sm)",
+                height: 160, overflow: "auto",
+              }}>
+                <input value={iconSearch} onChange={(e) => setIconSearch(e.target.value)}
+                  placeholder="Search icons..." style={{ ...inputStyle, marginBottom: 8, fontSize: 11 }} />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 32px)", gap: 4 }}>
+                  {filteredIcons.slice(0, 80).map((name) => (
+                    <button key={name} title={name}
+                      onClick={() => { setIconId(`mkt:${name}`); setIconPickerOpen(false); }}
+                      style={{
+                        width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+                        background: iconId === `mkt:${name}` ? "var(--de-accent-dim)" : "transparent",
+                        border: "1px solid transparent", borderRadius: "var(--de-radius-sm)", cursor: "pointer",
+                        color: "var(--de-text-secondary)",
+                      }}>
+                      <Icon icon={`mkt:${name}`} style={{ width: 16, height: 16 }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </FieldGroup>
+
+          {/* Component Type + SubType */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FieldGroup label="Component Type" error={errors.componentType}>
+              <input value={componentType} onChange={(e) => setComponentType(e.target.value)}
+                placeholder="e.g., GRID" style={inputStyle} />
+            </FieldGroup>
+            <FieldGroup label="Component SubType" error={errors.componentSubType}>
+              <input value={componentSubType} onChange={(e) => setComponentSubType(e.target.value)}
+                placeholder="e.g., CREDIT" style={inputStyle} />
+            </FieldGroup>
+          </div>
+
+          {/* Config ID */}
+          <FieldGroup label="Config ID">
+            <input
+              value={configId}
+              onChange={(e) => { setConfigId(e.target.value); setConfigIdEdited(true); }}
+              placeholder="Auto-generated from type/subtype"
+              style={{ ...inputStyle, fontFamily: "var(--de-mono)" }}
+            />
           </FieldGroup>
         </div>
 
-        {/* Config ID */}
-        <FieldGroup label="Config ID">
-          <input
-            value={configId}
-            onChange={(e) => { setConfigId(e.target.value); setConfigIdEdited(true); }}
-            placeholder="Auto-generated from type/subtype"
-            style={{ ...inputStyle, fontFamily: "var(--de-mono)" }}
-          />
-        </FieldGroup>
-
-        {/* Actions */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
+        {/* Footer — pinned at bottom */}
+        <div style={{
+          display: "flex", justifyContent: "flex-end", gap: 8,
+          padding: "12px 24px", borderTop: "1px solid var(--de-border)",
+          flexShrink: 0,
+        }}>
           <button onClick={onCancel} style={cancelBtnStyle}>Cancel</button>
           <button onClick={handleSave} style={saveBtnStyle}>Save</button>
         </div>
