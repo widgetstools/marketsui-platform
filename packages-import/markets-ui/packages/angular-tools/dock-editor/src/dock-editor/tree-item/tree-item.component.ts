@@ -75,22 +75,25 @@ export interface TreeItemData {
         <img [src]="gripUrl" width="12" height="12" alt="" />
       </span>
 
-      <!-- Icon chip -->
-      <span class="w-6 h-6 flex items-center justify-center rounded bg-card border border-border flex-shrink-0">
+      <!-- Icon chip — 24x24, 6px radius to match React -->
+      <span class="w-6 h-6 flex items-center justify-center bg-card border border-border flex-shrink-0"
+        style="border-radius: var(--de-radius-sm);">
         <img [src]="getItemIconUrl()" width="13" height="13" [alt]="item.label" />
       </span>
 
-      <!-- Label -->
-      <span class="flex-1 text-sm font-medium text-foreground overflow-hidden text-ellipsis whitespace-nowrap pl-1">
+      <!-- Label — 13px to match React (not Tailwind text-sm 14px) -->
+      <span class="flex-1 font-medium text-foreground overflow-hidden text-ellipsis whitespace-nowrap pl-1"
+        style="font-size: 13px;">
         {{ item.label }}
       </span>
 
-      <!-- Child count badge -->
+      <!-- Child count badge — 10px radius (stadium), 5px padding to match React -->
       <span
         *ngIf="hasChildren"
-        class="min-w-[20px] h-[18px] flex items-center justify-center rounded-full
+        class="min-w-[20px] h-[18px] flex items-center justify-center
                bg-card border border-border text-[10px] font-semibold text-muted-foreground
-               px-1.5 flex-shrink-0"
+               flex-shrink-0"
+        style="border-radius: 10px; padding: 0 5px;"
       >
         {{ item.childCount ?? item.children?.length ?? 0 }}
       </span>

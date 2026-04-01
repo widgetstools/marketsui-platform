@@ -123,7 +123,7 @@ export class IconUrlPipe implements PipeTransform {
     .reg-name { font-size: 13px; font-weight: 500; color: var(--de-text); line-height: 1.3; }
     .reg-url { font-size: 11px; color: var(--de-text-tertiary); white-space: nowrap;
       overflow: hidden; text-overflow: ellipsis; }
-    .reg-tag { padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;
+    .reg-tag { padding: 2px 6px; border-radius: var(--de-radius-sm); font-size: 10px; font-weight: 500;
       text-transform: uppercase; letter-spacing: 0.04em; }
     .action-btn { background: var(--de-bg-surface); border: 1px solid var(--de-border);
       border-radius: var(--de-radius-sm); padding: 4px; cursor: pointer;

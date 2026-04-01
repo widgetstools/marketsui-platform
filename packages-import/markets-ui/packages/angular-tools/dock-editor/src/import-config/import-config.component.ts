@@ -37,20 +37,20 @@ const isInOpenFin = typeof (window as any).fin !== 'undefined';
       <!-- Title -->
       <div class="text-center">
         <h1 class="text-lg font-semibold m-0" style="color: var(--de-text);">Import Config</h1>
-        <p class="text-sm m-0 mt-1" style="color: var(--de-text-secondary);">
+        <p class="m-0 mt-1" style="color: var(--de-text-secondary); font-size: 13px;">
           Select a previously exported config JSON file
         </p>
       </div>
 
-      <!-- Drop zone -->
+      <!-- Drop zone — max-width 320px to match React -->
       <div
-        class="w-full max-w-xs p-5 text-center cursor-pointer transition-all"
+        class="w-full p-5 text-center cursor-pointer transition-all"
         [style.border]="'1.5px dashed ' + (fileName() ? 'var(--de-accent)' : 'var(--de-border-strong)')"
         [style.background]="fileName() ? 'var(--de-accent-dim)' : 'var(--de-bg-surface)'"
-        style="border-radius: var(--de-radius-md);"
+        style="border-radius: var(--de-radius-md); max-width: 320px;"
         (click)="fileInput.click()"
       >
-        <span class="text-sm" [style.color]="fileName() ? 'var(--de-accent)' : 'var(--de-text-secondary)'">
+        <span style="font-size: 13px;" [style.color]="fileName() ? 'var(--de-accent)' : 'var(--de-text-secondary)'">
           {{ fileName() ?? 'Click to select a .json file' }}
         </span>
       </div>
@@ -65,7 +65,8 @@ const isInOpenFin = typeof (window as any).fin !== 'undefined';
       <!-- Status message -->
       <p
         *ngIf="message()"
-        class="text-sm text-center m-0"
+        class="text-center m-0"
+        style="font-size: 13px;"
         [style.color]="status() === 'success' ? 'var(--de-success)' : 'var(--de-danger)'"
       >
         {{ message() }}
