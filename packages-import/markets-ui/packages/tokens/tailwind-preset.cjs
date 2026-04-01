@@ -54,12 +54,19 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        /* Brand — warm amber for trading branding, editor accents */
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          foreground: "hsl(var(--brand-foreground))",
+        },
         /* Trading semantic colors */
         bid: "hsl(var(--mdl-bid))",
         ask: "hsl(var(--mdl-ask))",
         success: "hsl(var(--mdl-success))",
         "pnl-positive": "hsl(var(--mdl-pnl-positive))",
         "pnl-negative": "hsl(var(--mdl-pnl-negative))",
+        "flash-up": "hsl(var(--mdl-flash-up))",
+        "flash-down": "hsl(var(--mdl-flash-down))",
       },
       /* ── Border Radius ── */
       borderRadius: {

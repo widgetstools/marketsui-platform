@@ -202,7 +202,7 @@ export class TreeItemComponent {
   private get secondaryColor(): string { return this.theme === 'dark' ? '#8b8b9e' : '#5c5c72'; }
   private get tertiaryColor(): string { return this.theme === 'dark' ? '#5c5c6e' : '#8e8ea0'; }
   private get ghostColor(): string { return this.theme === 'dark' ? '#3a3a4a' : '#b8b8c8'; }
-  private get dangerColor(): string { return this.theme === 'dark' ? '#e5534b' : '#cf4844'; }
+  private get dangerColor(): string { return this.theme === 'dark' ? '#e5534b' : '#dc2626'; }
 
   protected get chevronDownUrl(): string  { return iconIdToSvgUrl('lucide:chevron-down',  this.tertiaryColor); }
   protected get chevronRightUrl(): string { return iconIdToSvgUrl('lucide:chevron-right', this.tertiaryColor); }
