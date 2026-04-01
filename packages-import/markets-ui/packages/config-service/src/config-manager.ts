@@ -16,7 +16,7 @@
 // empty, the ConfigManager fetches the seed file and populates the
 // APP_REGISTRY, USER_PROFILE, and ROLES tables.
 
-import { ConfigDatabase } from "./db";
+import { ConfigDatabase } from './db';
 import type {
   AppConfigRow,
   AppRegistryRow,
@@ -26,7 +26,7 @@ import type {
   RoleRow,
   SeedData,
   UserProfileRow,
-} from "./types";
+} from './types';
 
 // How often to retry failed REST writes.
 // 10 seconds is a balance: short enough to recover quickly after a
