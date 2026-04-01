@@ -4,11 +4,13 @@ declare const fin: any;
 import {
   Component,
   OnInit,
-  OnDestroy,
+  DestroyRef,
   inject,
   signal,
   computed,
   ChangeDetectionStrategy,
+  Pipe,
+  PipeTransform,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +21,6 @@ import { iconIdToSvgUrl } from '@markets/angular-dock-editor';
 
 // PrimeNG imports
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 
@@ -57,62 +58,6 @@ const EDITOR_CSS = `
   --de-shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
 }
 
-/* PrimeNG dialog portal — renders outside the [data-dock-editor] container,
-   so we style the overlay mask and dialog panel globally to match the theme. */
-/* Scoped to .registry-editor-dialog to avoid polluting other PrimeNG dialogs */
-.p-dialog-mask:has(.registry-editor-dialog) {
-  background: rgba(0, 0, 0, 0.5) !important;
-}
-.registry-editor-dialog.p-dialog {
-  background: #18181c !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  border-radius: 10px !important;
-  color: #e8e8ec !important;
-  font-family: 'DM Sans', system-ui, sans-serif !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-}
-.registry-editor-dialog.p-dialog .p-dialog-header {
-  background: transparent !important;
-  color: #e8e8ec !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  padding: 16px 20px !important;
-}
-.registry-editor-dialog.p-dialog .p-dialog-header .p-dialog-title {
-  font-size: 14px !important;
-  font-weight: 600 !important;
-}
-.registry-editor-dialog.p-dialog .p-dialog-content {
-  background: transparent !important;
-  color: #e8e8ec !important;
-  padding: 16px 20px !important;
-}
-.registry-editor-dialog.p-dialog .p-dialog-footer {
-  background: transparent !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
-  padding: 12px 20px !important;
-}
-
-/* Light theme dialog — when the editor is in light mode, override dialog colors */
-[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .registry-editor-dialog.p-dialog,
-body.light-registry-editor .registry-editor-dialog.p-dialog {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  color: #1a1a2e !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
-}
-[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .registry-editor-dialog.p-dialog .p-dialog-header,
-body.light-registry-editor .registry-editor-dialog.p-dialog .p-dialog-header {
-  color: #1a1a2e !important;
-  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
-}
-[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .registry-editor-dialog.p-dialog .p-dialog-content,
-body.light-registry-editor .registry-editor-dialog.p-dialog .p-dialog-content {
-  color: #1a1a2e !important;
-}
-[data-dock-editor][data-theme="light"] ~ .p-dialog-mask .registry-editor-dialog.p-dialog .p-dialog-footer,
-body.light-registry-editor .registry-editor-dialog.p-dialog .p-dialog-footer {
-  border-top-color: rgba(0, 0, 0, 0.08) !important;
-}
 `;
 
 let cssInjected = false;
@@ -140,13 +85,30 @@ const EMPTY_FORM: FormData = {
   configId: '',
 };
 
+/**
+ * Pure pipe — resolves an icon ID to a themed data URL or Iconify CDN URL.
+ * Used in templates to avoid method calls that recalculate on every CD cycle.
+ * Pure pipes only re-evaluate when their input values change.
+ */
+@Pipe({ name: 'iconUrl', standalone: true, pure: true })
+export class IconUrlPipe implements PipeTransform {
+  transform(iconId: string, theme: 'dark' | 'light'): string {
+    const accentColor = theme === 'dark' ? '#e8a849' : '#c4882e';
+    const [prefix, name] = iconId.split(':');
+    if (prefix === 'mkt' && name) {
+      return iconIdToSvgUrl(iconId, accentColor);
+    }
+    return `https://api.iconify.design/${iconId.replace(':', '/')}.svg?color=${encodeURIComponent(accentColor)}`;
+  }
+}
+
 @Component({
   selector: 'mkt-registry-editor',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule, FormsModule,
-    ButtonModule, DialogModule, InputTextModule,
+    ButtonModule, InputTextModule, IconUrlPipe,
   ],
   providers: [RegistryEditorService],
   styles: [`
@@ -168,6 +130,66 @@ const EMPTY_FORM: FormData = {
       color: var(--de-text-secondary); display: flex; align-items: center; justify-content: center; }
     .action-btn:hover { background: var(--de-bg-hover); }
     .action-btn.danger { color: var(--de-danger); }
+
+    /* Dialog overlay + container */
+    .form-overlay { position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; }
+    .form-dialog { background: var(--de-bg-raised); border: 1px solid var(--de-border-strong);
+      border-radius: var(--de-radius-lg); padding: 28px 32px; width: 480px; max-width: 90vw;
+      box-shadow: var(--de-shadow-lg); font-family: var(--de-font); }
+    .form-title { font-size: 18px; font-weight: 700; color: var(--de-text); margin-bottom: 24px; }
+    .form-field { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 12px; font-weight: 500; color: var(--de-accent);
+      margin-bottom: 6px; letter-spacing: 0.01em; }
+    .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+
+    /* PrimeNG input overrides — match dock theme + React shadcn sizing */
+    :host ::ng-deep .form-dialog .p-inputtext {
+      width: 100%; background: var(--de-bg-surface); color: var(--de-text);
+      border: 1px solid var(--de-border-strong); border-radius: var(--de-radius-md);
+      font-family: var(--de-font); font-size: 13px; padding: 10px 14px;
+      transition: border-color 0.15s ease;
+    }
+    :host ::ng-deep .form-dialog .p-inputtext::placeholder { color: var(--de-text-ghost); }
+    :host ::ng-deep .form-dialog .p-inputtext:focus,
+    :host ::ng-deep .form-dialog .p-inputtext:enabled:focus {
+      border-color: var(--de-accent); box-shadow: none; outline: none;
+    }
+    :host ::ng-deep .form-dialog .p-inputtext.mono {
+      font-family: var(--de-mono); font-size: 12px;
+    }
+
+    /* PrimeNG button overrides for dialog — compact, matching React */
+    :host ::ng-deep .form-actions .p-button {
+      font-size: 13px; font-weight: 600; font-family: var(--de-font);
+      padding: 8px 20px; border-radius: var(--de-radius-md);
+    }
+    :host ::ng-deep .form-actions .p-button.p-button-secondary {
+      background: var(--de-bg-surface); color: var(--de-text-secondary);
+      border: 1px solid var(--de-border-strong);
+    }
+    :host ::ng-deep .form-actions .p-button.p-button-secondary:hover {
+      background: var(--de-bg-hover);
+    }
+
+    /* Icon display row — click to open picker */
+    .form-icon-display { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      background: var(--de-bg-surface); border: 1px solid var(--de-border-strong);
+      border-radius: var(--de-radius-md); cursor: pointer; transition: border-color 0.15s ease;
+      font-size: 13px; color: var(--de-text); }
+    .form-icon-display:hover { border-color: var(--de-accent); }
+
+    /* Icon picker grid */
+    .form-icon-grid { max-height: 160px; overflow-y: auto; display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 4px;
+      padding: 6px; margin-top: 8px; background: var(--de-bg-surface);
+      border-radius: var(--de-radius-sm); border: 1px solid var(--de-border); }
+    .form-icon-cell { width: 34px; height: 34px; display: flex; align-items: center;
+      justify-content: center; border-radius: 4px; cursor: pointer;
+      border: 1px solid transparent; transition: all 0.1s ease; }
+    .form-icon-cell:hover { background: var(--de-bg-hover); border-color: var(--de-border-strong); }
+    .form-icon-cell.selected { background: var(--de-accent-dim); border-color: var(--de-accent); }
   `],
   template: `
     <div data-dock-editor [attr.data-theme]="theme()"
@@ -214,7 +236,7 @@ const EMPTY_FORM: FormData = {
           @for (entry of svc.entries(); track entry.id) {
             <div class="reg-row">
               <div class="reg-icon-box">
-                <img [src]="getIconUrl(entry.iconId)" width="14" height="14" alt="" />
+                <img [src]="entry.iconId | iconUrl : theme()" width="14" height="14" alt="" />
               </div>
               <div [style.flex]="'1'" [style.min-width]="'0'">
                 <div class="reg-name">{{ entry.displayName }}</div>
@@ -249,97 +271,103 @@ const EMPTY_FORM: FormData = {
         </div>
       }
 
-      <!-- Dialog -->
-      <p-dialog [visible]="dialogVisible()" (visibleChange)="dialogVisible.set($event)" [header]="dialogTitle()" [modal]="true"
-        [style]="{ width: '480px' }" [closable]="true" styleClass="registry-editor-dialog">
-        <div [style.display]="'flex'" [style.flex-direction]="'column'" [style.gap]="'14px'"
-          [style.padding]="'8px 0'">
+      <!-- Custom Dialog — matches React form exactly -->
+      @if (dialogVisible()) {
+        <div class="form-overlay" (click)="dialogVisible.set(false)">
+          <div class="form-dialog" (click)="$event.stopPropagation()">
+            <div class="form-title">{{ dialogTitle() }}</div>
 
-          <div>
-            <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Display Name *</label>
-            <input pInputText [(ngModel)]="form.displayName" [style.width]="'100%'" />
-          </div>
-
-          <div>
-            <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Host URL *</label>
-            <input pInputText [(ngModel)]="form.hostUrl" placeholder="http://localhost:5174/views/..."
-              [style.width]="'100%'" />
-          </div>
-
-          <div [style.display]="'grid'" [style.grid-template-columns]="'1fr 1fr'" [style.gap]="'12px'">
-            <div>
-              <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Component Type *</label>
-              <input pInputText [(ngModel)]="form.componentType" placeholder="GRID"
-                [style.width]="'100%'" (ngModelChange)="onTypeSubTypeChange()" />
+            <!-- Display Name -->
+            <div class="form-field">
+              <label class="form-label">Display Name</label>
+              <input pInputText [ngModel]="form().displayName"
+                (ngModelChange)="updateForm('displayName', $event)"
+                placeholder="e.g., Credit Blotter" />
             </div>
-            <div>
-              <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Component SubType *</label>
-              <input pInputText [(ngModel)]="form.componentSubType" placeholder="CREDIT"
-                [style.width]="'100%'" (ngModelChange)="onTypeSubTypeChange()" />
+
+            <!-- Host URL -->
+            <div class="form-field">
+              <label class="form-label">Host URL</label>
+              <input pInputText [ngModel]="form().hostUrl"
+                (ngModelChange)="updateForm('hostUrl', $event)"
+                placeholder="e.g., http://localhost:5174/views/credit-blotter" />
             </div>
-          </div>
 
-          <div>
-            <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Config ID</label>
-            <input pInputText [(ngModel)]="form.configId" [style.width]="'100%'"
-              [style.font-family]="'var(--de-mono)'" [style.color]="'var(--de-accent)'"
-              [style.font-size]="'12px'"
-              (ngModelChange)="configIdEdited.set(true)" />
-          </div>
-
-          <!-- Icon Picker -->
-          <div>
-            <label [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">Icon</label>
-            <input pInputText [(ngModel)]="iconSearchValue" [style.width]="'100%'"
-              placeholder="Search icons..." [style.margin-bottom]="'8px'"
-              (ngModelChange)="iconSearch.set($event)" />
-            <div [style.max-height]="'160px'" [style.overflow-y]="'auto'"
-              [style.display]="'grid'" [style.grid-template-columns]="'repeat(auto-fill, minmax(32px, 1fr))'"
-              [style.gap]="'4px'" [style.padding]="'4px'"
-              [style.background]="'var(--de-bg-surface)'" [style.border-radius]="'var(--de-radius-sm)'"
-              [style.border]="'1px solid var(--de-border)'">
-              @for (iconId of filteredIcons(); track iconId) {
-                <div (click)="form.iconId = 'mkt:' + iconId"
-                  [style.width]="'32px'" [style.height]="'32px'"
-                  [style.display]="'flex'" [style.align-items]="'center'" [style.justify-content]="'center'"
-                  [style.border-radius]="'4px'" [style.cursor]="'pointer'"
-                  [style.border]="form.iconId === 'mkt:' + iconId ? '1px solid var(--de-accent)' : '1px solid transparent'"
-                  [style.background]="form.iconId === 'mkt:' + iconId ? 'var(--de-accent-dim)' : 'transparent'"
-                  [title]="iconId">
-                  <img [src]="getIconUrl('mkt:' + iconId)" width="16" height="16" [alt]="iconId" />
+            <!-- Icon — click to toggle picker -->
+            <div class="form-field">
+              <label class="form-label">Icon</label>
+              <div class="form-icon-display" (click)="iconPickerOpen.set(!iconPickerOpen())">
+                <img [src]="form().iconId | iconUrl : theme()" width="16" height="16" alt="" />
+                <span>{{ form().iconId }}</span>
+              </div>
+              @if (iconPickerOpen()) {
+                <input pInputText [ngModel]="iconSearch()"
+                  (ngModelChange)="iconSearch.set($event)"
+                  placeholder="Search icons..." [style.margin-top]="'8px'" />
+                <div class="form-icon-grid">
+                  @for (name of filteredIcons(); track name) {
+                    <div class="form-icon-cell"
+                      [class.selected]="form().iconId === 'mkt:' + name"
+                      (click)="updateForm('iconId', 'mkt:' + name); iconPickerOpen.set(false)"
+                      [title]="name">
+                      <img [src]="'mkt:' + name | iconUrl : theme()" width="16" height="16" [alt]="name" />
+                    </div>
+                  }
                 </div>
               }
             </div>
-            @if (form.iconId) {
-              <div [style.display]="'flex'" [style.align-items]="'center'" [style.gap]="'8px'"
-                [style.margin-top]="'6px'" [style.font-size]="'11px'" [style.color]="'var(--de-text-secondary)'">
-                <img [src]="getIconUrl(form.iconId)" width="14" height="14" alt="" />
-                {{ form.iconId }}
+
+            <!-- Component Type / SubType — two columns -->
+            <div class="form-row-2col">
+              <div class="form-field">
+                <label class="form-label">Component Type</label>
+                <input pInputText [ngModel]="form().componentType"
+                  (ngModelChange)="updateForm('componentType', $event); onTypeSubTypeChange()"
+                  placeholder="e.g., GRID" />
               </div>
-            }
+              <div class="form-field">
+                <label class="form-label">Component SubType</label>
+                <input pInputText [ngModel]="form().componentSubType"
+                  (ngModelChange)="updateForm('componentSubType', $event); onTypeSubTypeChange()"
+                  placeholder="e.g., CREDIT" />
+              </div>
+            </div>
+
+            <!-- Config ID -->
+            <div class="form-field">
+              <label class="form-label">Config ID</label>
+              <input pInputText class="mono" [ngModel]="form().configId"
+                (ngModelChange)="updateForm('configId', $event); configIdEdited.set(true)"
+                placeholder="Auto-generated from type/subtype" />
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions">
+              <button pButton (click)="dialogVisible.set(false)" label="Cancel"
+                severity="secondary" size="small"></button>
+              <button pButton (click)="handleSave()" label="Save"
+                severity="warn" size="small"></button>
+            </div>
           </div>
         </div>
-
-        <ng-template #footer>
-          <button pButton (click)="dialogVisible.set(false)" label="Cancel" severity="secondary" size="small"></button>
-          <button pButton (click)="handleSave()" label="Save" severity="warn" size="small"></button>
-        </ng-template>
-      </p-dialog>
+      }
     </div>
   `,
 })
-export class RegistryEditorComponent implements OnInit, OnDestroy {
+export class RegistryEditorComponent implements OnInit {
   readonly svc = inject(RegistryEditorService);
-  readonly theme = signal<'dark' | 'light'>('dark');
+  private readonly destroyRef = inject(DestroyRef);
 
+  readonly theme = signal<'dark' | 'light'>('dark');
   readonly dialogVisible = signal(false);
   readonly dialogTitle = signal('Add Component');
   readonly editingId = signal<string | null>(null);
 
-  form: FormData = { ...EMPTY_FORM };
-  iconSearchValue = '';
+  // Form state as signal — required for OnPush change detection
+  readonly form = signal<FormData>({ ...EMPTY_FORM });
 
   readonly configIdEdited = signal(false);
+  readonly iconPickerOpen = signal(false);
   readonly iconSearch = signal('');
   readonly filteredIcons = computed(() => {
     const q = this.iconSearch().toLowerCase();
@@ -351,7 +379,6 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
   });
 
   private themeHandler: ((data: { isDark: boolean }) => void) | null = null;
-  private destroyed = false;
 
   ngOnInit(): void {
     injectStyles();
@@ -359,41 +386,37 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
     this.syncTheme();
   }
 
-  ngOnDestroy(): void {
-    this.destroyed = true;
-    // Unsubscribe IAB theme listener
-    if (this.themeHandler) {
-      try {
-        fin.InterApplicationBus.unsubscribe(
-          { uuid: fin.me.identity.uuid }, 'theme-changed', this.themeHandler,
-        );
-      } catch { /* cleanup */ }
-    }
-    // Remove body class used by PrimeNG dialog portal
-    document.body.classList.remove('light-registry-editor');
-  }
-
+  /** Subscribe to OpenFin theme. Uses DestroyRef for cleanup instead of ngOnDestroy. */
   private syncTheme(): void {
     if (typeof fin === 'undefined') return;
 
-    // Guard async work against component destruction
+    let active = true;
+    this.destroyRef.onDestroy(() => {
+      active = false;
+      // Unsubscribe IAB theme listener
+      if (this.themeHandler) {
+        try {
+          fin.InterApplicationBus.unsubscribe(
+            { uuid: fin.me.identity.uuid }, 'theme-changed', this.themeHandler,
+          );
+        } catch { /* cleanup */ }
+      }
+    });
+
+    // Read initial theme
     (async () => {
       try {
         const platform = fin.Platform.getCurrentSync();
         const scheme = await platform.Theme.getSelectedScheme();
-        if (this.destroyed) return; // Component destroyed while awaiting
-        const t = scheme === 'dark' ? 'dark' : 'light';
-        this.theme.set(t);
-        document.body.classList.toggle('light-registry-editor', t === 'light');
+        if (!active) return;
+        this.theme.set(scheme === 'dark' ? 'dark' : 'light');
       } catch { /* keep default */ }
     })();
 
+    // Listen for theme changes
     this.themeHandler = (data: { isDark: boolean }) => {
-      const t = data.isDark ? 'dark' : 'light';
-      this.theme.set(t);
-      document.body.classList.toggle('light-registry-editor', t === 'light');
+      this.theme.set(data.isDark ? 'dark' : 'light');
     };
-
     try {
       fin.InterApplicationBus.subscribe(
         { uuid: fin.me.identity.uuid }, 'theme-changed', this.themeHandler,
@@ -402,60 +425,56 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
   }
 
   toggleTheme(): void {
-    const next = this.theme() === 'dark' ? 'light' : 'dark';
-    this.theme.set(next);
-    // Toggle body class so PrimeNG dialog portal (outside component tree)
-    // can pick up the light theme via CSS selectors
-    document.body.classList.toggle('light-registry-editor', next === 'light');
+    this.theme.set(this.theme() === 'dark' ? 'light' : 'dark');
   }
 
-  getIconUrl(iconId: string): string {
-    const [prefix, name] = iconId.split(':');
-    if (prefix === 'mkt' && name) {
-      return iconIdToSvgUrl(iconId, this.theme() === 'dark' ? '#e8a849' : '#c4882e');
-    }
-    return `https://api.iconify.design/${iconId.replace(':', '/')}.svg?color=${
-      encodeURIComponent(this.theme() === 'dark' ? '#e8a849' : '#c4882e')
-    }`;
+  /** Update a single form field immutably — triggers OnPush CD */
+  updateForm(field: keyof FormData, value: string): void {
+    this.form.update(f => ({ ...f, [field]: value }));
   }
 
   onTypeSubTypeChange(): void {
     if (!this.configIdEdited()) {
-      this.form.configId = this.form.componentType && this.form.componentSubType
-        ? generateTemplateConfigId(this.form.componentType.toUpperCase(), this.form.componentSubType.toUpperCase())
-        : '';
+      const f = this.form();
+      if (f.componentType && f.componentSubType) {
+        this.form.update(prev => ({
+          ...prev,
+          configId: generateTemplateConfigId(prev.componentType.toUpperCase(), prev.componentSubType.toUpperCase()),
+        }));
+      }
     }
   }
 
   openAddDialog(): void {
     this.editingId.set(null);
-    this.form = { ...EMPTY_FORM };
+    this.form.set({ ...EMPTY_FORM });
     this.configIdEdited.set(false);
     this.iconSearch.set('');
-    this.iconSearchValue = '';
+    this.iconPickerOpen.set(false);
     this.dialogTitle.set('Add Component');
     this.dialogVisible.set(true);
   }
 
   openEditDialog(entry: RegistryEntry): void {
     this.editingId.set(entry.id);
-    this.form = {
+    this.form.set({
       displayName: entry.displayName,
       hostUrl: entry.hostUrl,
       iconId: entry.iconId,
       componentType: entry.componentType,
       componentSubType: entry.componentSubType,
       configId: entry.configId ?? '',
-    };
+    });
     this.configIdEdited.set(true);
     this.iconSearch.set('');
-    this.iconSearchValue = '';
+    this.iconPickerOpen.set(false);
     this.dialogTitle.set('Edit Component');
     this.dialogVisible.set(true);
   }
 
   handleSave(): void {
-    if (!this.form.displayName || !this.form.hostUrl || !this.form.componentType || !this.form.componentSubType) {
+    const f = this.form();
+    if (!f.displayName || !f.hostUrl || !f.componentType || !f.componentSubType) {
       return;
     }
 
@@ -463,14 +482,14 @@ export class RegistryEditorComponent implements OnInit, OnDestroy {
 
     const entry: RegistryEntry = {
       id: currentEditingId ?? crypto.randomUUID(),
-      displayName: this.form.displayName,
-      hostUrl: this.form.hostUrl,
-      iconId: this.form.iconId,
-      componentType: this.form.componentType.toUpperCase(),
-      componentSubType: this.form.componentSubType.toUpperCase(),
-      configId: this.form.configId || generateTemplateConfigId(
-        this.form.componentType.toUpperCase(),
-        this.form.componentSubType.toUpperCase(),
+      displayName: f.displayName,
+      hostUrl: f.hostUrl,
+      iconId: f.iconId,
+      componentType: f.componentType.toUpperCase(),
+      componentSubType: f.componentSubType.toUpperCase(),
+      configId: f.configId || generateTemplateConfigId(
+        f.componentType.toUpperCase(),
+        f.componentSubType.toUpperCase(),
       ),
       createdAt: currentEditingId
         ? (this.svc.entries().find((e) => e.id === currentEditingId)?.createdAt ?? new Date().toISOString())
