@@ -2,9 +2,14 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
-import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
+import { ModuleRegistry, type ColDef } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { SharedStateService } from '../services/shared-state.service';
+import {
+  SideCellRenderer,
+  FilledAmountRenderer,
+  StatusBadgeRenderer,
+} from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey('');
@@ -71,10 +76,7 @@ export class OrderBlotterWidget {
       field: 'side',
       headerName: 'SIDE',
       flex: 0.5,
-      cellRenderer: (p: ICellRendererParams) => {
-        const c = p.value === 'Buy' ? 'var(--bn-green)' : 'var(--bn-red)';
-        return `<span style="font-size:9px;font-weight:700;color:${c}">${String(p.value).toUpperCase()}</span>`;
-      },
+      cellRenderer: SideCellRenderer,
     },
     {
       field: 'type',
@@ -93,11 +95,7 @@ export class OrderBlotterWidget {
       headerName: 'FILLED',
       flex: 0.6,
       type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams) => {
-        const row = p.data;
-        const c = row.filled === row.qty ? 'var(--bn-green)' : '#f0b90b';
-        return `<span style="color:${c}">${p.value}</span>`;
-      },
+      cellRenderer: FilledAmountRenderer,
     },
     {
       field: 'px',
@@ -118,15 +116,7 @@ export class OrderBlotterWidget {
       field: 'status',
       headerName: 'STATUS',
       flex: 0.7,
-      cellRenderer: (p: ICellRendererParams) => {
-        const s = p.value;
-        let cls = 'badge-new';
-        if (s === 'Filled') cls = 'badge-filled';
-        else if (s === 'Partial') cls = 'badge-partial';
-        else if (s === 'Pending') cls = 'badge-new';
-        else if (s === 'Cancelled') cls = 'badge-cancel';
-        return `<span class="font-mono-fi ${cls}" style="font-size:9px;padding:1px 6px;border-radius:2px">${s}</span>`;
-      },
+      cellRenderer: StatusBadgeRenderer,
     },
   ];
 

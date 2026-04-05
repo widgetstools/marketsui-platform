@@ -6,6 +6,7 @@ import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams } from 'ag-grid-community';
 import { fiGridTheme } from '@/lib/agGridTheme';
 import { MARKET_INDICES, YC_CHART_DATA } from '@/data/tradingData';
+import { ChangeValueRenderer, YtdValueRenderer } from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 
@@ -62,14 +63,8 @@ export function MarketIndices() {
   const colDefs = useMemo<ColDef<MarketIndex>[]>(()=>[
     {field:'name', headerName:'INDEX', flex:1},
     {field:'val',  headerName:'LAST',  width:90, type:'numericColumn', valueFormatter:p=>p.value?.toFixed(2)},
-    {field:'chg',  headerName:'CHG',   width:80, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
-      const v=p.value; const color=v>=0?'var(--bn-green)':'var(--bn-red)';
-      return `<span style="color:${color}">${v>=0?'+':''}${v.toFixed(2)}</span>`;
-    }},
-    {field:'ytd',  headerName:'YTD',   width:80, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
-      const v=p.value as string; const color=v.startsWith('+')?'var(--bn-green)':'var(--bn-red)';
-      return `<span style="color:${color}">${v}</span>`;
-    }},
+    {field:'chg',  headerName:'CHG',   width:80, type:'numericColumn', cellRenderer:ChangeValueRenderer},
+    {field:'ytd',  headerName:'YTD',   width:80, type:'numericColumn', cellRenderer:YtdValueRenderer},
   ],[]);
 
   const defaultColDef = useMemo<ColDef>(()=>({

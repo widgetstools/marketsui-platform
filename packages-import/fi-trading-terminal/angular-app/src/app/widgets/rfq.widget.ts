@@ -6,6 +6,7 @@ import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { SharedStateService } from '../services/shared-state.service';
+import { RfqStatusRenderer } from '@design-system/cell-renderers';
 import {
   BONDS,
   DEALERS,
@@ -448,25 +449,7 @@ export class RfqWidget implements OnInit, OnDestroy {
       field: 'status',
       headerName: 'STATUS',
       flex: 0.6,
-      cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-        const s = p.value;
-        const bg =
-          s === 'done'
-            ? 'rgba(0,229,160,0.12)'
-            : s === 'stale'
-              ? 'rgba(74,82,117,0.2)'
-              : 'rgba(61,158,255,0.1)';
-        const c =
-          s === 'done' ? 'var(--fi-green)' : s === 'stale' ? 'var(--fi-t2)' : 'var(--fi-blue)';
-        const border =
-          s === 'done'
-            ? 'rgba(0,229,160,0.25)'
-            : s === 'stale'
-              ? 'rgba(74,82,117,0.25)'
-              : 'rgba(61,158,255,0.25)';
-        const label = s === 'done' ? 'DONE' : s === 'stale' ? 'STALE' : 'LIVE';
-        return `<span class="font-mono-fi" style="font-size:9px;padding:1px 6px;border-radius:2px;background:${bg};color:${c};border:1px solid ${border}">${label}</span>`;
-      },
+      cellRenderer: RfqStatusRenderer,
     },
     {
       headerName: 'ACTION',

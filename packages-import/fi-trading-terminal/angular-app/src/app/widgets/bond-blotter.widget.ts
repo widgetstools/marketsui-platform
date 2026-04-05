@@ -8,11 +8,17 @@ import {
   type ColDef,
   type GridApi,
   type GridReadyEvent,
-  type ICellRendererParams,
 } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { BONDS, type Bond } from '../services/trading-data.service';
 import { SharedStateService } from '../services/shared-state.service';
+import {
+  TickerCellRenderer,
+  RatingBadgeRenderer,
+  OasValueRenderer,
+  SignedValueRenderer,
+  SideCellRenderer,
+} from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey('');
@@ -106,7 +112,7 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
       minWidth: 60,
       flex: 0.7,
       pinned: 'left',
-      cellStyle: { color: 'var(--fi-cyan)', fontWeight: 700, fontSize: '11px' },
+      cellRenderer: TickerCellRenderer,
     },
     {
       field: 'issuer',
@@ -142,33 +148,7 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
       headerName: 'RTG',
       minWidth: 45,
       flex: 0.5,
-      cellRenderer: (p: ICellRendererParams<Bond>) => {
-        const m: Record<string, { bg: string; color: string; border: string }> = {
-          aaa: {
-            bg: 'rgba(45,212,191,0.1)',
-            color: 'var(--bn-green)',
-            border: 'rgba(45,212,191,0.25)',
-          },
-          aa: {
-            bg: 'rgba(45,212,191,0.06)',
-            color: 'var(--bn-green)',
-            border: 'rgba(45,212,191,0.2)',
-          },
-          a: { bg: 'rgba(190,242,100,0.08)', color: '#86cc16', border: 'rgba(132,204,22,0.25)' },
-          bbb: {
-            bg: 'rgba(245,166,35,0.08)',
-            color: 'var(--bn-yellow)',
-            border: 'rgba(245,166,35,0.25)',
-          },
-          hy: {
-            bg: 'rgba(248,113,113,0.08)',
-            color: 'var(--bn-red)',
-            border: 'rgba(248,113,113,0.25)',
-          },
-        };
-        const s = m[p.data?.rtgClass || 'bbb'] || m['bbb'];
-        return `<span style="font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;letter-spacing:0.04em;padding:1px 6px;border-radius:2px;background:${s.bg};color:${s.color};border:1px solid ${s.border}">${p.value}</span>`;
-      },
+      cellRenderer: RatingBadgeRenderer,
     },
     {
       field: 'sector',
@@ -228,11 +208,7 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
       minWidth: 50,
       flex: 0.5,
       type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams) => {
-        const v = Number(p.value);
-        const c = v > 80 ? 'var(--fi-amber)' : 'var(--fi-green)';
-        return `<span style="color:${c}">${v > 0 ? '+' + v : v}</span>`;
-      },
+      cellRenderer: OasValueRenderer,
     },
     {
       field: 'dur',
@@ -256,10 +232,7 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
       minWidth: 50,
       flex: 0.5,
       type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams) => {
-        const v = Number(p.value);
-        return `<span style="color:var(--bn-t1)">${v > 0 ? '+' + v : v}</span>`;
-      },
+      cellRenderer: SignedValueRenderer,
     },
     {
       field: 'cvx',
@@ -281,10 +254,7 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
       headerName: 'SIDE',
       minWidth: 45,
       flex: 0.5,
-      cellRenderer: (p: ICellRendererParams) => {
-        const c = p.value === 'Buy' ? 'var(--fi-green)' : 'var(--fi-red)';
-        return `<span style="font-size:9px;font-weight:700;letter-spacing:0.05em;color:${c}">${p.value === 'Buy' ? 'BUY' : 'SELL'}</span>`;
-      },
+      cellRenderer: SideCellRenderer,
     },
     {
       field: 'axes',

@@ -6,20 +6,11 @@ import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { fiGridTheme } from '@/lib/agGridTheme';
 import type { Bond } from '@/data/tradingData';
 import { INITIAL_ORDERS, INITIAL_TRADES } from '@/data/tradingData';
+import { SideCellRenderer, StatusBadgeRenderer, FilledAmountRenderer } from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 interface BottomOrderPanelProps { bond: Bond | null; }
-
-const statusCellRenderer = (p: ICellRendererParams) => {
-  const s = p.value as string;
-  const m: Record<string, string> = {
-    Filled: 'badge-filled', Partial: 'badge-partial',
-    Pending: 'badge-new', Cancelled: 'badge-cancel',
-  };
-  const cls = m[s] || 'badge-new';
-  return `<span class="font-mono-fi text-xs px-1.5 py-0.5 rounded-sm ${cls}">${s}</span>`;
-};
 
 export function BottomOrderPanel({ bond }: BottomOrderPanelProps) {
   const [tab, setTab] = useState('Order History');
@@ -29,34 +20,25 @@ export function BottomOrderPanel({ bond }: BottomOrderPanelProps) {
     { field: 'time',   headerName: 'Date',    width: 70,  cellStyle: { color: 'var(--bn-t1)' } },
     { field: 'bond',   headerName: 'Pair',    flex: 1,    cellStyle: { color: 'var(--bn-t0)' } },
     { field: 'type',   headerName: 'Type',    width: 60,  cellStyle: { color: 'var(--bn-t1)' } },
-    { field: 'side',   headerName: 'Side',    width: 55,  cellRenderer: (p: ICellRendererParams) => {
-      const color = p.value === 'Buy' ? 'var(--bn-green)' : 'var(--bn-red)';
-      return `<span style="font-weight:700;color:${color}">${p.value}</span>`;
-    }},
+    { field: 'side',   headerName: 'Side',    width: 55,  cellRenderer: SideCellRenderer },
     { field: 'px',     headerName: 'Price',   width: 80,  type: 'numericColumn', valueFormatter: p => p.value > 0 ? p.value.toFixed(3) : '—' },
     { field: 'qty',    headerName: 'Amount',  width: 70,  type: 'numericColumn' },
-    { field: 'filled', headerName: 'Filled',  width: 70,  type: 'numericColumn', cellRenderer: (p: ICellRendererParams) => {
-      const color = p.value === p.data.qty ? 'var(--bn-green)' : 'var(--bn-yellow)';
-      return `<span style="color:${color}">${p.value}</span>`;
-    }},
+    { field: 'filled', headerName: 'Filled',  width: 70,  type: 'numericColumn', cellRenderer: FilledAmountRenderer },
     { colId: 'total',  headerName: 'Total',   width: 80,  type: 'numericColumn',
       valueGetter: p => p.data?.px > 0 ? (+p.data.px * parseFloat(p.data.qty.replace('$', ''))).toFixed(0) : '—',
       cellStyle: { color: 'var(--bn-t1)' } },
-    { field: 'status', headerName: 'Status',  width: 85,  cellRenderer: statusCellRenderer },
+    { field: 'status', headerName: 'Status',  width: 85,  cellRenderer: StatusBadgeRenderer },
   ], []);
 
   const tradeColDefs = useMemo<ColDef[]>(() => [
     { field: 'time',   headerName: 'Date',   width: 70,  cellStyle: { color: 'var(--bn-t1)' } },
     { field: 'bond',   headerName: 'Pair',   flex: 1,    cellStyle: { color: 'var(--bn-t0)' } },
-    { field: 'side',   headerName: 'Side',   width: 55,  cellRenderer: (p: ICellRendererParams) => {
-      const isBuy = p.value === 'B';
-      return `<span style="font-weight:700;color:${isBuy ? 'var(--bn-green)' : 'var(--bn-red)'}">${isBuy ? 'Buy' : 'Sell'}</span>`;
-    }},
+    { field: 'side',   headerName: 'Side',   width: 55,  cellRenderer: SideCellRenderer },
     { field: 'price',  headerName: 'Price',  width: 80,  type: 'numericColumn', valueFormatter: p => p.value?.toFixed(3) },
     { field: 'size',   headerName: 'Amount', width: 70,  type: 'numericColumn' },
     { colId: 'total',  headerName: 'Total',  width: 80,  type: 'numericColumn', valueGetter: () => '—', cellStyle: { color: 'var(--bn-t1)' } },
     { colId: 'fee',    headerName: 'Fee',    width: 60,  type: 'numericColumn', valueGetter: () => '—', cellStyle: { color: 'var(--bn-t1)' } },
-    { field: 'status', headerName: 'Status', width: 85,  cellRenderer: statusCellRenderer },
+    { field: 'status', headerName: 'Status', width: 85,  cellRenderer: StatusBadgeRenderer },
   ], []);
 
   const defaultColDef = useMemo<ColDef>(() => ({

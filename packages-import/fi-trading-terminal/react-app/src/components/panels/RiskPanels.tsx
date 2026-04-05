@@ -6,6 +6,7 @@ import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { fiGridTheme } from '@/lib/agGridTheme';
 import { RISK_POSITIONS, BONDS } from '@/data/tradingData';
+import { BookNameRenderer, OasValueRenderer, PnlValueRenderer } from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 
@@ -54,17 +55,11 @@ export function RiskKpiStrip() {
 
 export function BookRiskSummary() {
   const colDefs = useMemo<ColDef[]>(()=>[
-    {field:'book', headerName:'BOOK', flex:1, cellRenderer:(p:ICellRendererParams)=>`<span style="color:#00bcd4">${p.value}</span>`},
+    {field:'book', headerName:'BOOK', flex:1, cellRenderer:BookNameRenderer},
     {field:'mv',   headerName:'MV',   width:70, type:'numericColumn'},
     {field:'dv01', headerName:'DV01', width:80, type:'numericColumn', valueFormatter:p=>p.value?.toLocaleString(), cellStyle:{color:'#1e90ff'}},
-    {field:'oas',  headerName:'OAS',  width:70, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
-      const v=p.value; const color=v>100?'#f0b90b':'var(--bn-green)';
-      return `<span style="color:${color}">${v>0?'+'+v:v}</span>`;
-    }},
-    {field:'pnl',  headerName:'P&L',  width:80, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
-      const v=p.value; const color=v>=0?'var(--bn-green)':'var(--bn-red)';
-      return `<span style="color:${color}">${v>=0?'+':''}${v}K</span>`;
-    }},
+    {field:'oas',  headerName:'OAS',  width:70, type:'numericColumn', cellRenderer:OasValueRenderer},
+    {field:'pnl',  headerName:'P&L',  width:80, type:'numericColumn', cellRenderer:PnlValueRenderer},
   ],[]);
   const defaultColDef = useMemo<ColDef>(()=>({
     suppressMovable:true,

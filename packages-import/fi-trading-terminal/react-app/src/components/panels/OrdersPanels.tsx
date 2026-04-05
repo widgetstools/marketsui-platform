@@ -5,12 +5,14 @@ import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { fiGridTheme } from '@/lib/agGridTheme';
 import { INITIAL_ORDERS } from '@/data/tradingData';
+import { SideCellRenderer, StatusBadgeRenderer, FilledAmountRenderer } from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 const BD = '1px solid var(--bn-border)';
 type Order = typeof INITIAL_ORDERS[0];
 
+// React helper for OrderDetail panel (not an AG Grid renderer)
 const statusBadge=(s:string)=>{
   const m:Record<string,{bg:string,color:string,border:string}>={
     Filled:{bg:'rgba(45,212,191,0.1)',color:'var(--bn-green)',border:'rgba(45,212,191,0.3)'},
@@ -130,29 +132,13 @@ export function OrderBlotter() {
   const colDefs = useMemo<ColDef<Order>[]>(()=>[
     {field:'time', headerName:'TIME',   width:60, cellStyle:{fontSize:9,color:'var(--bn-t2)'}},
     {field:'bond', headerName:'BOND',   flex:1,   cellStyle:{color:'#00bcd4'}},
-    {field:'side', headerName:'SIDE',   width:55, cellRenderer:(p:ICellRendererParams)=>{
-      const v=p.value; const color=v==='Buy'?'var(--bn-green)':'var(--bn-red)';
-      return `<span style="font-size:9px;font-weight:700;color:${color}">${v.toUpperCase()}</span>`;
-    }},
+    {field:'side', headerName:'SIDE',   width:55, cellRenderer:SideCellRenderer},
     {field:'type',   headerName:'TYPE',   width:55, cellStyle:{fontSize:9,color:'var(--bn-t1)'}},
     {field:'qty',    headerName:'QTY',    width:65, type:'numericColumn'},
-    {field:'filled', headerName:'FILLED', width:65, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
-      const color=p.value===p.data.qty?'var(--bn-green)':'#f0b90b';
-      return `<span style="color:${color}">${p.value}</span>`;
-    }},
+    {field:'filled', headerName:'FILLED', width:65, type:'numericColumn', cellRenderer:FilledAmountRenderer},
     {field:'px',  headerName:'PX',  width:75, type:'numericColumn', valueFormatter:p=>p.value>0?p.value.toFixed(3):'—'},
     {field:'ytm', headerName:'YTM', width:65, type:'numericColumn', valueFormatter:p=>p.value>0?p.value.toFixed(2)+'%':'—', cellStyle:{color:'var(--bn-t1)'}},
-    {field:'status', headerName:'STATUS', width:80, cellRenderer:(p:ICellRendererParams)=>{
-      const s=p.value;
-      const m:Record<string,{bg:string,color:string,border:string}>={
-        Filled:{bg:'rgba(45,212,191,0.1)',color:'var(--bn-green)',border:'rgba(45,212,191,0.3)'},
-        Partial:{bg:'rgba(240,185,11,0.1)',color:'#f0b90b',border:'rgba(240,185,11,0.3)'},
-        Pending:{bg:'rgba(30,144,255,0.1)',color:'#1e90ff',border:'rgba(30,144,255,0.3)'},
-        Cancelled:{bg:'rgba(248,113,113,0.1)',color:'var(--bn-red)',border:'rgba(248,113,113,0.3)'},
-      };
-      const st=m[s]||m.Pending;
-      return `<span style="font-size:9px;padding:1px 6px;border-radius:2px;background:${st.bg};color:${st.color};border:1px solid ${st.border}">${s}</span>`;
-    }},
+    {field:'status', headerName:'STATUS', width:80, cellRenderer:StatusBadgeRenderer},
   ],[]);
 
   const defaultColDef = useMemo<ColDef>(()=>({

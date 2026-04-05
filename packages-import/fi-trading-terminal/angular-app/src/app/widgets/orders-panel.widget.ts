@@ -2,9 +2,14 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
-import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
+import { ModuleRegistry, type ColDef } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { INITIAL_ORDERS, INITIAL_TRADES } from '../services/trading-data.service';
+import {
+  SideCellRenderer,
+  FilledAmountRenderer,
+  StatusBadgeRenderer,
+} from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey('');
@@ -129,10 +134,7 @@ export class OrdersPanelWidget {
       field: 'side',
       headerName: 'Side',
       flex: 0.5,
-      cellRenderer: (p: ICellRendererParams) => {
-        const c = p.value === 'Buy' ? 'var(--bn-green)' : 'var(--bn-red)';
-        return `<span style="font-weight:700;color:${c}">${p.value}</span>`;
-      },
+      cellRenderer: SideCellRenderer,
     },
     {
       field: 'px',
@@ -152,11 +154,7 @@ export class OrdersPanelWidget {
       headerName: 'Filled',
       flex: 0.6,
       type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams) => {
-        const row = p.data;
-        const c = row.filled === row.qty ? 'var(--bn-green)' : 'var(--bn-yellow)';
-        return `<span style="color:${c}">${p.value}</span>`;
-      },
+      cellRenderer: FilledAmountRenderer,
     },
     {
       headerName: 'Total',
@@ -173,15 +171,7 @@ export class OrdersPanelWidget {
       field: 'status',
       headerName: 'Status',
       flex: 0.6,
-      cellRenderer: (p: ICellRendererParams) => {
-        const s = p.value;
-        let cls = 'badge-new';
-        if (s === 'Filled') cls = 'badge-filled';
-        else if (s === 'Partial') cls = 'badge-partial';
-        else if (s === 'Pending') cls = 'badge-new';
-        else if (s === 'Cancelled') cls = 'badge-cancel';
-        return `<span class="font-mono-fi ${cls}" style="font-size:11px;padding:1px 6px;border-radius:2px">${s}</span>`;
-      },
+      cellRenderer: StatusBadgeRenderer,
     },
   ];
 
@@ -201,11 +191,7 @@ export class OrdersPanelWidget {
       field: 'side',
       headerName: 'Side',
       flex: 0.5,
-      cellRenderer: (p: ICellRendererParams) => {
-        const c = p.value === 'B' ? 'var(--bn-green)' : 'var(--bn-red)';
-        const label = p.value === 'B' ? 'Buy' : 'Sell';
-        return `<span style="font-weight:700;color:${c}">${label}</span>`;
-      },
+      cellRenderer: SideCellRenderer,
     },
     {
       field: 'price',
@@ -238,15 +224,7 @@ export class OrdersPanelWidget {
       field: 'status',
       headerName: 'Status',
       flex: 0.6,
-      cellRenderer: (p: ICellRendererParams) => {
-        const s = p.value;
-        let cls = 'badge-new';
-        if (s === 'Filled') cls = 'badge-filled';
-        else if (s === 'Partial') cls = 'badge-partial';
-        else if (s === 'Pending') cls = 'badge-new';
-        else if (s === 'Cancelled') cls = 'badge-cancel';
-        return `<span class="font-mono-fi ${cls}" style="font-size:11px;padding:1px 6px;border-radius:2px">${s}</span>`;
-      },
+      cellRenderer: StatusBadgeRenderer,
     },
   ];
 

@@ -6,6 +6,7 @@ import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { fiGridTheme } from '@/lib/agGridTheme';
 import type { Bond, RfqRequest, RfqQuote } from '@/data/tradingData';
+import { RfqStatusRenderer } from '@design-system/cell-renderers';
 import { BONDS, DEALERS } from '@/data/tradingData';
 import { Badge } from '@/components/ui/badge';
 import { X, CheckCircle, Clock, Zap, Search } from 'lucide-react';
@@ -75,15 +76,7 @@ function RfqQuoteGrid({ quotes, bestBid, bestAsk, rfqId, rfqStatus, onHitLift }:
         const isStale = p.data!.status === 'stale';
         return `<span style="color:var(--fi-amber);opacity:${isStale ? 0.4 : 1}">${p.value}¢</span>`;
       }},
-    { field: 'status', headerName: 'STATUS', width: 75, cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-      const s = p.value as string;
-      const isDone = s === 'done'; const isStale = s === 'stale';
-      const bg = isDone ? 'rgba(0,229,160,0.12)' : isStale ? 'rgba(74,82,117,0.2)' : 'rgba(61,158,255,0.1)';
-      const color = isDone ? 'var(--fi-green)' : isStale ? 'var(--fi-t2)' : 'var(--fi-blue)';
-      const border = isDone ? 'rgba(0,229,160,0.25)' : isStale ? 'rgba(74,82,117,0.25)' : 'rgba(61,158,255,0.25)';
-      const label = isDone ? 'DONE' : isStale ? 'STALE' : 'LIVE';
-      return `<span style="font-size:9px;padding:1px 6px;border-radius:2px;background:${bg};color:${color};border:1px solid ${border}">${label}</span>`;
-    }},
+    { field: 'status', headerName: 'STATUS', width: 75, cellRenderer: RfqStatusRenderer },
     { colId: 'action', headerName: 'ACTION', width: 130, cellRenderer: ActionCell },
   ], [bestBid, bestAsk, ActionCell]);
 

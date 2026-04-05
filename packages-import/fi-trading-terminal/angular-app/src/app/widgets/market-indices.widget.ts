@@ -7,10 +7,13 @@ import {
   type ColDef,
   type GridApi,
   type GridReadyEvent,
-  type ICellRendererParams,
 } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { MARKET_INDICES, type MarketIndex } from '../services/trading-data.service';
+import {
+  ChangeValueRenderer,
+  YtdValueRenderer,
+} from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey('');
@@ -68,22 +71,14 @@ export class MarketIndicesWidget implements OnInit, OnDestroy {
       headerName: 'CHG',
       flex: 0.8,
       type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams<MarketIndex>) => {
-        const v = Number(p.value);
-        const c = v >= 0 ? 'var(--bn-green)' : 'var(--bn-red)';
-        return `<span style="color:${c}">${v >= 0 ? '+' : ''}${v.toFixed(2)}</span>`;
-      },
+      cellRenderer: ChangeValueRenderer,
     },
     {
       field: 'ytd',
       headerName: 'YTD',
       flex: 0.8,
       type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams<MarketIndex>) => {
-        const v = String(p.value);
-        const c = v.startsWith('+') ? 'var(--bn-green)' : 'var(--bn-red)';
-        return `<span style="color:${c}">${v}</span>`;
-      },
+      cellRenderer: YtdValueRenderer,
     },
   ];
 

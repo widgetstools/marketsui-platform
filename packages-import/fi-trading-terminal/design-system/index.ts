@@ -19,3 +19,12 @@ export { componentTokens } from './tokens/components';
 export { generateShadcnCSS, getShadcnTokens } from './adapters/shadcn';
 export { generatePrimeNGPreset } from './adapters/primeng';
 export { agGridLightParams, agGridDarkParams } from './adapters/ag-grid';
+
+// Cell Renderers (vanilla TS — framework-agnostic)
+export {
+  SideCellRenderer, StatusBadgeRenderer, ColoredValueRenderer,
+  OasValueRenderer, SignedValueRenderer, TickerCellRenderer,
+  RatingBadgeRenderer, PnlValueRenderer, FilledAmountRenderer,
+  BookNameRenderer, ChangeValueRenderer, YtdValueRenderer,
+  RfqStatusRenderer,
+} from './cell-renderers';

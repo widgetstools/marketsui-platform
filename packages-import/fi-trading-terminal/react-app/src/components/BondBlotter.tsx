@@ -8,28 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
 import { fiGridTheme } from '@/lib/agGridTheme';
+import { TickerCellRenderer, RatingBadgeRenderer, SideCellRenderer, OasValueRenderer, SignedValueRenderer } from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey('');
-
-const RatingCell = ({value,data}:ICellRendererParams<Bond>) => {
-  const m:Record<string,{bg:string,color:string,border:string}> = {
-    aaa:{bg:'rgba(0,203,129,0.1)',color:'var(--bn-green)',border:'rgba(0,203,129,0.25)'},
-    aa: {bg:'rgba(0,203,129,0.06)',color:'var(--bn-green)',border:'rgba(0,203,129,0.2)'},
-    a:  {bg:'rgba(190,242,100,0.08)',color:'#86cc16',border:'rgba(132,204,22,0.25)'},
-    bbb:{bg:'rgba(245,166,35,0.08)',color:'var(--bn-yellow)',border:'rgba(245,166,35,0.25)'},
-    hy: {bg:'rgba(246,70,93,0.08)',color:'var(--bn-red)',border:'rgba(246,70,93,0.25)'},
-  };
-  const s=m[data?.rtgClass||'bbb']||m.bbb;
-  return <span className="font-mono-fi px-1.5 py-0.5 rounded-sm font-bold" style={{fontSize:9,letterSpacing:'0.04em',background:s.bg,color:s.color,border:`1px solid ${s.border}`}}>{value}</span>;
-};
-const BidCell=({value}:ICellRendererParams)=><span className="font-mono-fi font-semibold" style={{color:'var(--bn-blue)'}}>  {Number(value).toFixed(3)}</span>;
-const AskCell=({value}:ICellRendererParams)=><span className="font-mono-fi font-semibold" style={{color:'var(--bn-red)'}}>{Number(value).toFixed(3)}</span>;
-const MidCell=({value}:ICellRendererParams)=><span className="font-mono-fi" style={{color:'var(--bn-t1)'}}>{Number(value).toFixed(3)}</span>;
-const SideCell=({value}:ICellRendererParams)=><span className="font-mono-fi font-bold" style={{fontSize:9,letterSpacing:'0.05em',color:value==='Buy'?'var(--fi-green)':'var(--fi-red)'}}>{value==='Buy'?'BUY':'SELL'}</span>;
-const OasCell=({value}:ICellRendererParams)=><span className="font-mono-fi" style={{color:Number(value)>80?'var(--fi-amber)':'var(--fi-green)'}}>{Number(value)>0?`+${value}`:value}</span>;
-const TickerCell=({value}:ICellRendererParams)=><span className="font-mono-fi font-bold" style={{color:'var(--fi-cyan)',fontSize:11}}>{value}</span>;
-const GspdCell=({value}:ICellRendererParams)=><span className="font-mono-fi" style={{color:'var(--bn-t1)'}}>{Number(value)>0?`+${value}`:value}</span>;
 
 interface BondBlotterProps { onSelectBond: (b:Bond)=>void; }
 
@@ -40,26 +22,26 @@ export function BondBlotter({onSelectBond}:BondBlotterProps) {
   const [sectorFilter,setSectorFilter]=useState('All');
 
   const colDefs=useMemo<ColDef<Bond>[]>(()=>[
-    {field:'ticker',  headerName:'TICKER', width:68,  cellRenderer:TickerCell,  pinned:'left'},
+    {field:'ticker',  headerName:'TICKER', width:68,  cellRenderer:TickerCellRenderer,  pinned:'left'},
     {field:'issuer',  headerName:'ISSUER', width:140, cellStyle:{color:'var(--bn-t1)',fontSize:11}, pinned:'left'},
     {field:'cpn',     headerName:'CPN',    width:62,  valueFormatter:p=>p.value?.toFixed(3), type:'numericColumn'},
     {field:'mat',     headerName:'MAT',    width:52,  cellStyle:{color:'var(--bn-t1)'}},
     {field:'cusip',   headerName:'CUSIP',  width:90,  cellStyle:{color:'var(--bn-t2)',fontSize:9}},
-    {field:'rtg',     headerName:'RTG',    width:50,  cellRenderer:RatingCell},
+    {field:'rtg',     headerName:'RTG',    width:50,  cellRenderer:RatingBadgeRenderer},
     {field:'sector',  headerName:'SECTOR', width:90,  cellStyle:{color:'var(--bn-t1)',fontSize:9}},
-    {field:'bid',     headerName:'BID',    width:80,  cellRenderer:BidCell, type:'numericColumn'},
-    {field:'ask',     headerName:'ASK',    width:80,  cellRenderer:AskCell, type:'numericColumn'},
-    {colId:'mid',     headerName:'MID',    width:80,  type:'numericColumn',  cellRenderer:MidCell,
+    {field:'bid',     headerName:'BID',    width:80,  type:'numericColumn', valueFormatter:p=>p.value?.toFixed(3), cellStyle:{color:'var(--bn-blue)',fontWeight:600}},
+    {field:'ask',     headerName:'ASK',    width:80,  type:'numericColumn', valueFormatter:p=>p.value?.toFixed(3), cellStyle:{color:'var(--bn-red)',fontWeight:600}},
+    {colId:'mid',     headerName:'MID',    width:80,  type:'numericColumn', valueFormatter:p=>p.value?.toFixed(3), cellStyle:{color:'var(--bn-t1)'},
      valueGetter:p=>p.data?((p.data.bid+p.data.ask)/2):0},
     {field:'ytm',     headerName:'YTM',    width:60,  valueFormatter:p=>p.value?.toFixed(3), type:'numericColumn'},
     {field:'ytw',     headerName:'YTW',    width:60,  valueFormatter:p=>p.value?.toFixed(3), type:'numericColumn', cellStyle:{color:'var(--bn-t1)'}},
-    {field:'oas',     headerName:'OAS',    width:56,  cellRenderer:OasCell, type:'numericColumn'},
-    {field:'gSpd',    headerName:'G-SPD',  width:58,  cellRenderer:GspdCell, type:'numericColumn'},
+    {field:'oas',     headerName:'OAS',    width:56,  cellRenderer:OasValueRenderer, type:'numericColumn'},
+    {field:'gSpd',    headerName:'G-SPD',  width:58,  cellRenderer:SignedValueRenderer, type:'numericColumn'},
     {field:'dur',     headerName:'DUR',    width:54,  valueFormatter:p=>p.value?.toFixed(2), type:'numericColumn'},
     {field:'dv01',    headerName:'DV01',   width:62,  valueFormatter:p=>p.value?.toLocaleString(), type:'numericColumn'},
     {field:'cvx',     headerName:'CVX',    width:50,  valueFormatter:p=>p.value?.toFixed(2), type:'numericColumn'},
     {field:'face',    headerName:'FACE',   width:58,  cellStyle:{color:'var(--bn-t1)'}},
-    {field:'side',    headerName:'SIDE',   width:56,  cellRenderer:SideCell},
+    {field:'side',    headerName:'SIDE',   width:56,  cellRenderer:SideCellRenderer},
     {field:'axes',    headerName:'AXES',   width:62,  cellStyle:{color:'var(--bn-t2)',fontSize:9}},
   ],[]);
 

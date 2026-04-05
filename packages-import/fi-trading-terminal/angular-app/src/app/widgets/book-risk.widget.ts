@@ -2,9 +2,14 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
-import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
+import { ModuleRegistry, type ColDef } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { RISK_POSITIONS, BONDS } from '../services/trading-data.service';
+import {
+  BookNameRenderer,
+  OasValueRenderer,
+  PnlValueRenderer,
+} from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey('');
@@ -70,7 +75,7 @@ export class BookRiskWidget {
       field: 'book',
       headerName: 'BOOK',
       flex: 1,
-      cellStyle: { color: '#00bcd4' },
+      cellRenderer: BookNameRenderer,
     },
     {
       field: 'mv',
@@ -91,22 +96,14 @@ export class BookRiskWidget {
       headerName: 'OAS',
       flex: 0.7,
       type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams) => {
-        const v = Number(p.value);
-        const c = v > 100 ? '#f0b90b' : 'var(--bn-green)';
-        return `<span style="color:${c}">${v > 0 ? '+' + v : v}</span>`;
-      },
+      cellRenderer: OasValueRenderer,
     },
     {
       field: 'pnl',
       headerName: 'P&L',
       flex: 0.7,
       type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams) => {
-        const v = Number(p.value);
-        const c = v >= 0 ? 'var(--bn-green)' : 'var(--bn-red)';
-        return `<span style="color:${c}">${v >= 0 ? '+' : ''}${v}K</span>`;
-      },
+      cellRenderer: PnlValueRenderer,
     },
   ];
 
