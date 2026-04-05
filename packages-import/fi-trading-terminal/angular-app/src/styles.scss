@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Geist:wght@300;400;500;600&display=swap');
+
+// Import FI Design System tokens
+@import '../../src/design-system/themes/fi-dark.css';
+@import '../../src/design-system/themes/fi-light.css';
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bn-bg);
+  color: var(--bn-t0);
+  font-family: var(--fi-sans);
+  font-size: var(--fi-font-sm);
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 2px;
+}
