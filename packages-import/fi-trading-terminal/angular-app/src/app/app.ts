@@ -320,7 +320,16 @@ const TAB_LAYOUTS: Record<string, () => DockManagerState> = {
   'Design System': designSystemLayout,
 };
 
-const NAV_TABS = ['Prices', 'Trade', 'Risk', 'Market', 'Research', 'Orders', 'Analytics', 'Design System'];
+const NAV_TABS = [
+  'Prices',
+  'Trade',
+  'Risk',
+  'Market',
+  'Research',
+  'Orders',
+  'Analytics',
+  'Design System',
+];
 
 @Component({
   selector: 'app-root',

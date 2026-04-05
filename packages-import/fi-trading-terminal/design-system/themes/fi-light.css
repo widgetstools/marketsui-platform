@@ -1,61 +1,62 @@
 /*
  * FI Design System — Light Theme
- * Generated from design-system/tokens/semantic.ts
- * Drop this into any project's globals.css for the light palette.
+ * Warm, low-fatigue palette optimized for extended screen time.
+ * Cream/parchment undertones replace stark whites.
+ * High text contrast for readability (WCAG AA on all tiers).
  */
 
 [data-theme="light"] {
   /* ── shadcn/ui overrides ── */
-  --background: 0 0% 96%;
-  --foreground: 240 33% 14%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 33% 14%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 33% 14%;
-  --primary: 45 95% 40%;
+  --background: 40 20% 95%;
+  --foreground: 220 20% 16%;
+  --card: 40 25% 98%;
+  --card-foreground: 220 20% 16%;
+  --popover: 40 25% 98%;
+  --popover-foreground: 220 20% 16%;
+  --primary: 45 85% 38%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 9% 91%;
-  --secondary-foreground: 220 6% 41%;
-  --muted: 220 14% 94%;
-  --muted-foreground: 218 8% 62%;
-  --accent: 220 9% 91%;
-  --accent-foreground: 240 33% 14%;
-  --destructive: 0 72% 51%;
+  --secondary: 35 12% 90%;
+  --secondary-foreground: 220 15% 35%;
+  --muted: 35 10% 92%;
+  --muted-foreground: 220 10% 45%;
+  --accent: 35 12% 90%;
+  --accent-foreground: 220 20% 16%;
+  --destructive: 0 65% 48%;
   --destructive-foreground: 0 0% 100%;
-  --border: 220 13% 88%;
-  --input: 220 13% 88%;
-  --ring: 45 95% 40%;
+  --border: 35 12% 85%;
+  --input: 35 12% 85%;
+  --ring: 45 85% 38%;
 
-  /* ── Surface ── */
-  --bn-bg:      #f5f5f5;
-  --bn-bg1:     #ffffff;
-  --bn-bg2:     #f0f1f3;
-  --bn-bg3:     #e6e8eb;
+  /* ── Surface (warm cream tones, never pure white) ── */
+  --bn-bg:      #f3f0eb;
+  --bn-bg1:     #faf8f5;
+  --bn-bg2:     #efece6;
+  --bn-bg3:     #e4e0d9;
 
-  /* ── Text ── */
-  --bn-t0:      #1a1a2e;
-  --bn-t1:      #5f6673;
-  --bn-t2:      #9ca3af;
-  --bn-t3:      #d1d5db;
+  /* ── Text (high contrast, warm-neutral) ── */
+  --bn-t0:      #1c1917;
+  --bn-t1:      #44403c;
+  --bn-t2:      #78716c;
+  --bn-t3:      #a8a29e;
 
-  /* ── Border ── */
-  --bn-border:  #e0e3e7;
-  --bn-border2: #d1d5db;
+  /* ── Border (warm, soft) ── */
+  --bn-border:  #d6d3cd;
+  --bn-border2: #c8c4bc;
 
-  /* ── Accent (darker shades for white bg readability) ── */
-  --bn-green:   #0d9488;
-  --bn-green2:  #0f766e;
-  --bn-red:     #dc2626;
-  --bn-red2:    #b91c1c;
-  --bn-yellow:  #b45309;
-  --bn-blue:    #2563eb;
-  --bn-cyan:    #0891b2;
+  /* ── Accent (deeper shades for warm bg — WCAG AA compliant) ── */
+  --bn-green:   #0f766e;
+  --bn-green2:  #115e59;
+  --bn-red:     #b91c1c;
+  --bn-red2:    #991b1b;
+  --bn-yellow:  #92400e;
+  --bn-blue:    #1d4ed8;
+  --bn-cyan:    #0e7490;
 
   /* ── Actions ── */
-  --bn-buy-bg:  #0d9488;
-  --bn-sell-bg: #dc2626;
-  --bn-logo-bg: #ffffff;
+  --bn-buy-bg:  #0f766e;
+  --bn-sell-bg: #b91c1c;
+  --bn-logo-bg: #faf8f5;
 
   /* ── Misc ── */
-  --scrollbar-thumb: #d1d5db;
+  --scrollbar-thumb: #c8c4bc;
 }

@@ -81,40 +81,42 @@ export const dark: ColorScheme = {
 };
 
 // ── Light Scheme ──
+// Warm cream/parchment tones — no stark whites.
+// Text contrast boosted for WCAG AA readability.
 export const light: ColorScheme = {
   surface: {
-    ground:    colors.neutral[50],   // #f5f5f5
-    primary:   colors.neutral[0],    // #ffffff
-    secondary: colors.neutral[100],  // #f0f1f3
-    tertiary:  colors.neutral[200],  // #e6e8eb
+    ground:    '#f3f0eb',   // warm parchment
+    primary:   '#faf8f5',   // soft cream (not pure white)
+    secondary: '#efece6',   // warm hover
+    tertiary:  '#e4e0d9',   // warm pressed
   },
   text: {
-    primary:   '#1a1a2e',
-    secondary: colors.neutral[600],  // #5f6673
-    muted:     colors.neutral[400],  // #9ca3af
-    faint:     colors.neutral[300],  // #d1d5db
+    primary:   '#1c1917',   // near-black warm (high contrast)
+    secondary: '#44403c',   // stone-700 — strong labels
+    muted:     '#78716c',   // stone-500 — readable captions
+    faint:     '#a8a29e',   // stone-400 — placeholders
   },
   border: {
-    primary:   '#e0e3e7',
-    secondary: colors.neutral[300],  // #d1d5db
+    primary:   '#d6d3cd',   // warm border
+    secondary: '#c8c4bc',   // warm interactive border
   },
   accent: {
-    positive:      colors.teal[600],    // #0d9488 (darker for white bg)
-    positiveHover: colors.teal[700],    // #0f766e
-    negative:      colors.red[600],     // #dc2626
-    negativeHover: colors.red[700],     // #b91c1c
-    warning:       colors.amber[700],   // #b45309
-    info:          colors.blue[600],    // #2563eb
-    highlight:     colors.cyan[600],    // #0891b2
+    positive:      colors.teal[700],    // #0f766e — deeper for warm bg
+    positiveHover: colors.teal[800],    // #115e59
+    negative:      colors.red[700],     // #b91c1c — deeper red
+    negativeHover: colors.red[800],     // #991b1b
+    warning:       '#92400e',           // amber-800 — rich warm amber
+    info:          colors.blue[700],    // #1d4ed8 — deeper blue
+    highlight:     colors.cyan[700],    // #0e7490 — deeper cyan
     purple:        colors.purple[600],  // #9333ea
   },
   action: {
-    buyBg:    colors.teal[600],
+    buyBg:    colors.teal[700],   // #0f766e
     buyText:  '#ffffff',
-    sellBg:   colors.red[600],
+    sellBg:   colors.red[700],    // #b91c1c
     sellText: '#ffffff',
   },
-  scrollbar: colors.neutral[300],
+  scrollbar: '#c8c4bc',
 };
 
 // ── Shared (non-theme-dependent) ──
