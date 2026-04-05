@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 
 import { ModuleRegistry, type ColDef } from 'ag-grid-community';
-import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { INITIAL_ORDERS, INITIAL_TRADES } from '../services/trading-data.service';
 import {
@@ -12,6 +12,9 @@ import {
   StatusBadgeRenderer,
 } from '@design-system/cell-renderers';
 
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+LicenseManager.setLicenseKey('');
 
 @Component({
   selector: 'orders-panel-widget',
@@ -48,7 +51,7 @@ import {
       <!-- Content -->
       <div style="flex:1;overflow:hidden">
         <!-- Order History -->
-        <ag-grid-angular [modules]="agModules"
+        <ag-grid-angular
           *ngIf="tab === 'orders'"
           style="width:100%;height:100%"
           [theme]="gridTheme"
@@ -59,7 +62,7 @@ import {
           [rowHeight]="26"
         />
         <!-- Trade History -->
-        <ag-grid-angular [modules]="agModules"
+        <ag-grid-angular
           *ngIf="tab === 'trades'"
           style="width:100%;height:100%"
           [theme]="gridTheme"
@@ -96,7 +99,6 @@ export class OrdersPanelWidget {
   @Input() panel: any;
 
   gridTheme = fiGridTheme;
-  agModules = [AllEnterpriseModule];
   tab = 'orders';
   tabNames = [
     { key: 'orders', label: 'Order History' },

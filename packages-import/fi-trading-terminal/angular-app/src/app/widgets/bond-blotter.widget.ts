@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 
 import { ModuleRegistry, type ColDef, type GridApi, type GridReadyEvent } from 'ag-grid-community';
-import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { BONDS, type Bond } from '../services/trading-data.service';
 import { SharedStateService } from '../services/shared-state.service';
@@ -16,6 +16,9 @@ import {
   SideCellRenderer,
 } from '@design-system/cell-renderers';
 
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+LicenseManager.setLicenseKey('');
 
 @Component({
   selector: 'bond-blotter-widget',
@@ -68,7 +71,7 @@ import {
     </div>
     <!-- Grid -->
     <div style="flex:1;overflow:hidden">
-      <ag-grid-angular [modules]="agModules"
+      <ag-grid-angular
         style="width:100%;height:100%"
         [theme]="gridTheme"
         [rowData]="filteredData"
@@ -92,7 +95,6 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
   private tickInterval: any;
 
   gridTheme = fiGridTheme;
-  agModules = [AllEnterpriseModule];
   gridApi: GridApi<Bond> | null = null;
   rowData: Bond[] = [];
   search = '';

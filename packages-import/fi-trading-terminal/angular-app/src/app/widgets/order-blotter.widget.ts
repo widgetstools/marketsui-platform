@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 
 import { ModuleRegistry, type ColDef } from 'ag-grid-community';
-import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { SharedStateService } from '../services/shared-state.service';
 import {
@@ -12,6 +12,9 @@ import {
   StatusBadgeRenderer,
 } from '@design-system/cell-renderers';
 
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+LicenseManager.setLicenseKey('');
 
 @Component({
   selector: 'order-blotter-widget',
@@ -36,7 +39,7 @@ import {
         </button>
       </div>
       <div style="flex:1;overflow:hidden">
-        <ag-grid-angular [modules]="agModules"
+        <ag-grid-angular
           style="width:100%;height:100%"
           [theme]="gridTheme"
           [rowData]="filteredOrders"
@@ -57,7 +60,6 @@ export class OrderBlotterWidget {
   filters = ['All', 'Filled', 'Partial', 'Pending', 'Cancelled'];
 
   gridTheme = fiGridTheme;
-  agModules = [AllEnterpriseModule];
   colDefs: ColDef[] = [
     {
       field: 'time',

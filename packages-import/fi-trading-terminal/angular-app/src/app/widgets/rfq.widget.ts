@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 
 import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
-import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { SharedStateService } from '../services/shared-state.service';
 import { RfqStatusRenderer } from '@design-system/cell-renderers';
@@ -33,6 +33,9 @@ function makeQuote(bond: Bond, side: 'Buy' | 'Sell', dealer: string): RfqQuote {
     status: 'live',
   };
 }
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+LicenseManager.setLicenseKey('');
 
 @Component({
   selector: 'rfq-widget',
@@ -316,7 +319,7 @@ function makeQuote(bond: Bond, side: 'Buy' | 'Sell', dealer: string): RfqQuote {
                   </div>
                 </div>
               </div>
-              <ag-grid-angular [modules]="agModules"
+              <ag-grid-angular
                 *ngIf="activeReq.quotes.length > 0"
                 style="width:100%;height:100%"
                 [theme]="gridTheme"
@@ -361,7 +364,6 @@ export class RfqWidget implements OnInit, OnDestroy {
   private staleInterval: any;
 
   gridTheme = fiGridTheme;
-  agModules = [AllEnterpriseModule];
   dealers = DEALERS;
   rfqSide: 'Buy' | 'Sell' = 'Buy';
   rfqSize = '5';

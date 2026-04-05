@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 
 import { ModuleRegistry, type ColDef } from 'ag-grid-community';
-import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { RISK_POSITIONS, BONDS } from '../services/trading-data.service';
 import {
@@ -17,6 +17,9 @@ const HEAT_COLORS = ['#1e90ff', '#00bcd4', '#f0b90b', '#f59e0b', 'var(--bn-red)'
 const heatLevel = (oas: number) =>
   oas < 20 ? 0 : oas < 50 ? 1 : oas < 100 ? 2 : oas < 150 ? 3 : oas < 250 ? 4 : 5;
 
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+LicenseManager.setLicenseKey('');
+
 @Component({
   selector: 'book-risk-widget',
   standalone: true,
@@ -27,7 +30,7 @@ const heatLevel = (oas: number) =>
       style="display:flex;flex-direction:column;height:100%;background:var(--bn-bg1);overflow:hidden"
     >
       <div style="flex:1;overflow:hidden">
-        <ag-grid-angular [modules]="agModules"
+        <ag-grid-angular
           style="width:100%;height:100%"
           [theme]="gridTheme"
           [rowData]="positions"
@@ -66,7 +69,6 @@ export class BookRiskWidget {
   @Input() panel: any;
 
   gridTheme = fiGridTheme;
-  agModules = [AllEnterpriseModule];
   positions = RISK_POSITIONS;
   heatBonds = BONDS.slice(0, 16);
 
