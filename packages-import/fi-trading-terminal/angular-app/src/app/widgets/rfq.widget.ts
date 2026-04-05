@@ -1,13 +1,7 @@
 import { Component, Input, OnInit, OnDestroy, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AgGridAngular } from 'ag-grid-angular';
-
-import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
-import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
-import { fiGridTheme } from '../services/ag-grid-theme';
 import { SharedStateService } from '../services/shared-state.service';
-import { RfqStatusRenderer } from '../services/cell-renderers';
 import {
   BONDS,
   DEALERS,
@@ -34,13 +28,16 @@ function makeQuote(bond: Bond, side: 'Buy' | 'Sell', dealer: string): RfqQuote {
   };
 }
 
-ModuleRegistry.registerModules([AllEnterpriseModule]);
-LicenseManager.setLicenseKey('');
+const RFQ_STATUS_STYLES: Record<string, { bg: string; color: string; border: string }> = {
+  live:  { bg: 'rgba(61,158,255,0.1)',  color: 'var(--fi-blue)',  border: 'rgba(61,158,255,0.25)' },
+  done:  { bg: 'rgba(45,212,191,0.12)', color: 'var(--fi-green)', border: 'rgba(45,212,191,0.25)' },
+  stale: { bg: 'rgba(74,82,117,0.2)',   color: 'var(--fi-t2)',    border: 'rgba(74,82,117,0.25)' },
+};
 
 @Component({
   selector: 'rfq-widget',
   standalone: true,
-  imports: [CommonModule, FormsModule, AgGridAngular],
+  imports: [CommonModule, FormsModule],
   host: { style: 'display:flex;flex-direction:column;height:100%;width:100%' },
   template: `
     <div style="display:flex;flex-direction:column;height:100%;background:var(--fi-bg1)">
@@ -319,18 +316,59 @@ LicenseManager.setLicenseKey('');
                   </div>
                 </div>
               </div>
-              <ag-grid-angular
-                *ngIf="activeReq.quotes.length > 0"
-                style="width:100%;height:100%"
-                [theme]="gridTheme"
-                [rowData]="sortedQuotes"
-                [columnDefs]="quoteColDefs"
-                [defaultColDef]="defaultColDef"
-                [headerHeight]="28"
-                [rowHeight]="26"
-                [getRowId]="getQuoteRowId"
-                [context]="gridContext"
-              />
+              <div *ngIf="activeReq.quotes.length > 0" style="width:100%;height:100%;overflow:auto">
+                <table style="width:100%;border-collapse:collapse">
+                  <thead>
+                    <tr>
+                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:left;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">DEALER</th>
+                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">BID</th>
+                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">BID SIZE</th>
+                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">ASK</th>
+                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">ASK SIZE</th>
+                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">SPREAD</th>
+                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:left;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">STATUS</th>
+                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:left;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let q of sortedQuotes" [style.opacity]="q.status === 'stale' || q.status === 'done' ? 0.5 : 1">
+                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;font-weight:700;color:var(--fi-cyan)">{{ q.dealer }}</td>
+                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right"
+                          [style.font-weight]="q.bid === bestBid ? '700' : '400'"
+                          [style.color]="q.bid === bestBid ? 'var(--fi-blue)' : '#5a7090'">
+                        {{ q.bid.toFixed(3) }}<span *ngIf="q.bid === bestBid" style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-blue)">&#9650;BEST</span>
+                      </td>
+                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right;color:var(--fi-t1)">{{ q.bidSize }}</td>
+                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right"
+                          [style.font-weight]="q.ask === bestAsk ? '700' : '400'"
+                          [style.color]="q.ask === bestAsk ? 'var(--fi-red)' : '#7a4050'">
+                        {{ q.ask.toFixed(3) }}<span *ngIf="q.ask === bestAsk" style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-red)">&#9660;BEST</span>
+                      </td>
+                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right;color:var(--fi-t1)">{{ q.askSize }}</td>
+                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right;color:var(--fi-amber)">{{ ((q.ask - q.bid) * 100).toFixed(1) }}c</td>
+                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap">
+                        <span style="font-size:9px;padding:1px 6px;border-radius:2px"
+                              [style.background]="statusBg(q.status)"
+                              [style.color]="statusColor(q.status)"
+                              [style.border]="'1px solid ' + statusBorder(q.status)">{{ q.status.toUpperCase() }}</span>
+                      </td>
+                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap">
+                        <ng-container *ngIf="q.status === 'done'">
+                          <span style="color:var(--fi-green)">&#10003;</span>
+                        </ng-container>
+                        <ng-container *ngIf="q.status !== 'done' && q.status !== 'stale' && activeReq?.status !== 'done'">
+                          <div style="display:flex;gap:6px">
+                            <button class="font-mono-fi font-bold" (click)="hitLift(activeReq!.id, q.dealer, 'hit')"
+                              style="font-size:11px;padding:4px 10px;border-radius:2px;background:rgba(61,158,255,0.15);color:var(--fi-blue);border:1px solid rgba(61,158,255,0.35);cursor:pointer">HIT</button>
+                            <button class="font-mono-fi font-bold" (click)="hitLift(activeReq!.id, q.dealer, 'lift')"
+                              style="font-size:11px;padding:4px 10px;border-radius:2px;background:rgba(0,229,160,0.15);color:var(--fi-green);border:1px solid rgba(0,229,160,0.35);cursor:pointer">LIFT</button>
+                          </div>
+                        </ng-container>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
             <!-- Done banner -->
             <div
@@ -363,7 +401,6 @@ export class RfqWidget implements OnInit, OnDestroy {
   private quoteInterval: any;
   private staleInterval: any;
 
-  gridTheme = fiGridTheme;
   dealers = DEALERS;
   rfqSide: 'Buy' | 'Sell' = 'Buy';
   rfqSize = '5';
@@ -371,140 +408,6 @@ export class RfqWidget implements OnInit, OnDestroy {
   instrSearch = '';
   instrOpen = false;
   localBond: Bond | null = null;
-
-  gridContext = { component: this };
-
-  getQuoteRowId = (p: { data: RfqQuote }) => p.data.dealer;
-
-  quoteColDefs: ColDef<RfqQuote>[] = [
-    {
-      field: 'dealer',
-      headerName: 'DEALER',
-      flex: 0.8,
-      cellStyle: { color: 'var(--fi-cyan)', fontWeight: '700' },
-    },
-    {
-      field: 'bid',
-      headerName: 'BID',
-      flex: 0.7,
-      type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-        if (!p.data) return '';
-        const isBest = p.data.bid === this.bestBid;
-        const fw = isBest ? 700 : 400;
-        const c = isBest ? 'var(--fi-blue)' : '#5a7090';
-        const op = p.data.status === 'stale' ? 'opacity:0.4;' : '';
-        const best = isBest
-          ? '<span style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-blue)">BEST</span>'
-          : '';
-        return `<span style="font-weight:${fw};color:${c};${op}">${p.data.bid.toFixed(3)}${best}</span>`;
-      },
-    },
-    {
-      field: 'bidSize',
-      headerName: 'BID SIZE',
-      flex: 0.6,
-      type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-        const op = p.data?.status === 'stale' ? 'opacity:0.4;' : '';
-        return `<span style="color:var(--fi-t1);${op}">${p.value}</span>`;
-      },
-    },
-    {
-      field: 'ask',
-      headerName: 'ASK',
-      flex: 0.7,
-      type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-        if (!p.data) return '';
-        const isBest = p.data.ask === this.bestAsk;
-        const fw = isBest ? 700 : 400;
-        const c = isBest ? 'var(--fi-red)' : '#7a4050';
-        const op = p.data.status === 'stale' ? 'opacity:0.4;' : '';
-        const best = isBest
-          ? '<span style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-red)">BEST</span>'
-          : '';
-        return `<span style="font-weight:${fw};color:${c};${op}">${p.data.ask.toFixed(3)}${best}</span>`;
-      },
-    },
-    {
-      field: 'askSize',
-      headerName: 'ASK SIZE',
-      flex: 0.6,
-      type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-        const op = p.data?.status === 'stale' ? 'opacity:0.4;' : '';
-        return `<span style="color:var(--fi-t1);${op}">${p.value}</span>`;
-      },
-    },
-    {
-      headerName: 'SPREAD',
-      flex: 0.6,
-      type: 'numericColumn',
-      valueGetter: (p) => (p.data ? ((p.data.ask - p.data.bid) * 100).toFixed(1) : ''),
-      cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-        const op = p.data?.status === 'stale' ? 'opacity:0.4;' : '';
-        return `<span style="color:var(--fi-amber);${op}">${p.value}c</span>`;
-      },
-    },
-    {
-      field: 'status',
-      headerName: 'STATUS',
-      flex: 0.6,
-      cellRenderer: RfqStatusRenderer,
-    },
-    {
-      headerName: 'ACTION',
-      flex: 0.8,
-      cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-        if (
-          !p.data ||
-          p.data.status === 'done' ||
-          p.data.status === 'stale' ||
-          this.activeReq?.status === 'done'
-        ) {
-          return '';
-        }
-        const container = document.createElement('div');
-        container.style.display = 'flex';
-        container.style.gap = '6px';
-
-        const hitBtn = document.createElement('button');
-        hitBtn.className = 'font-mono-fi font-bold';
-        hitBtn.style.cssText =
-          'font-size:11px;padding:4px 10px;border-radius:2px;background:rgba(61,158,255,0.15);color:var(--fi-blue);border:1px solid rgba(61,158,255,0.35);cursor:pointer';
-        hitBtn.textContent = 'HIT';
-        hitBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.hitLift(this.activeReq!.id, p.data!.dealer, 'hit');
-        });
-
-        const liftBtn = document.createElement('button');
-        liftBtn.className = 'font-mono-fi font-bold';
-        liftBtn.style.cssText =
-          'font-size:11px;padding:4px 10px;border-radius:2px;background:rgba(0,229,160,0.15);color:var(--fi-green);border:1px solid rgba(0,229,160,0.35);cursor:pointer';
-        liftBtn.textContent = 'LIFT';
-        liftBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.hitLift(this.activeReq!.id, p.data!.dealer, 'lift');
-        });
-
-        container.appendChild(hitBtn);
-        container.appendChild(liftBtn);
-        return container;
-      },
-    },
-  ];
-
-  defaultColDef: ColDef = {
-    sortable: true,
-    resizable: true,
-    suppressMovable: true,
-    cellStyle: {
-      fontFamily: 'JetBrains Mono,monospace',
-      fontSize: '11px',
-    },
-  };
 
   get activeBond(): Bond | null {
     return this.localBond || this.shared.selectedBond();

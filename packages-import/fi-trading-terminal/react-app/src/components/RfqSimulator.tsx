@@ -1,17 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
-import { AgGridReact } from 'ag-grid-react';
-import { ModuleRegistry } from 'ag-grid-community';
-import { AllEnterpriseModule } from 'ag-grid-enterprise';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import { fiGridTheme } from '@/lib/agGridTheme';
 import type { Bond, RfqRequest, RfqQuote } from '@/data/tradingData';
-import { RfqStatusRenderer } from '@design-system/cell-renderers';
 import { BONDS, DEALERS } from '@/data/tradingData';
 import { Badge } from '@/components/ui/badge';
 import { X, CheckCircle, Clock, Zap, Search } from 'lucide-react';
-
-ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 let rfqCounter = 1;
 
@@ -23,81 +15,95 @@ function makeQuote(bond: Bond, side: 'Buy' | 'Sell', dealer: string): RfqQuote {
   return { dealer, bid, ask, bidSize: `$${(Math.floor(Math.random()*8+2))}MM`, askSize: `$${(Math.floor(Math.random()*8+2))}MM`, ts: Date.now(), status: 'live' };
 }
 
-/* ── AG Grid sub-component for RFQ quote ladder ── */
+const STATUS_STYLES: Record<string, { bg: string; color: string; border: string }> = {
+  live:  { bg: 'rgba(61,158,255,0.1)',  color: 'var(--fi-blue)',  border: 'rgba(61,158,255,0.25)' },
+  done:  { bg: 'rgba(45,212,191,0.12)', color: 'var(--fi-green)', border: 'rgba(45,212,191,0.25)' },
+  stale: { bg: 'rgba(74,82,117,0.2)',   color: 'var(--fi-t2)',    border: 'rgba(74,82,117,0.25)' },
+};
+
+const thStyle: React.CSSProperties = {
+  fontSize: 9, color: 'var(--fi-t1)', textTransform: 'uppercase', letterSpacing: '0.04em',
+  fontWeight: 600, padding: '6px 8px', textAlign: 'left', whiteSpace: 'nowrap',
+  background: 'var(--fi-bg2)', borderBottom: '1px solid var(--fi-border)',
+};
+const thStyleRight: React.CSSProperties = { ...thStyle, textAlign: 'right' };
+const cellBase: React.CSSProperties = {
+  fontFamily: "'JetBrains Mono',monospace", fontSize: 11, padding: '6px 8px',
+  borderBottom: '1px solid var(--fi-border)', whiteSpace: 'nowrap',
+};
+
+/* ── HTML table sub-component for RFQ quote ladder ── */
 function RfqQuoteGrid({ quotes, bestBid, bestAsk, rfqId, rfqStatus, onHitLift }: {
   quotes: RfqQuote[]; bestBid: number; bestAsk: number; rfqId: string; rfqStatus: string;
   onHitLift: (rfqId: string, dealer: string, action: 'hit' | 'lift') => void;
 }) {
   const sorted = useMemo(() => [...quotes].sort((a, b) => b.bid - a.bid), [quotes]);
 
-  const ActionCell = useCallback((p: ICellRendererParams<RfqQuote>) => {
-    const q = p.data!;
-    const isDone = q.status === 'done';
-    const isStale = q.status === 'stale';
-    if (isDone) return <CheckCircle size={14} style={{ color: 'var(--fi-green)' }} />;
-    if (isStale || rfqStatus === 'done') return null;
-    return (
-      <div className="flex gap-1.5">
-        <button onClick={() => onHitLift(rfqId, q.dealer, 'hit')}
-          className="font-mono-fi px-2.5 py-1 rounded-sm font-bold"
-          style={{ fontSize: 11, background: 'rgba(61,158,255,0.15)', color: 'var(--fi-blue)', border: '1px solid rgba(61,158,255,0.35)' }}>
-          HIT
-        </button>
-        <button onClick={() => onHitLift(rfqId, q.dealer, 'lift')}
-          className="font-mono-fi px-2.5 py-1 rounded-sm font-bold"
-          style={{ fontSize: 11, background: 'rgba(0,229,160,0.15)', color: 'var(--fi-green)', border: '1px solid rgba(0,229,160,0.35)' }}>
-          LIFT
-        </button>
-      </div>
-    );
-  }, [rfqId, rfqStatus, onHitLift]);
-
-  const colDefs = useMemo<ColDef<RfqQuote>[]>(() => [
-    { field: 'dealer', headerName: 'DEALER', flex: 1, cellStyle: { fontWeight: 700, color: 'var(--fi-cyan)' } },
-    { field: 'bid', headerName: 'BID', width: 110, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-      const q = p.data!; const isBest = q.bid === bestBid; const isStale = q.status === 'stale';
-      return `<span style="font-weight:${isBest ? 700 : 400};color:${isBest ? 'var(--fi-blue)' : '#5a7090'};opacity:${isStale ? 0.4 : 1}">${q.bid.toFixed(3)}${isBest ? '<span style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-blue)">▲BEST</span>' : ''}</span>`;
-    }},
-    { field: 'bidSize', headerName: 'BID SIZE', width: 80, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-      const isStale = p.data!.status === 'stale';
-      return `<span style="color:var(--fi-t1);opacity:${isStale ? 0.4 : 1}">${p.value}</span>`;
-    }},
-    { field: 'ask', headerName: 'ASK', width: 110, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-      const q = p.data!; const isBest = q.ask === bestAsk; const isStale = q.status === 'stale';
-      return `<span style="font-weight:${isBest ? 700 : 400};color:${isBest ? 'var(--fi-red)' : '#7a4050'};opacity:${isStale ? 0.4 : 1}">${q.ask.toFixed(3)}${isBest ? '<span style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-red)">▼BEST</span>' : ''}</span>`;
-    }},
-    { field: 'askSize', headerName: 'ASK SIZE', width: 80, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-      const isStale = p.data!.status === 'stale';
-      return `<span style="color:var(--fi-t1);opacity:${isStale ? 0.4 : 1}">${p.value}</span>`;
-    }},
-    { colId: 'spread', headerName: 'SPREAD', width: 80, type: 'numericColumn',
-      valueGetter: p => p.data ? ((p.data.ask - p.data.bid) * 100).toFixed(1) : '',
-      cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
-        const isStale = p.data!.status === 'stale';
-        return `<span style="color:var(--fi-amber);opacity:${isStale ? 0.4 : 1}">${p.value}¢</span>`;
-      }},
-    { field: 'status', headerName: 'STATUS', width: 75, cellRenderer: RfqStatusRenderer },
-    { colId: 'action', headerName: 'ACTION', width: 130, cellRenderer: ActionCell },
-  ], [bestBid, bestAsk, ActionCell]);
-
-  const defaultColDef = useMemo<ColDef>(() => ({
-    suppressMovable: true,
-    cellStyle: { fontFamily: 'JetBrains Mono,monospace', fontSize: 11 },
-  }), []);
-
-  const getRowId = useCallback((p: { data: RfqQuote }) => p.data.dealer, []);
-
   return (
-    <AgGridReact<RfqQuote>
-      theme={fiGridTheme}
-      rowData={sorted}
-      columnDefs={colDefs}
-      defaultColDef={defaultColDef}
-      getRowId={getRowId}
-      headerHeight={28}
-      rowHeight={34}
-      domLayout='autoHeight'
-    />
+    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <thead>
+        <tr>
+          <th style={thStyle}>DEALER</th>
+          <th style={thStyleRight}>BID</th>
+          <th style={thStyleRight}>BID SIZE</th>
+          <th style={thStyleRight}>ASK</th>
+          <th style={thStyleRight}>ASK SIZE</th>
+          <th style={thStyleRight}>SPREAD</th>
+          <th style={thStyle}>STATUS</th>
+          <th style={thStyle}>ACTION</th>
+        </tr>
+      </thead>
+      <tbody>
+        {sorted.map(q => {
+          const isStale = q.status === 'stale';
+          const isDone = q.status === 'done';
+          const rowOpacity = isStale || isDone ? 0.5 : 1;
+          const isBestBid = q.bid === bestBid;
+          const isBestAsk = q.ask === bestAsk;
+          const spread = ((q.ask - q.bid) * 100).toFixed(1);
+          const ss = STATUS_STYLES[q.status] || STATUS_STYLES['live'];
+          return (
+            <tr key={q.dealer} style={{ opacity: rowOpacity }}>
+              <td style={{ ...cellBase, fontWeight: 700, color: 'var(--fi-cyan)' }}>{q.dealer}</td>
+              <td style={{ ...cellBase, textAlign: 'right', fontWeight: isBestBid ? 700 : 400, color: isBestBid ? 'var(--fi-blue)' : '#5a7090' }}>
+                {q.bid.toFixed(3)}
+                {isBestBid && <span style={{ marginLeft: 4, fontSize: 9, fontWeight: 700, color: 'var(--fi-blue)' }}>▲BEST</span>}
+              </td>
+              <td style={{ ...cellBase, textAlign: 'right', color: 'var(--fi-t1)' }}>{q.bidSize}</td>
+              <td style={{ ...cellBase, textAlign: 'right', fontWeight: isBestAsk ? 700 : 400, color: isBestAsk ? 'var(--fi-red)' : '#7a4050' }}>
+                {q.ask.toFixed(3)}
+                {isBestAsk && <span style={{ marginLeft: 4, fontSize: 9, fontWeight: 700, color: 'var(--fi-red)' }}>▼BEST</span>}
+              </td>
+              <td style={{ ...cellBase, textAlign: 'right', color: 'var(--fi-t1)' }}>{q.askSize}</td>
+              <td style={{ ...cellBase, textAlign: 'right', color: 'var(--fi-amber)' }}>{spread}¢</td>
+              <td style={cellBase}>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, padding: '1px 6px', borderRadius: 2, background: ss.bg, color: ss.color, border: `1px solid ${ss.border}` }}>
+                  {q.status.toUpperCase()}
+                </span>
+              </td>
+              <td style={cellBase}>
+                {isDone ? (
+                  <CheckCircle size={14} style={{ color: 'var(--fi-green)' }} />
+                ) : !isStale && rfqStatus !== 'done' ? (
+                  <div className="flex gap-1.5">
+                    <button onClick={() => onHitLift(rfqId, q.dealer, 'hit')}
+                      className="font-mono-fi px-2.5 py-1 rounded-sm font-bold"
+                      style={{ fontSize: 11, background: 'rgba(61,158,255,0.15)', color: 'var(--fi-blue)', border: '1px solid rgba(61,158,255,0.35)' }}>
+                      HIT
+                    </button>
+                    <button onClick={() => onHitLift(rfqId, q.dealer, 'lift')}
+                      className="font-mono-fi px-2.5 py-1 rounded-sm font-bold"
+                      style={{ fontSize: 11, background: 'rgba(0,229,160,0.15)', color: 'var(--fi-green)', border: '1px solid rgba(0,229,160,0.35)' }}>
+                      LIFT
+                    </button>
+                  </div>
+                ) : null}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
