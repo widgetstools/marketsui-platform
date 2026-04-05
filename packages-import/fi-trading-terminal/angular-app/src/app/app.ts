@@ -1,4 +1,4 @@
-import { Component, signal, effect, PLATFORM_ID, inject, Type } from '@angular/core';
+import { Component, signal, effect, PLATFORM_ID, inject, Type, OnDestroy } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DockManagerCoreComponent, type DockTheme } from '@widgetstools/angular-dock-manager';
@@ -538,7 +538,7 @@ const NAV_TABS = [
     `,
   ],
 })
-export class App {
+export class App implements OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private shared = inject(SharedStateService);
 
@@ -548,11 +548,12 @@ export class App {
   layoutVersion = signal(1);
   private lastDockState: DockManagerState | null = null;
   time = '';
-  tickerStrip: TickerItem[] = TICKER_STRIP;
+  tickerStrip: TickerItem[] = TICKER_STRIP.map(t => ({...t}));
   widgets = WIDGETS;
   dockTheme: DockTheme = slateDark;
   private dockApi: DockviewApi | null = null;
   private clockId: any;
+  private tickerId: any;
 
   get isTrading() {
     return this.activeTab() === 'Trade' || this.activeTab() === 'Prices';
@@ -618,6 +619,20 @@ export class App {
     };
     updateClock();
     this.clockId = setInterval(updateClock, 1000);
+
+    // Tick the ticker strip values
+    this.tickerId = setInterval(() => {
+      this.tickerStrip = this.tickerStrip.map(t => {
+        if (Math.random() < 0.3) {
+          const delta = (Math.random() - 0.5) * 0.04;
+          const oldVal = parseFloat(t.value);
+          const newVal = +(oldVal + delta).toFixed(2);
+          const chgVal = +(parseFloat(t.change) + delta).toFixed(2);
+          return { ...t, value: newVal.toFixed(2), change: (chgVal >= 0 ? '+' : '') + chgVal.toFixed(2), up: chgVal >= 0 };
+        }
+        return t;
+      });
+    }, 2000);
   }
 
   setActiveTab(t: string) {
@@ -692,5 +707,10 @@ export class App {
       });
       this.dockApi.floatPanel({ panelId: 'rfq', x: 120, y: 60, width: 720, height: 520 });
     }
+  }
+
+  ngOnDestroy() {
+    if (this.clockId) clearInterval(this.clockId);
+    if (this.tickerId) clearInterval(this.tickerId);
   }
 }
