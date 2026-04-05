@@ -10,7 +10,7 @@ import {
   BookNameRenderer,
   OasValueRenderer,
   PnlValueRenderer,
-} from '@design-system/cell-renderers';
+} from '../services/cell-renderers';
 
 
 const HEAT_COLORS = ['#1e90ff', '#00bcd4', '#f0b90b', '#f59e0b', 'var(--bn-red)', '#dc2626'];

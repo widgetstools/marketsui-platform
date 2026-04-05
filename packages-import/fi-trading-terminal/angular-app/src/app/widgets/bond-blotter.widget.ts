@@ -14,7 +14,7 @@ import {
   OasValueRenderer,
   SignedValueRenderer,
   SideCellRenderer,
-} from '@design-system/cell-renderers';
+} from '../services/cell-renderers';
 
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);

@@ -6,7 +6,7 @@ import { ModuleRegistry, type ColDef, type GridApi, type GridReadyEvent } from '
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { MARKET_INDICES, type MarketIndex } from '../services/trading-data.service';
-import { ChangeValueRenderer, YtdValueRenderer } from '@design-system/cell-renderers';
+import { ChangeValueRenderer, YtdValueRenderer } from '../services/cell-renderers';
 
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);

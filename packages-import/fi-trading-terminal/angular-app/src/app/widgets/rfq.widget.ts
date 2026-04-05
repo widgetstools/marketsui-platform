@@ -7,7 +7,7 @@ import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-c
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { SharedStateService } from '../services/shared-state.service';
-import { RfqStatusRenderer } from '@design-system/cell-renderers';
+import { RfqStatusRenderer } from '../services/cell-renderers';
 import {
   BONDS,
   DEALERS,

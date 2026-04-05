@@ -10,7 +10,7 @@ import {
   SideCellRenderer,
   FilledAmountRenderer,
   StatusBadgeRenderer,
-} from '@design-system/cell-renderers';
+} from '../services/cell-renderers';
 
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
