@@ -3,7 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
-import { ModuleRegistry, type ColDef, type GridApi, type GridReadyEvent, type ICellRendererParams } from 'ag-grid-community';
+import {
+  ModuleRegistry,
+  type ColDef,
+  type GridApi,
+  type GridReadyEvent,
+  type ICellRendererParams,
+} from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { BONDS, type Bond } from '../services/trading-data.service';
 import { SharedStateService } from '../services/shared-state.service';
@@ -18,26 +24,46 @@ LicenseManager.setLicenseKey('');
   host: { style: 'display:flex;flex-direction:column;height:100%;width:100%' },
   template: `
     <!-- Toolbar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 12px;height:28px;border-bottom:1px solid var(--fi-border);background:var(--fi-bg1);flex-shrink:0">
+    <div
+      style="display:flex;align-items:center;justify-content:space-between;padding:0 12px;height:28px;border-bottom:1px solid var(--fi-border);background:var(--fi-bg1);flex-shrink:0"
+    >
       <div style="display:flex;align-items:center;gap:6px">
-        <button *ngFor="let f of quickFilters" class="pact">{{f}}</button>
+        <button *ngFor="let f of quickFilters" class="pact">{{ f }}</button>
         <div style="width:1px;height:14px;background:var(--fi-border2)"></div>
         <button class="pact">CSV</button>
         <button class="pact">Cols</button>
       </div>
-      <span class="font-mono-fi" style="font-size:9px;padding:1px 6px;border-radius:2px;background:var(--fi-bg3);color:var(--fi-t1);border:1px solid var(--fi-border2)">{{filteredData.length}}</span>
+      <span
+        class="font-mono-fi"
+        style="font-size:9px;padding:1px 6px;border-radius:2px;background:var(--fi-bg3);color:var(--fi-t1);border:1px solid var(--fi-border2)"
+        >{{ filteredData.length }}</span
+      >
     </div>
     <!-- Sector filters -->
-    <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid var(--fi-border);background:var(--fi-bg0);flex-shrink:0">
-      <button *ngFor="let s of sectors" (click)="sectorFilter=s" class="font-mono-fi"
-        [style.fontSize.px]="9" [style.padding]="'2px 8px'" [style.borderRadius.px]="2"
-        [style.background]="sectorFilter===s ? 'rgba(61,158,255,0.1)' : 'transparent'"
-        [style.borderColor]="sectorFilter===s ? 'var(--fi-blue)' : 'var(--fi-border2)'"
-        [style.color]="sectorFilter===s ? 'var(--fi-blue)' : 'var(--bn-t2)'"
-        style="border:1px solid;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer">{{s}}</button>
+    <div
+      style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid var(--fi-border);background:var(--fi-bg0);flex-shrink:0"
+    >
+      <button
+        *ngFor="let s of sectors"
+        (click)="sectorFilter = s"
+        class="font-mono-fi"
+        [style.fontSize.px]="9"
+        [style.padding]="'2px 8px'"
+        [style.borderRadius.px]="2"
+        [style.background]="sectorFilter === s ? 'rgba(61,158,255,0.1)' : 'transparent'"
+        [style.borderColor]="sectorFilter === s ? 'var(--fi-blue)' : 'var(--fi-border2)'"
+        [style.color]="sectorFilter === s ? 'var(--fi-blue)' : 'var(--bn-t2)'"
+        style="border:1px solid;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer"
+      >
+        {{ s }}
+      </button>
       <div style="margin-left:auto;position:relative">
-        <input [(ngModel)]="search" placeholder="Ticker / CUSIP / Issuer..."
-          class="font-mono-fi" style="height:24px;padding:0 8px 0 24px;width:176px;border-radius:2px;background:var(--fi-bg2);color:var(--fi-t0);font-size:11px;border:1px solid var(--fi-border2);outline:none"/>
+        <input
+          [(ngModel)]="search"
+          placeholder="Ticker / CUSIP / Issuer..."
+          class="font-mono-fi"
+          style="height:24px;padding:0 8px 0 24px;width:176px;border-radius:2px;background:var(--fi-bg2);color:var(--fi-t0);font-size:11px;border:1px solid var(--fi-border2);outline:none"
+        />
       </div>
     </div>
     <!-- Grid -->
@@ -74,55 +100,192 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
   sectors = ['All', 'Government', 'Financials', 'Technology', 'Healthcare', 'Consumer', 'Telecom'];
 
   colDefs: ColDef<Bond>[] = [
-    { field: 'ticker', headerName: 'TICKER', width: 68, pinned: 'left', cellStyle: { color: 'var(--fi-cyan)', fontWeight: 700, fontSize: '11px' } },
-    { field: 'issuer', headerName: 'ISSUER', width: 140, pinned: 'left', cellStyle: { color: 'var(--bn-t1)', fontSize: '11px' } },
-    { field: 'cpn', headerName: 'CPN', width: 62, valueFormatter: p => p.value?.toFixed(3), type: 'numericColumn' },
+    {
+      field: 'ticker',
+      headerName: 'TICKER',
+      width: 68,
+      pinned: 'left',
+      cellStyle: { color: 'var(--fi-cyan)', fontWeight: 700, fontSize: '11px' },
+    },
+    {
+      field: 'issuer',
+      headerName: 'ISSUER',
+      width: 140,
+      pinned: 'left',
+      cellStyle: { color: 'var(--bn-t1)', fontSize: '11px' },
+    },
+    {
+      field: 'cpn',
+      headerName: 'CPN',
+      width: 62,
+      valueFormatter: (p) => p.value?.toFixed(3),
+      type: 'numericColumn',
+    },
     { field: 'mat', headerName: 'MAT', width: 52, cellStyle: { color: 'var(--bn-t1)' } },
-    { field: 'cusip', headerName: 'CUSIP', width: 90, cellStyle: { color: 'var(--bn-t2)', fontSize: '9px' } },
-    { field: 'rtg', headerName: 'RTG', width: 50, cellRenderer: (p: ICellRendererParams<Bond>) => {
-      const m: Record<string,{bg:string,color:string,border:string}> = {
-        aaa:{bg:'rgba(0,203,129,0.1)',color:'var(--bn-green)',border:'rgba(0,203,129,0.25)'},
-        aa:{bg:'rgba(0,203,129,0.06)',color:'var(--bn-green)',border:'rgba(0,203,129,0.2)'},
-        a:{bg:'rgba(190,242,100,0.08)',color:'#86cc16',border:'rgba(132,204,22,0.25)'},
-        bbb:{bg:'rgba(245,166,35,0.08)',color:'var(--bn-yellow)',border:'rgba(245,166,35,0.25)'},
-        hy:{bg:'rgba(246,70,93,0.08)',color:'var(--bn-red)',border:'rgba(246,70,93,0.25)'},
-      };
-      const s = m[p.data?.rtgClass||'bbb']||m['bbb'];
-      return `<span style="font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;letter-spacing:0.04em;padding:1px 6px;border-radius:2px;background:${s.bg};color:${s.color};border:1px solid ${s.border}">${p.value}</span>`;
-    }},
-    { field: 'sector', headerName: 'SECTOR', width: 90, cellStyle: { color: 'var(--bn-t1)', fontSize: '9px' } },
-    { field: 'bid', headerName: 'BID', width: 80, type: 'numericColumn', cellStyle: { color: 'var(--bn-blue)', fontWeight: 600 }, valueFormatter: p => Number(p.value).toFixed(3) },
-    { field: 'ask', headerName: 'ASK', width: 80, type: 'numericColumn', cellStyle: { color: 'var(--bn-red)', fontWeight: 600 }, valueFormatter: p => Number(p.value).toFixed(3) },
-    { colId: 'mid', headerName: 'MID', width: 80, type: 'numericColumn', cellStyle: { color: 'var(--bn-t1)' }, valueGetter: p => p.data ? ((p.data.bid + p.data.ask) / 2) : 0, valueFormatter: p => Number(p.value).toFixed(3) },
-    { field: 'ytm', headerName: 'YTM', width: 60, valueFormatter: p => p.value?.toFixed(3), type: 'numericColumn' },
-    { field: 'ytw', headerName: 'YTW', width: 60, valueFormatter: p => p.value?.toFixed(3), type: 'numericColumn', cellStyle: { color: 'var(--bn-t1)' } },
-    { field: 'oas', headerName: 'OAS', width: 56, type: 'numericColumn', cellRenderer: (p: ICellRendererParams) => {
-      const v = Number(p.value); const c = v > 80 ? 'var(--fi-amber)' : 'var(--fi-green)';
-      return `<span style="color:${c}">${v > 0 ? '+' + v : v}</span>`;
-    }},
-    { field: 'gSpd', headerName: 'G-SPD', width: 58, type: 'numericColumn', cellRenderer: (p: ICellRendererParams) => {
-      const v = Number(p.value); return `<span style="color:var(--bn-t1)">${v > 0 ? '+' + v : v}</span>`;
-    }},
-    { field: 'dur', headerName: 'DUR', width: 54, valueFormatter: p => p.value?.toFixed(2), type: 'numericColumn' },
-    { field: 'dv01', headerName: 'DV01', width: 62, valueFormatter: p => p.value?.toLocaleString(), type: 'numericColumn' },
-    { field: 'cvx', headerName: 'CVX', width: 50, valueFormatter: p => p.value?.toFixed(2), type: 'numericColumn' },
+    {
+      field: 'cusip',
+      headerName: 'CUSIP',
+      width: 90,
+      cellStyle: { color: 'var(--bn-t2)', fontSize: '9px' },
+    },
+    {
+      field: 'rtg',
+      headerName: 'RTG',
+      width: 50,
+      cellRenderer: (p: ICellRendererParams<Bond>) => {
+        const m: Record<string, { bg: string; color: string; border: string }> = {
+          aaa: {
+            bg: 'rgba(0,203,129,0.1)',
+            color: 'var(--bn-green)',
+            border: 'rgba(0,203,129,0.25)',
+          },
+          aa: {
+            bg: 'rgba(0,203,129,0.06)',
+            color: 'var(--bn-green)',
+            border: 'rgba(0,203,129,0.2)',
+          },
+          a: { bg: 'rgba(190,242,100,0.08)', color: '#86cc16', border: 'rgba(132,204,22,0.25)' },
+          bbb: {
+            bg: 'rgba(245,166,35,0.08)',
+            color: 'var(--bn-yellow)',
+            border: 'rgba(245,166,35,0.25)',
+          },
+          hy: {
+            bg: 'rgba(246,70,93,0.08)',
+            color: 'var(--bn-red)',
+            border: 'rgba(246,70,93,0.25)',
+          },
+        };
+        const s = m[p.data?.rtgClass || 'bbb'] || m['bbb'];
+        return `<span style="font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;letter-spacing:0.04em;padding:1px 6px;border-radius:2px;background:${s.bg};color:${s.color};border:1px solid ${s.border}">${p.value}</span>`;
+      },
+    },
+    {
+      field: 'sector',
+      headerName: 'SECTOR',
+      width: 90,
+      cellStyle: { color: 'var(--bn-t1)', fontSize: '9px' },
+    },
+    {
+      field: 'bid',
+      headerName: 'BID',
+      width: 80,
+      type: 'numericColumn',
+      cellStyle: { color: 'var(--bn-blue)', fontWeight: 600 },
+      valueFormatter: (p) => Number(p.value).toFixed(3),
+    },
+    {
+      field: 'ask',
+      headerName: 'ASK',
+      width: 80,
+      type: 'numericColumn',
+      cellStyle: { color: 'var(--bn-red)', fontWeight: 600 },
+      valueFormatter: (p) => Number(p.value).toFixed(3),
+    },
+    {
+      colId: 'mid',
+      headerName: 'MID',
+      width: 80,
+      type: 'numericColumn',
+      cellStyle: { color: 'var(--bn-t1)' },
+      valueGetter: (p) => (p.data ? (p.data.bid + p.data.ask) / 2 : 0),
+      valueFormatter: (p) => Number(p.value).toFixed(3),
+    },
+    {
+      field: 'ytm',
+      headerName: 'YTM',
+      width: 60,
+      valueFormatter: (p) => p.value?.toFixed(3),
+      type: 'numericColumn',
+    },
+    {
+      field: 'ytw',
+      headerName: 'YTW',
+      width: 60,
+      valueFormatter: (p) => p.value?.toFixed(3),
+      type: 'numericColumn',
+      cellStyle: { color: 'var(--bn-t1)' },
+    },
+    {
+      field: 'oas',
+      headerName: 'OAS',
+      width: 56,
+      type: 'numericColumn',
+      cellRenderer: (p: ICellRendererParams) => {
+        const v = Number(p.value);
+        const c = v > 80 ? 'var(--fi-amber)' : 'var(--fi-green)';
+        return `<span style="color:${c}">${v > 0 ? '+' + v : v}</span>`;
+      },
+    },
+    {
+      field: 'gSpd',
+      headerName: 'G-SPD',
+      width: 58,
+      type: 'numericColumn',
+      cellRenderer: (p: ICellRendererParams) => {
+        const v = Number(p.value);
+        return `<span style="color:var(--bn-t1)">${v > 0 ? '+' + v : v}</span>`;
+      },
+    },
+    {
+      field: 'dur',
+      headerName: 'DUR',
+      width: 54,
+      valueFormatter: (p) => p.value?.toFixed(2),
+      type: 'numericColumn',
+    },
+    {
+      field: 'dv01',
+      headerName: 'DV01',
+      width: 62,
+      valueFormatter: (p) => p.value?.toLocaleString(),
+      type: 'numericColumn',
+    },
+    {
+      field: 'cvx',
+      headerName: 'CVX',
+      width: 50,
+      valueFormatter: (p) => p.value?.toFixed(2),
+      type: 'numericColumn',
+    },
     { field: 'face', headerName: 'FACE', width: 58, cellStyle: { color: 'var(--bn-t1)' } },
-    { field: 'side', headerName: 'SIDE', width: 56, cellRenderer: (p: ICellRendererParams) => {
-      const c = p.value === 'Buy' ? 'var(--fi-green)' : 'var(--fi-red)';
-      return `<span style="font-size:9px;font-weight:700;letter-spacing:0.05em;color:${c}">${p.value === 'Buy' ? 'BUY' : 'SELL'}</span>`;
-    }},
-    { field: 'axes', headerName: 'AXES', width: 62, cellStyle: { color: 'var(--bn-t2)', fontSize: '9px' } },
+    {
+      field: 'side',
+      headerName: 'SIDE',
+      width: 56,
+      cellRenderer: (p: ICellRendererParams) => {
+        const c = p.value === 'Buy' ? 'var(--fi-green)' : 'var(--fi-red)';
+        return `<span style="font-size:9px;font-weight:700;letter-spacing:0.05em;color:${c}">${p.value === 'Buy' ? 'BUY' : 'SELL'}</span>`;
+      },
+    },
+    {
+      field: 'axes',
+      headerName: 'AXES',
+      width: 62,
+      cellStyle: { color: 'var(--bn-t2)', fontSize: '9px' },
+    },
   ];
 
   defaultColDef: ColDef = {
-    sortable: true, resizable: true, suppressMovable: false,
-    cellStyle: { fontFamily: 'JetBrains Mono,monospace', fontSize: '11px', display: 'flex', alignItems: 'center' },
+    sortable: true,
+    resizable: true,
+    suppressMovable: false,
+    cellStyle: {
+      fontFamily: 'JetBrains Mono,monospace',
+      fontSize: '11px',
+      display: 'flex',
+      alignItems: 'center',
+    },
   };
 
   get filteredData(): Bond[] {
-    return this.rowData.filter(b => {
+    return this.rowData.filter((b) => {
       const ms = this.sectorFilter === 'All' || b.sector === this.sectorFilter;
-      const mq = !this.search || [b.ticker, b.issuer, b.cusip].some(v => v.toLowerCase().includes(this.search.toLowerCase()));
+      const mq =
+        !this.search ||
+        [b.ticker, b.issuer, b.cusip].some((v) =>
+          v.toLowerCase().includes(this.search.toLowerCase()),
+        );
       return ms && mq;
     });
   }
@@ -130,10 +293,10 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
   getRowId = (p: { data: Bond }) => p.data.id;
 
   ngOnInit() {
-    this.rowData = BONDS.map(b => ({ ...b }));
+    this.rowData = BONDS.map((b) => ({ ...b }));
     this.tickInterval = setInterval(() => {
       const updates: Bond[] = [];
-      this.rowData = this.rowData.map(b => {
+      this.rowData = this.rowData.map((b) => {
         if (Math.random() < 0.22) {
           const delta = (Math.random() - 0.5) * 0.05;
           const nb = { ...b, bid: +(b.bid + delta).toFixed(3), ask: +(b.ask + delta).toFixed(3) };
@@ -152,7 +315,9 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
     if (this.tickInterval) clearInterval(this.tickInterval);
   }
 
-  onGridReady(e: GridReadyEvent) { this.gridApi = e.api; }
+  onGridReady(e: GridReadyEvent) {
+    this.gridApi = e.api;
+  }
 
   onRowClicked(e: any) {
     if (e.data) this.shared.selectedBond.set(e.data);
