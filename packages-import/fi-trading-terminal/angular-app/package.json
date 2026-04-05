@@ -18,6 +18,8 @@
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
     "@primeng/themes": "^21.0.4",
+    "@widgetstools/angular-dock-manager": "^0.1.7",
+    "@widgetstools/dock-manager-core": "^0.1.7",
     "ag-grid-angular": "^35.2.0",
     "ag-grid-community": "^35.2.0",
     "ag-grid-enterprise": "^35.2.0",
