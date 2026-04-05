@@ -47,7 +47,7 @@ export function BondBlotter({onSelectBond}:BondBlotterProps) {
 
   const defaultColDef=useMemo<ColDef>(()=>({
     sortable:true,resizable:true,suppressMovable:false,
-    cellStyle:{fontFamily:'JetBrains Mono,monospace',fontSize:11,display:'flex',alignItems:'center'},
+    cellStyle:{fontFamily:'JetBrains Mono,monospace',fontSize:11},
   }),[]);
 
   // Live ticking

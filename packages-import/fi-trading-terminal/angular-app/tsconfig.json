@@ -14,9 +14,11 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@design-system/*": ["../design-system/*"]
+      "@design-system/*": ["../design-system/*"],
+      "ag-grid-community": ["./node_modules/ag-grid-community"]
     }
   },
   "angularCompilerOptions": {

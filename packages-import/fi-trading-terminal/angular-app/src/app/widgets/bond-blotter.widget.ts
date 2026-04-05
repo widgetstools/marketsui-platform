@@ -3,12 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
-import {
-  ModuleRegistry,
-  type ColDef,
-  type GridApi,
-  type GridReadyEvent,
-} from 'ag-grid-community';
+import { ModuleRegistry, type ColDef, type GridApi, type GridReadyEvent } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { BONDS, type Bond } from '../services/trading-data.service';
 import { SharedStateService } from '../services/shared-state.service';
@@ -272,8 +267,6 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
     cellStyle: {
       fontFamily: 'JetBrains Mono,monospace',
       fontSize: '11px',
-      display: 'flex',
-      alignItems: 'center',
     },
   };
 

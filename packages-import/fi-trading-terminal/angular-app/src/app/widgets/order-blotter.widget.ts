@@ -127,8 +127,6 @@ export class OrderBlotterWidget {
     cellStyle: {
       fontFamily: 'JetBrains Mono,monospace',
       fontSize: '11px',
-      display: 'flex',
-      alignItems: 'center',
     },
   };
 

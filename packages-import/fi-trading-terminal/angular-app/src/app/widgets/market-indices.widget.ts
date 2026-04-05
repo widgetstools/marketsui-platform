@@ -2,18 +2,10 @@ import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
-import {
-  ModuleRegistry,
-  type ColDef,
-  type GridApi,
-  type GridReadyEvent,
-} from 'ag-grid-community';
+import { ModuleRegistry, type ColDef, type GridApi, type GridReadyEvent } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { MARKET_INDICES, type MarketIndex } from '../services/trading-data.service';
-import {
-  ChangeValueRenderer,
-  YtdValueRenderer,
-} from '@design-system/cell-renderers';
+import { ChangeValueRenderer, YtdValueRenderer } from '@design-system/cell-renderers';
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey('');
@@ -89,8 +81,6 @@ export class MarketIndicesWidget implements OnInit, OnDestroy {
     cellStyle: {
       fontFamily: 'JetBrains Mono,monospace',
       fontSize: '11px',
-      display: 'flex',
-      alignItems: 'center',
     },
   };
 

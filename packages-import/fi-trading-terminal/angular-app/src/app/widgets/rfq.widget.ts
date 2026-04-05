@@ -501,8 +501,6 @@ export class RfqWidget implements OnInit, OnDestroy {
     cellStyle: {
       fontFamily: 'JetBrains Mono,monospace',
       fontSize: '11px',
-      display: 'flex',
-      alignItems: 'center',
     },
   };
 

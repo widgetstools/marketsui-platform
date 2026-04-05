@@ -43,7 +43,7 @@ export function BottomOrderPanel({ bond }: BottomOrderPanelProps) {
 
   const defaultColDef = useMemo<ColDef>(() => ({
     suppressMovable: true,
-    cellStyle: { fontFamily: 'JetBrains Mono,monospace', fontSize: 11, display: 'flex', alignItems: 'center' },
+    cellStyle: { fontFamily: 'JetBrains Mono,monospace', fontSize: 11 },
   }), []);
 
   const getOrderRowId = useCallback((p: { data: typeof INITIAL_ORDERS[0] }) => p.data.id, []);

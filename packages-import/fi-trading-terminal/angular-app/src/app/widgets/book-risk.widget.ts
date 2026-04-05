@@ -114,8 +114,6 @@ export class BookRiskWidget {
     cellStyle: {
       fontFamily: 'JetBrains Mono,monospace',
       fontSize: '11px',
-      display: 'flex',
-      alignItems: 'center',
     },
   };
 

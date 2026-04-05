@@ -63,7 +63,7 @@ export function BookRiskSummary() {
   ],[]);
   const defaultColDef = useMemo<ColDef>(()=>({
     suppressMovable:true,
-    cellStyle:{fontFamily:'JetBrains Mono,monospace',fontSize:11,display:'flex',alignItems:'center'},
+    cellStyle:{fontFamily:'JetBrains Mono,monospace',fontSize:11},
   }),[]);
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',background:'var(--bn-bg1)',overflow:'hidden'}}>

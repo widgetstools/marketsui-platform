@@ -82,7 +82,7 @@ function RfqQuoteGrid({ quotes, bestBid, bestAsk, rfqId, rfqStatus, onHitLift }:
 
   const defaultColDef = useMemo<ColDef>(() => ({
     suppressMovable: true,
-    cellStyle: { fontFamily: 'JetBrains Mono,monospace', fontSize: 11, display: 'flex', alignItems: 'center' },
+    cellStyle: { fontFamily: 'JetBrains Mono,monospace', fontSize: 11 },
   }), []);
 
   const getRowId = useCallback((p: { data: RfqQuote }) => p.data.dealer, []);
