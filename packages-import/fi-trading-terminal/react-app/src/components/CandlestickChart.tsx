@@ -121,7 +121,7 @@ function drawChart(canvas: HTMLCanvasElement, candles: Candle[], ma7: number[], 
   const tagColor = last.c >= last.o ? greenColor : redColor;
   ctx.fillStyle = tagColor;
   ctx.beginPath(); ctx.roundRect(W-pad.r-48, lastY-9, 48, 18, 2); ctx.fill();
-  ctx.fillStyle = getCssVar('--bn-t0'); ctx.font = 'bold 9px JetBrains Mono,monospace'; ctx.textAlign='center';
+  ctx.fillStyle = getCssVar('--bn-cta-text'); ctx.font = 'bold 9px JetBrains Mono,monospace'; ctx.textAlign='center';
   ctx.fillText(last.c.toFixed(3), W-pad.r-24, lastY+3);
 
   // MA legend

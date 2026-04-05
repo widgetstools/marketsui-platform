@@ -75,9 +75,9 @@
 .price-input::placeholder { color: var(--bn-t2); }
 
 /* ── Buy/Sell CTA ── */
-.btn-buy  { background: var(--bn-buy-bg); color: #fff; font-weight: 700; border-radius: 4px; padding: 10px; width: 100%; cursor: pointer; font-size: var(--fi-font-md); font-family: var(--fi-mono); letter-spacing: 0.03em; }
+.btn-buy  { background: var(--bn-buy-bg); color: var(--bn-cta-text); font-weight: 700; border-radius: 4px; padding: 10px; width: 100%; cursor: pointer; font-size: var(--fi-font-md); font-family: var(--fi-mono); letter-spacing: 0.03em; }
 .btn-buy:hover  { background: var(--bn-green2); }
-.btn-sell { background: var(--bn-sell-bg); color: #fff; font-weight: 700; border-radius: 4px; padding: 10px; width: 100%; cursor: pointer; font-size: var(--fi-font-md); font-family: var(--fi-mono); letter-spacing: 0.03em; }
+.btn-sell { background: var(--bn-sell-bg); color: var(--bn-cta-text); font-weight: 700; border-radius: 4px; padding: 10px; width: 100%; cursor: pointer; font-size: var(--fi-font-md); font-family: var(--fi-mono); letter-spacing: 0.03em; }
 .btn-sell:hover { background: var(--bn-red2); }
 
 /* ── Recharts ── */

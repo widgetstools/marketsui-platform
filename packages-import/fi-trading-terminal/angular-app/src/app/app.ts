@@ -411,23 +411,68 @@ const NAV_TABS = [
           </div>
           <div style="width:1px;height:14px;background:var(--bn-border);flex-shrink:0"></div>
           <!-- Clock -->
-          <span class="font-mono-fi" style="color:var(--bn-t1);font-size:11px">{{ time }}</span>
+          <span class="font-mono-fi" style="color:var(--bn-t1);font-size:11px">{{ time() }}</span>
           <div style="width:1px;height:14px;background:var(--bn-border);flex-shrink:0"></div>
           <!-- Save layout -->
           <button
             (click)="saveLayout()"
             title="Save layout"
-            style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;background:var(--bn-bg3);color:var(--bn-t1);border:none;cursor:pointer;font-size:13px"
+            style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;border:none;cursor:pointer;transition:all 0.15s ease"
+            [style.background]="saveFlash() ? 'rgba(45,212,191,0.25)' : 'var(--bn-bg3)'"
+            [style.color]="saveFlash() ? 'var(--bn-green)' : 'var(--bn-t1)'"
+            [style.transform]="saveFlash() ? 'scale(0.9)' : 'scale(1)'"
           >
-            💾
+            @if (saveFlash()) {
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            } @else {
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"
+                />
+                <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
+                <path d="M7 3v4a1 1 0 0 0 1 1h7" />
+              </svg>
+            }
           </button>
           <!-- Reset layout -->
           <button
             (click)="resetLayout()"
             title="Reset layout"
-            style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;background:var(--bn-bg3);color:var(--bn-t1);border:none;cursor:pointer;font-size:13px"
+            style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;background:var(--bn-bg3);color:var(--bn-t1);border:none;cursor:pointer"
           >
-            ↺
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
           </button>
           <!-- Theme toggle -->
           <button
@@ -466,7 +511,7 @@ const NAV_TABS = [
         <!-- Ticker strip (compact, right side) -->
         <div style="display:flex;align-items:center;overflow:hidden;gap:4px;margin-left:auto">
           <div
-            *ngFor="let t of tickerStrip.slice(0, 8)"
+            *ngFor="let t of tickerStrip().slice(0, 8)"
             style="display:flex;align-items:center;padding:3px 7px;border-radius:3px;gap:5px;background:var(--bn-bg2);flex-shrink:0"
           >
             <span style="font-size:9px;color:var(--bn-t2);white-space:nowrap">{{ t.label }}</span>
@@ -491,7 +536,7 @@ const NAV_TABS = [
         style="display:flex;align-items:stretch;overflow:hidden;height:38px;border-bottom:1px solid var(--bn-border)"
       >
         <div
-          *ngFor="let t of tickerStrip"
+          *ngFor="let t of tickerStrip()"
           style="display:flex;align-items:center;gap:8px;padding:0 12px;border-right:1px solid var(--bn-border)"
         >
           <span style="font-size:11px;color:var(--bn-t2);white-space:nowrap">{{ t.label }}</span>
@@ -546,9 +591,10 @@ export class App implements OnDestroy {
   activeTab = signal('Trade');
   isDark = signal(true);
   layoutVersion = signal(1);
+  saveFlash = signal(false);
   private lastDockState: DockManagerState | null = null;
-  time = '';
-  tickerStrip: TickerItem[] = TICKER_STRIP.map((t) => ({ ...t }));
+  time = signal('');
+  tickerStrip = signal<TickerItem[]>(TICKER_STRIP.map((t) => ({ ...t })));
   widgets = WIDGETS;
   dockTheme: DockTheme = slateDark;
   private dockApi: DockviewApi | null = null;
@@ -608,35 +654,38 @@ export class App implements OnDestroy {
     });
     // Clock
     const updateClock = () => {
-      this.time =
+      this.time.set(
         new Date().toLocaleTimeString('en-US', {
           hour12: false,
           timeZone: 'America/New_York',
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
-        }) + ' ET';
+        }) + ' ET',
+      );
     };
     updateClock();
     this.clockId = setInterval(updateClock, 1000);
 
     // Tick the ticker strip values
     this.tickerId = setInterval(() => {
-      this.tickerStrip = this.tickerStrip.map((t) => {
-        if (Math.random() < 0.3) {
-          const delta = (Math.random() - 0.5) * 0.04;
-          const oldVal = parseFloat(t.value);
-          const newVal = +(oldVal + delta).toFixed(2);
-          const chgVal = +(parseFloat(t.change) + delta).toFixed(2);
-          return {
-            ...t,
-            value: newVal.toFixed(2),
-            change: (chgVal >= 0 ? '+' : '') + chgVal.toFixed(2),
-            up: chgVal >= 0,
-          };
-        }
-        return t;
-      });
+      this.tickerStrip.set(
+        this.tickerStrip().map((t) => {
+          if (Math.random() < 0.3) {
+            const delta = (Math.random() - 0.5) * 0.04;
+            const oldVal = parseFloat(t.value);
+            const newVal = +(oldVal + delta).toFixed(2);
+            const chgVal = +(parseFloat(t.change) + delta).toFixed(2);
+            return {
+              ...t,
+              value: newVal.toFixed(2),
+              change: (chgVal >= 0 ? '+' : '') + chgVal.toFixed(2),
+              up: chgVal >= 0,
+            };
+          }
+          return t;
+        }),
+      );
     }, 2000);
   }
 
@@ -666,6 +715,8 @@ export class App implements OnDestroy {
   saveLayout() {
     if (this.lastDockState) {
       saveLayoutToStorage(this.activeTab(), this.lastDockState);
+      this.saveFlash.set(true);
+      setTimeout(() => this.saveFlash.set(false), 800);
     }
   }
 

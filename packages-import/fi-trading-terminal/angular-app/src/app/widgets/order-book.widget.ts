@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, inject, effect } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, inject, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SharedStateService } from '../services/shared-state.service';
@@ -77,7 +77,7 @@ function genLevels(mid: number, side: 'ask' | 'bid', n = 14): Level[] {
           [style.flex]="view === 'asks' ? '1' : '0 0 auto'"
         >
           <div
-            *ngFor="let a of asks; let i = index"
+            *ngFor="let a of asks(); let i = index"
             (click)="onClickPrice(a.price)"
             style="display:grid;grid-template-columns:repeat(3,1fr);padding:2px 12px;cursor:pointer;position:relative"
             class="ob-row-ask"
@@ -99,17 +99,20 @@ function genLevels(mid: number, side: 'ask' | 'bid', n = 14): Level[] {
           *ngIf="view === 'both'"
           style="display:flex;align-items:center;gap:12px;padding:6px 12px;border-top:1px solid var(--bn-border);border-bottom:1px solid var(--bn-border);background:var(--bn-bg2);flex-shrink:0"
         >
-          <span class="font-mono-fi font-bold" style="font-size:13px" [style.color]="spreadColor">{{
-            mid.toFixed(3)
-          }}</span>
+          <span
+            class="font-mono-fi font-bold"
+            style="font-size:13px"
+            [style.color]="spreadColor()"
+            >{{ mid().toFixed(3) }}</span
+          >
           <span class="font-mono-fi" style="font-size:11px;color:var(--bn-t1)"
-            >Spread: {{ spread }} ({{ spreadPct }}%)</span
+            >Spread: {{ spread() }} ({{ spreadPct() }}%)</span
           >
         </div>
         <!-- Bids -->
         <div *ngIf="view === 'both' || view === 'bids'" style="flex:1;overflow-y:auto">
           <div
-            *ngFor="let b of bids; let i = index"
+            *ngFor="let b of bids(); let i = index"
             (click)="onClickPrice(b.price)"
             style="display:grid;grid-template-columns:repeat(3,1fr);padding:2px 12px;cursor:pointer;position:relative"
             class="ob-row-bid"
@@ -140,7 +143,7 @@ function genLevels(mid: number, side: 'ask' | 'bid', n = 14): Level[] {
         </div>
         <div style="overflow-y:auto;flex:1">
           <div
-            *ngFor="let t of trades"
+            *ngFor="let t of trades()"
             style="display:grid;grid-template-columns:repeat(3,1fr);padding:2px 12px"
           >
             <div
@@ -169,9 +172,9 @@ export class OrderBookWidget implements OnInit, OnDestroy {
   private shared = inject(SharedStateService);
   private intervalId: any;
 
-  asks: Level[] = [];
-  bids: Level[] = [];
-  trades: { price: number; qty: number; side: 'B' | 'S'; time: string }[] = [];
+  asks = signal<Level[]>([]);
+  bids = signal<Level[]>([]);
+  trades = signal<{ price: number; qty: number; side: 'B' | 'S'; time: string }[]>([]);
   view: 'both' | 'asks' | 'bids' = 'both';
   precision = '0.01';
   precisions = ['0.001', '0.01', '0.1'];
@@ -181,15 +184,15 @@ export class OrderBookWidget implements OnInit, OnDestroy {
     { v: 'asks', icon: '\u2580' },
   ];
 
-  mid = 100;
-  spread = 0;
-  spreadPct = '0';
-  spreadColor = 'var(--bn-green)';
+  mid = signal(100);
+  spread = signal(0);
+  spreadPct = signal('0');
+  spreadColor = signal('var(--bn-green)');
 
   constructor() {
     effect(() => {
       const bond = this.shared.selectedBond();
-      this.mid = (bond.bid + bond.ask) / 2;
+      this.mid.set((bond.bid + bond.ask) / 2);
       this.generateBook();
     });
   }
@@ -204,32 +207,36 @@ export class OrderBookWidget implements OnInit, OnDestroy {
 
   private generateBook() {
     if (this.intervalId) clearInterval(this.intervalId);
-    this.asks = genLevels(this.mid, 'ask', 14).reverse();
-    this.bids = genLevels(this.mid, 'bid', 14);
+    this.asks.set(genLevels(this.mid(), 'ask', 14).reverse());
+    this.bids.set(genLevels(this.mid(), 'bid', 14));
     this.updateSpread();
 
     this.intervalId = setInterval(() => {
-      const newMid = this.mid + (Math.random() - 0.5) * 0.04;
-      this.asks = genLevels(newMid, 'ask', 14).reverse();
-      this.bids = genLevels(newMid, 'bid', 14);
+      const newMid = this.mid() + (Math.random() - 0.5) * 0.04;
+      this.asks.set(genLevels(newMid, 'ask', 14).reverse());
+      this.bids.set(genLevels(newMid, 'bid', 14));
       this.updateSpread();
       const side = Math.random() > 0.5 ? ('B' as const) : ('S' as const);
       const price = +(newMid + (side === 'B' ? 0.012 : -0.012)).toFixed(3);
       const qty = +(Math.random() * 0.3 + 0.001).toFixed(5);
       const now = new Date();
       const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-      this.trades = [{ price, qty, side, time }, ...this.trades.slice(0, 24)];
+      this.trades.set([{ price, qty, side, time }, ...this.trades().slice(0, 24)]);
     }, 1000);
   }
 
   private updateSpread() {
-    if (this.asks.length && this.bids.length) {
-      this.spread = +(this.asks[this.asks.length - 1].price - this.bids[0].price).toFixed(3);
-      this.spreadPct = ((this.spread / this.mid) * 100).toFixed(4);
-      this.spreadColor =
-        this.bids[0]?.price > this.asks[this.asks.length - 1]?.price
+    const asksVal = this.asks();
+    const bidsVal = this.bids();
+    if (asksVal.length && bidsVal.length) {
+      const sp = +(asksVal[asksVal.length - 1].price - bidsVal[0].price).toFixed(3);
+      this.spread.set(sp);
+      this.spreadPct.set(((sp / this.mid()) * 100).toFixed(4));
+      this.spreadColor.set(
+        bidsVal[0]?.price > asksVal[asksVal.length - 1]?.price
           ? 'var(--bn-red)'
-          : 'var(--bn-green)';
+          : 'var(--bn-green)',
+      );
     }
   }
 

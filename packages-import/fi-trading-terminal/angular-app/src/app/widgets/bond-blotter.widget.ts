@@ -16,7 +16,6 @@ import {
   SideCellRenderer,
 } from '../services/cell-renderers';
 
-
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey('');
 

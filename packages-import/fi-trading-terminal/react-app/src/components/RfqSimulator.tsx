@@ -375,7 +375,7 @@ export function RfqPanel({ selectedBond, requests, setRequests, onClose }: RfqPa
             {/* Send */}
             <button onClick={sendRfq} disabled={!activeBond}
               className="w-full py-2 rounded-sm font-mono-fi font-bold tracking-widest flex items-center justify-center gap-1.5 mt-1"
-              style={{ fontSize: 11, background: activeBond ? 'var(--fi-blue)' : 'var(--fi-bg3)', color: activeBond ? '#07090e' : 'var(--fi-t3)', cursor: activeBond ? 'pointer' : 'not-allowed' }}>
+              style={{ fontSize: 11, background: activeBond ? 'var(--fi-blue)' : 'var(--fi-bg3)', color: activeBond ? 'var(--bn-cta-text)' : 'var(--fi-t3)', cursor: activeBond ? 'pointer' : 'not-allowed' }}>
               <Zap size={12} /> SEND RFQ
             </button>
           </div>

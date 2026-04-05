@@ -12,7 +12,6 @@ import {
   StatusBadgeRenderer,
 } from '../services/cell-renderers';
 
-
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey('');
 

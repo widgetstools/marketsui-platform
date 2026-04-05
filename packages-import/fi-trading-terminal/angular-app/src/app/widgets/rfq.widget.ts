@@ -207,7 +207,7 @@ const RFQ_STATUS_STYLES: Record<string, { bg: string; color: string; border: str
               class="font-mono-fi font-bold"
               style="width:100%;padding:8px;border-radius:2px;font-size:11px;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;border:none;cursor:pointer"
               [style.background]="activeBond ? 'var(--fi-blue)' : 'var(--fi-bg3)'"
-              [style.color]="activeBond ? '#07090e' : 'var(--fi-t3)'"
+              [style.color]="activeBond ? 'var(--bn-cta-text)' : 'var(--fi-t3)'"
             >
               SEND RFQ
             </button>
@@ -431,7 +431,7 @@ const RFQ_STATUS_STYLES: Record<string, { bg: string; color: string; border: str
                           *ngIf="
                             q.status !== 'done' &&
                             q.status !== 'stale' &&
-                            activeReq?.status !== 'done'
+                            activeReq!.status !== 'done'
                           "
                         >
                           <div style="display:flex;gap:6px">

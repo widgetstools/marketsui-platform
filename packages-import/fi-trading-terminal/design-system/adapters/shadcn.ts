@@ -71,6 +71,7 @@ function schemeVars(scheme: ColorScheme, mode: 'dark'|'light') {
     --bn-cyan:    ${scheme.accent.highlight};
     --bn-buy-bg:  ${scheme.action.buyBg};
     --bn-sell-bg: ${scheme.action.sellBg};
+    --bn-cta-text: #ffffff;
     --bn-logo-bg: ${scheme.surface.ground};
     --scrollbar-thumb: ${scheme.scrollbar};
 

@@ -27,12 +27,12 @@ export class SharedStateService implements OnDestroy {
 
   // Auto-fill partial orders (matches React behavior)
   private fillInterval = setInterval(() => {
-    this.orders.update(orders =>
-      orders.map(o =>
+    this.orders.update((orders) =>
+      orders.map((o) =>
         o.status === 'Partial' && Math.random() < 0.3
           ? { ...o, status: 'Filled', filled: o.qty }
-          : o
-      )
+          : o,
+      ),
     );
   }, 5000);
 
