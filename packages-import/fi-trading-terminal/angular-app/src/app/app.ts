@@ -309,6 +309,22 @@ function designSystemLayout(): DockManagerState {
   );
 }
 
+// ── Layout persistence helpers ──
+const STORAGE_PREFIX = 'fi-dock-';
+function getSavedLayout(tab: string): DockManagerState | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_PREFIX + tab);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return null;
+}
+function saveLayoutToStorage(tab: string, state: DockManagerState) {
+  try { localStorage.setItem(STORAGE_PREFIX + tab, JSON.stringify(state)); } catch {}
+}
+function clearSavedLayout(tab: string) {
+  try { localStorage.removeItem(STORAGE_PREFIX + tab); } catch {}
+}
+
 const TAB_LAYOUTS: Record<string, () => DockManagerState> = {
   Trade: tradeLayout,
   Prices: pricesLayout,
@@ -393,6 +409,22 @@ const NAV_TABS = [
           <!-- Clock -->
           <span class="font-mono-fi" style="color:var(--bn-t1);font-size:11px">{{ time }}</span>
           <div style="width:1px;height:14px;background:var(--bn-border);flex-shrink:0"></div>
+          <!-- Save layout -->
+          <button
+            (click)="saveLayout()"
+            title="Save layout"
+            style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;background:var(--bn-bg3);color:var(--bn-t1);border:none;cursor:pointer;font-size:13px"
+          >
+            💾
+          </button>
+          <!-- Reset layout -->
+          <button
+            (click)="resetLayout()"
+            title="Reset layout"
+            style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;background:var(--bn-bg3);color:var(--bn-t1);border:none;cursor:pointer;font-size:13px"
+          >
+            ↺
+          </button>
           <!-- Theme toggle -->
           <button
             (click)="toggleTheme()"
@@ -477,12 +509,13 @@ const NAV_TABS = [
     <!-- Dock Manager (switches per tab via ngIf + key) -->
     <div style="flex:1;overflow:hidden">
       @for (tab of navTabs; track tab) {
-        @if (activeTab() === tab) {
+        @if (activeTab() === tab && layoutVersion()) {
           <dock-manager-core
             [initialState]="getLayout(tab)"
             [widgets]="widgets"
             [theme]="dockTheme"
             (ready)="onDockReady($event)"
+            (stateChange)="onDockStateChange($event)"
           />
         }
       }
@@ -508,6 +541,8 @@ export class App {
   navTabs = NAV_TABS;
   activeTab = signal('Trade');
   isDark = signal(true);
+  layoutVersion = signal(1);
+  private lastDockState: DockManagerState | null = null;
   time = '';
   tickerStrip: TickerItem[] = TICKER_STRIP;
   widgets = WIDGETS;
@@ -591,11 +626,31 @@ export class App {
   }
 
   getLayout(tab: string): DockManagerState {
+    const saved = getSavedLayout(tab);
+    if (saved) return saved;
     return (TAB_LAYOUTS[tab] || tradeLayout)();
   }
 
   onDockReady(api: DockviewApi) {
     this.dockApi = api;
+  }
+
+  onDockStateChange(state: DockManagerState) {
+    this.lastDockState = state;
+  }
+
+  saveLayout() {
+    if (this.lastDockState) {
+      saveLayoutToStorage(this.activeTab(), this.lastDockState);
+    }
+  }
+
+  resetLayout() {
+    clearSavedLayout(this.activeTab());
+    this.lastDockState = null;
+    // Force remount by toggling layoutVersion
+    this.layoutVersion.set(0);
+    setTimeout(() => this.layoutVersion.set(1));
   }
 
   handleNewOrder() {

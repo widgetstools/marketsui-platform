@@ -1,6 +1,23 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { DockManagerCore, type WidgetProps, type DockManagerCoreHandle } from '@widgetstools/react-dock-manager';
 import { type DockManagerState, slateDark, vsCodeLight } from '@widgetstools/dock-manager-core';
+
+// ── Layout persistence helpers ──
+const STORAGE_PREFIX = 'fi-dock-';
+
+function getSavedLayout(tab: string): DockManagerState | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_PREFIX + tab);
+    if (saved) return JSON.parse(saved);
+  } catch { /* ignore malformed data */ }
+  return null;
+}
+
+function saveLayout(tab: string, state: DockManagerState) {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + tab, JSON.stringify(state));
+  } catch { /* ignore quota errors */ }
+}
 import '@widgetstools/react-dock-manager/styles.css';
 
 import type { Bond, RfqRequest } from '@/data/tradingData';
@@ -260,11 +277,26 @@ export default function App() {
   const [rfqRequests, setRfqRequests] = useState<RfqRequest[]>([]);
   const [showRfq, setShowRfq] = useState(false);
   const [clickedPrice, setClickedPrice] = useState<number | undefined>();
+  const [layoutVersion, setLayoutVersion] = useState(0);
   const dockRef = useRef<DockManagerCoreHandle>(null);
 
   _shared = { selectedBond, setSelectedBond, rfqRequests, setRfqRequests, showRfq, setShowRfq, clickedPrice, setClickedPrice };
 
   const handleTabChange = useCallback((t: string) => { setActiveTab(t); if (t !== 'Trade') setShowRfq(false); }, []);
+
+  const handleStateChange = useCallback((state: DockManagerState) => {
+    saveLayout(activeTab, state);
+  }, [activeTab]);
+
+  const handleSaveLayout = useCallback(() => {
+    const state = dockRef.current?.getState();
+    if (state) saveLayout(activeTab, state);
+  }, [activeTab]);
+
+  const handleResetLayout = useCallback(() => {
+    localStorage.removeItem(STORAGE_PREFIX + activeTab);
+    setLayoutVersion(v => v + 1);
+  }, [activeTab]);
 
   const handleNewOrder = useCallback(() => {
     const api = dockRef.current?.getApi();
@@ -293,17 +325,22 @@ export default function App() {
     }
   }, []);
 
-  const currentLayout = useMemo(() => (TAB_LAYOUTS[activeTab] || tradeLayout)(), [activeTab]);
+  const currentLayout = useMemo(() => {
+    const saved = getSavedLayout(activeTab);
+    if (saved) return saved;
+    return (TAB_LAYOUTS[activeTab] || tradeLayout)();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, layoutVersion]);
   const dockTheme = isDark ? slateDark : vsCodeLight;
   const Wrapper = TAB_WRAPPERS[activeTab] || PassThrough;
   const isTrading = activeTab === 'Trade' || activeTab === 'Prices';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', overflow: 'hidden', background: 'var(--bn-bg)' }}>
-      <TopBar activeTab={activeTab} onTabChange={handleTabChange} selectedBond={selectedBond} onNewOrder={isTrading ? handleNewOrder : undefined} onOpenRfq={isTrading ? handleOpenRfq : undefined} />
+      <TopBar activeTab={activeTab} onTabChange={handleTabChange} selectedBond={selectedBond} onNewOrder={isTrading ? handleNewOrder : undefined} onOpenRfq={isTrading ? handleOpenRfq : undefined} onSaveLayout={handleSaveLayout} onResetLayout={handleResetLayout} />
       <Wrapper>
         <div className="dock-manager-container" style={{ flex: 1, overflow: 'hidden' }}>
-          <DockManagerCore key={activeTab} ref={dockRef} initialState={currentLayout} widgets={WIDGETS} theme={dockTheme} />
+          <DockManagerCore key={`${activeTab}-${layoutVersion}`} ref={dockRef} initialState={currentLayout} widgets={WIDGETS} theme={dockTheme} onStateChange={handleStateChange} />
         </div>
       </Wrapper>
     </div>

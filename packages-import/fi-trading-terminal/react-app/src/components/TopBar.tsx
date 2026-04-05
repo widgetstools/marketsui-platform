@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TICKER_STRIP, type Bond } from '@/data/tradingData';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Save, RotateCcw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 const NAV_TABS = ['Prices','Trade','Risk','Market','Research','Orders','Analytics','Design System'];
@@ -11,9 +11,11 @@ interface TopBarProps {
   selectedBond: Bond | null;
   onNewOrder?: () => void;
   onOpenRfq?: () => void;
+  onSaveLayout?: () => void;
+  onResetLayout?: () => void;
 }
 
-export function TopBar({ activeTab, onTabChange, selectedBond, onNewOrder, onOpenRfq }: TopBarProps) {
+export function TopBar({ activeTab, onTabChange, selectedBond, onNewOrder, onOpenRfq, onSaveLayout, onResetLayout }: TopBarProps) {
   const { isDark, toggleTheme } = useTheme();
   const [time, setTime] = useState('');
   useEffect(() => {
@@ -74,6 +76,22 @@ export function TopBar({ activeTab, onTabChange, selectedBond, onNewOrder, onOpe
           <div style={{width:1,height:14,background:'var(--bn-border)',flexShrink:0}}/>
           <span className="font-mono-fi" style={{color:'var(--bn-t1)',fontSize:11}}>{time}</span>
           <div style={{width:1,height:14,background:'var(--bn-border)',flexShrink:0}}/>
+          {onSaveLayout && (
+            <button onClick={onSaveLayout}
+              className="flex items-center justify-center w-7 h-7 rounded transition-colors"
+              style={{ background: 'var(--bn-bg3)', color: 'var(--bn-t1)' }}
+              title="Save layout">
+              <Save size={13} />
+            </button>
+          )}
+          {onResetLayout && (
+            <button onClick={onResetLayout}
+              className="flex items-center justify-center w-7 h-7 rounded transition-colors"
+              style={{ background: 'var(--bn-bg3)', color: 'var(--bn-t1)' }}
+              title="Reset layout to default">
+              <RotateCcw size={13} />
+            </button>
+          )}
           <button onClick={toggleTheme}
             className="flex items-center justify-center w-7 h-7 rounded transition-colors"
             style={{ background: 'var(--bn-bg3)', color: 'var(--bn-t1)' }}
