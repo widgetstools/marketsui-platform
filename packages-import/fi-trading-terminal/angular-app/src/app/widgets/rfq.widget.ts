@@ -10,7 +10,6 @@ import {
   type RfqQuote,
 } from '../services/trading-data.service';
 
-
 let rfqCounter = 1;
 function makeQuote(bond: Bond, side: 'Buy' | 'Sell', dealer: string): RfqQuote {
   const spread = 0.04 + Math.random() * 0.08;
@@ -29,9 +28,9 @@ function makeQuote(bond: Bond, side: 'Buy' | 'Sell', dealer: string): RfqQuote {
 }
 
 const RFQ_STATUS_STYLES: Record<string, { bg: string; color: string; border: string }> = {
-  live:  { bg: 'rgba(61,158,255,0.1)',  color: 'var(--fi-blue)',  border: 'rgba(61,158,255,0.25)' },
-  done:  { bg: 'rgba(45,212,191,0.12)', color: 'var(--fi-green)', border: 'rgba(45,212,191,0.25)' },
-  stale: { bg: 'rgba(74,82,117,0.2)',   color: 'var(--fi-t2)',    border: 'rgba(74,82,117,0.25)' },
+  live: { bg: 'rgba(61,158,255,0.1)', color: 'var(--fi-blue)', border: 'rgba(61,158,255,0.25)' },
+  done: { bg: 'rgba(45,212,191,0.12)', color: 'var(--fi-green)', border: 'rgba(45,212,191,0.25)' },
+  stale: { bg: 'rgba(74,82,117,0.2)', color: 'var(--fi-t2)', border: 'rgba(74,82,117,0.25)' },
 };
 
 @Component({
@@ -320,48 +319,136 @@ const RFQ_STATUS_STYLES: Record<string, { bg: string; color: string; border: str
                 <table style="width:100%;border-collapse:collapse">
                   <thead>
                     <tr>
-                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:left;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">DEALER</th>
-                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">BID</th>
-                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">BID SIZE</th>
-                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">ASK</th>
-                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">ASK SIZE</th>
-                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">SPREAD</th>
-                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:left;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">STATUS</th>
-                      <th style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:left;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)">ACTION</th>
+                      <th
+                        style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:left;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)"
+                      >
+                        DEALER
+                      </th>
+                      <th
+                        style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)"
+                      >
+                        BID
+                      </th>
+                      <th
+                        style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)"
+                      >
+                        BID SIZE
+                      </th>
+                      <th
+                        style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)"
+                      >
+                        ASK
+                      </th>
+                      <th
+                        style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)"
+                      >
+                        ASK SIZE
+                      </th>
+                      <th
+                        style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:right;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)"
+                      >
+                        SPREAD
+                      </th>
+                      <th
+                        style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:left;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)"
+                      >
+                        STATUS
+                      </th>
+                      <th
+                        style="font-size:9px;color:var(--fi-t1);text-transform:uppercase;letter-spacing:0.04em;font-weight:600;padding:6px 8px;text-align:left;white-space:nowrap;background:var(--fi-bg2);border-bottom:1px solid var(--fi-border)"
+                      >
+                        ACTION
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let q of sortedQuotes" [style.opacity]="q.status === 'stale' || q.status === 'done' ? 0.5 : 1">
-                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;font-weight:700;color:var(--fi-cyan)">{{ q.dealer }}</td>
-                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right"
-                          [style.font-weight]="q.bid === bestBid ? '700' : '400'"
-                          [style.color]="q.bid === bestBid ? 'var(--fi-blue)' : '#5a7090'">
-                        {{ q.bid.toFixed(3) }}<span *ngIf="q.bid === bestBid" style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-blue)">&#9650;BEST</span>
+                    <tr
+                      *ngFor="let q of sortedQuotes"
+                      [style.opacity]="q.status === 'stale' || q.status === 'done' ? 0.5 : 1"
+                    >
+                      <td
+                        style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;font-weight:700;color:var(--fi-cyan)"
+                      >
+                        {{ q.dealer }}
                       </td>
-                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right;color:var(--fi-t1)">{{ q.bidSize }}</td>
-                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right"
-                          [style.font-weight]="q.ask === bestAsk ? '700' : '400'"
-                          [style.color]="q.ask === bestAsk ? 'var(--fi-red)' : '#7a4050'">
-                        {{ q.ask.toFixed(3) }}<span *ngIf="q.ask === bestAsk" style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-red)">&#9660;BEST</span>
+                      <td
+                        style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right"
+                        [style.font-weight]="q.bid === bestBid ? '700' : '400'"
+                        [style.color]="q.bid === bestBid ? 'var(--fi-blue)' : '#5a7090'"
+                      >
+                        {{ q.bid.toFixed(3)
+                        }}<span
+                          *ngIf="q.bid === bestBid"
+                          style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-blue)"
+                          >&#9650;BEST</span
+                        >
                       </td>
-                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right;color:var(--fi-t1)">{{ q.askSize }}</td>
-                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right;color:var(--fi-amber)">{{ ((q.ask - q.bid) * 100).toFixed(1) }}c</td>
-                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap">
-                        <span style="font-size:9px;padding:1px 6px;border-radius:2px"
-                              [style.background]="statusBg(q.status)"
-                              [style.color]="statusColor(q.status)"
-                              [style.border]="'1px solid ' + statusBorder(q.status)">{{ q.status.toUpperCase() }}</span>
+                      <td
+                        style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right;color:var(--fi-t1)"
+                      >
+                        {{ q.bidSize }}
                       </td>
-                      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap">
+                      <td
+                        style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right"
+                        [style.font-weight]="q.ask === bestAsk ? '700' : '400'"
+                        [style.color]="q.ask === bestAsk ? 'var(--fi-red)' : '#7a4050'"
+                      >
+                        {{ q.ask.toFixed(3)
+                        }}<span
+                          *ngIf="q.ask === bestAsk"
+                          style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-red)"
+                          >&#9660;BEST</span
+                        >
+                      </td>
+                      <td
+                        style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right;color:var(--fi-t1)"
+                      >
+                        {{ q.askSize }}
+                      </td>
+                      <td
+                        style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap;text-align:right;color:var(--fi-amber)"
+                      >
+                        {{ ((q.ask - q.bid) * 100).toFixed(1) }}c
+                      </td>
+                      <td
+                        style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap"
+                      >
+                        <span
+                          style="font-size:9px;padding:1px 6px;border-radius:2px"
+                          [style.background]="statusBg(q.status)"
+                          [style.color]="statusColor(q.status)"
+                          [style.border]="'1px solid ' + statusBorder(q.status)"
+                          >{{ q.status.toUpperCase() }}</span
+                        >
+                      </td>
+                      <td
+                        style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--fi-border);white-space:nowrap"
+                      >
                         <ng-container *ngIf="q.status === 'done'">
                           <span style="color:var(--fi-green)">&#10003;</span>
                         </ng-container>
-                        <ng-container *ngIf="q.status !== 'done' && q.status !== 'stale' && activeReq?.status !== 'done'">
+                        <ng-container
+                          *ngIf="
+                            q.status !== 'done' &&
+                            q.status !== 'stale' &&
+                            activeReq?.status !== 'done'
+                          "
+                        >
                           <div style="display:flex;gap:6px">
-                            <button class="font-mono-fi font-bold" (click)="hitLift(activeReq!.id, q.dealer, 'hit')"
-                              style="font-size:11px;padding:4px 10px;border-radius:2px;background:rgba(61,158,255,0.15);color:var(--fi-blue);border:1px solid rgba(61,158,255,0.35);cursor:pointer">HIT</button>
-                            <button class="font-mono-fi font-bold" (click)="hitLift(activeReq!.id, q.dealer, 'lift')"
-                              style="font-size:11px;padding:4px 10px;border-radius:2px;background:rgba(0,229,160,0.15);color:var(--fi-green);border:1px solid rgba(0,229,160,0.35);cursor:pointer">LIFT</button>
+                            <button
+                              class="font-mono-fi font-bold"
+                              (click)="hitLift(activeReq!.id, q.dealer, 'hit')"
+                              style="font-size:11px;padding:4px 10px;border-radius:2px;background:rgba(61,158,255,0.15);color:var(--fi-blue);border:1px solid rgba(61,158,255,0.35);cursor:pointer"
+                            >
+                              HIT
+                            </button>
+                            <button
+                              class="font-mono-fi font-bold"
+                              (click)="hitLift(activeReq!.id, q.dealer, 'lift')"
+                              style="font-size:11px;padding:4px 10px;border-radius:2px;background:rgba(0,229,160,0.15);color:var(--fi-green);border:1px solid rgba(0,229,160,0.35);cursor:pointer"
+                            >
+                              LIFT
+                            </button>
                           </div>
                         </ng-container>
                       </td>
