@@ -17,8 +17,7 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@design-system/*": ["../design-system/*"],
-      "ag-grid-community": ["./node_modules/ag-grid-community"]
+      "@design-system/*": ["../design-system/*"]
     }
   },
   "angularCompilerOptions": {
