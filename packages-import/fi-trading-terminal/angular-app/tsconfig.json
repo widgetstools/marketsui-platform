@@ -16,7 +16,7 @@
     "module": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@design-system/*": ["../src/design-system/*"]
+      "@design-system/*": ["../design-system/*"]
     }
   },
   "angularCompilerOptions": {

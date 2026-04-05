@@ -1,18 +1,13 @@
 // ─────────────────────────────────────────────────────────────
 //  FI Design System — AG Grid Adapter
-//  Generates themeQuartz.withParams() config for light + dark.
-//  Works identically in React (ag-grid-react) and Angular
-//  (ag-grid-angular) — same API, same params.
+//  Exports raw param objects for light and dark modes.
+//  Each app wraps them with themeQuartz.withParams() locally
+//  (avoids importing ag-grid-community from the design system).
 // ─────────────────────────────────────────────────────────────
 
-import { themeQuartz } from 'ag-grid-community';
 import { dark, light, shared } from '../tokens/semantic';
 
-// Use `as any` to support params that exist at runtime but aren't in
-// the base ThemeDefaultParams type (e.g. headerForegroundColor).
-// This ensures the adapter works across both React/Vite and Angular/esbuild.
-
-const lightParams: Record<string, unknown> = {
+export const agGridLightParams: Record<string, unknown> = {
   backgroundColor:          light.surface.primary,
   foregroundColor:           light.text.primary,
   headerBackgroundColor:     light.surface.secondary,
@@ -30,7 +25,7 @@ const lightParams: Record<string, unknown> = {
   columnBorder:              false,
 };
 
-const darkParams: Record<string, unknown> = {
+export const agGridDarkParams: Record<string, unknown> = {
   backgroundColor:          dark.surface.primary,
   foregroundColor:           dark.text.primary,
   headerBackgroundColor:     dark.surface.secondary,
@@ -47,23 +42,3 @@ const darkParams: Record<string, unknown> = {
   wrapperBorder:             false,
   columnBorder:              false,
 };
-
-/**
- * AG Grid theme with light and dark mode params.
- *
- * Usage (React):
- * ```tsx
- * import { fiGridTheme } from '@fi-design-system/adapters/ag-grid';
- * <AgGridReact theme={fiGridTheme} ... />
- * ```
- *
- * Usage (Angular):
- * ```typescript
- * import { fiGridTheme } from '@fi-design-system/adapters/ag-grid';
- * @Component({ template: '<ag-grid-angular [theme]="theme" />' })
- * export class MyGrid { theme = fiGridTheme; }
- * ```
- */
-export const fiGridTheme = themeQuartz
-  .withParams(lightParams as any, 'light')
-  .withParams(darkParams as any, 'dark');

@@ -18,4 +18,4 @@ export { componentTokens } from './tokens/components';
 // Adapters
 export { generateShadcnCSS, getShadcnTokens } from './adapters/shadcn';
 export { generatePrimeNGPreset } from './adapters/primeng';
-export { fiGridTheme } from './adapters/ag-grid';
+export { agGridLightParams, agGridDarkParams } from './adapters/ag-grid';
