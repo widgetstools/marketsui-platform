@@ -448,7 +448,6 @@ export class RfqWidget implements OnInit, OnDestroy {
       field: 'status',
       headerName: 'STATUS',
       flex: 0.6,
-      type: 'numericColumn',
       cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
         const s = p.value;
         const bg =
@@ -458,11 +457,7 @@ export class RfqWidget implements OnInit, OnDestroy {
               ? 'rgba(74,82,117,0.2)'
               : 'rgba(61,158,255,0.1)';
         const c =
-          s === 'done'
-            ? 'var(--fi-green)'
-            : s === 'stale'
-              ? 'var(--fi-t2)'
-              : 'var(--fi-blue)';
+          s === 'done' ? 'var(--fi-green)' : s === 'stale' ? 'var(--fi-t2)' : 'var(--fi-blue)';
         const border =
           s === 'done'
             ? 'rgba(0,229,160,0.25)'

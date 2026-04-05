@@ -134,7 +134,7 @@ export function OrderBlotter() {
       const v=p.value; const color=v==='Buy'?'var(--bn-green)':'var(--bn-red)';
       return `<span style="font-size:9px;font-weight:700;color:${color}">${v.toUpperCase()}</span>`;
     }},
-    {field:'type',   headerName:'TYPE',   width:55, cellStyle:{fontSize:9,color:'var(--bn-t1)'}, type:'numericColumn'},
+    {field:'type',   headerName:'TYPE',   width:55, cellStyle:{fontSize:9,color:'var(--bn-t1)'}},
     {field:'qty',    headerName:'QTY',    width:65, type:'numericColumn'},
     {field:'filled', headerName:'FILLED', width:65, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
       const color=p.value===p.data.qty?'var(--bn-green)':'#f0b90b';
@@ -142,7 +142,7 @@ export function OrderBlotter() {
     }},
     {field:'px',  headerName:'PX',  width:75, type:'numericColumn', valueFormatter:p=>p.value>0?p.value.toFixed(3):'—'},
     {field:'ytm', headerName:'YTM', width:65, type:'numericColumn', valueFormatter:p=>p.value>0?p.value.toFixed(2)+'%':'—', cellStyle:{color:'var(--bn-t1)'}},
-    {field:'status', headerName:'STATUS', width:80, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
+    {field:'status', headerName:'STATUS', width:80, cellRenderer:(p:ICellRendererParams)=>{
       const s=p.value;
       const m:Record<string,{bg:string,color:string,border:string}>={
         Filled:{bg:'rgba(45,212,191,0.1)',color:'var(--bn-green)',border:'rgba(45,212,191,0.3)'},

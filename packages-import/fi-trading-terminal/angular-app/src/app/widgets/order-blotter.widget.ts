@@ -80,7 +80,6 @@ export class OrderBlotterWidget {
       field: 'type',
       headerName: 'TYPE',
       flex: 0.5,
-      type: 'numericColumn',
       cellStyle: { color: 'var(--bn-t1)', fontSize: '9px' },
     },
     {
@@ -119,7 +118,6 @@ export class OrderBlotterWidget {
       field: 'status',
       headerName: 'STATUS',
       flex: 0.7,
-      type: 'numericColumn',
       cellRenderer: (p: ICellRendererParams) => {
         const s = p.value;
         let cls = 'badge-new';

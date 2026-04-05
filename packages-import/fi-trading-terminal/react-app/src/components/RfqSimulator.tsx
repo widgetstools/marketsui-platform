@@ -75,7 +75,7 @@ function RfqQuoteGrid({ quotes, bestBid, bestAsk, rfqId, rfqStatus, onHitLift }:
         const isStale = p.data!.status === 'stale';
         return `<span style="color:var(--fi-amber);opacity:${isStale ? 0.4 : 1}">${p.value}¢</span>`;
       }},
-    { field: 'status', headerName: 'STATUS', width: 75, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
+    { field: 'status', headerName: 'STATUS', width: 75, cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
       const s = p.value as string;
       const isDone = s === 'done'; const isStale = s === 'stale';
       const bg = isDone ? 'rgba(0,229,160,0.12)' : isStale ? 'rgba(74,82,117,0.2)' : 'rgba(61,158,255,0.1)';
