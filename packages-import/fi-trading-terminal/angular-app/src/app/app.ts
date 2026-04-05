@@ -536,7 +536,9 @@ export class App {
   constructor() {
     effect(() => {
       if (isPlatformBrowser(this.platformId)) {
-        document.documentElement.setAttribute('data-theme', this.isDark() ? 'dark' : 'light');
+        const mode = this.isDark() ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', mode);
+        document.body.dataset['agThemeMode'] = mode;
       }
     });
     effect(() => {
