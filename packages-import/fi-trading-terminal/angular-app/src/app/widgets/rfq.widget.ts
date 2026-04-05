@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 
 import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { SharedStateService } from '../services/shared-state.service';
 import { RfqStatusRenderer } from '@design-system/cell-renderers';
@@ -315,7 +316,7 @@ function makeQuote(bond: Bond, side: 'Buy' | 'Sell', dealer: string): RfqQuote {
                   </div>
                 </div>
               </div>
-              <ag-grid-angular
+              <ag-grid-angular [modules]="agModules"
                 *ngIf="activeReq.quotes.length > 0"
                 style="width:100%;height:100%"
                 [theme]="gridTheme"

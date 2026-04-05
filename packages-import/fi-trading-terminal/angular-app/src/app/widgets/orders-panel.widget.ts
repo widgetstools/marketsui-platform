@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 
 import { ModuleRegistry, type ColDef } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { INITIAL_ORDERS, INITIAL_TRADES } from '../services/trading-data.service';
 import {
@@ -47,7 +48,7 @@ import {
       <!-- Content -->
       <div style="flex:1;overflow:hidden">
         <!-- Order History -->
-        <ag-grid-angular
+        <ag-grid-angular [modules]="agModules"
           *ngIf="tab === 'orders'"
           style="width:100%;height:100%"
           [theme]="gridTheme"
@@ -58,7 +59,7 @@ import {
           [rowHeight]="26"
         />
         <!-- Trade History -->
-        <ag-grid-angular
+        <ag-grid-angular [modules]="agModules"
           *ngIf="tab === 'trades'"
           style="width:100%;height:100%"
           [theme]="gridTheme"

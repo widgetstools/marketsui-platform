@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 
 import { ModuleRegistry, type ColDef, type GridApi, type GridReadyEvent } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { MARKET_INDICES, type MarketIndex } from '../services/trading-data.service';
 import { ChangeValueRenderer, YtdValueRenderer } from '@design-system/cell-renderers';
@@ -18,7 +19,7 @@ import { ChangeValueRenderer, YtdValueRenderer } from '@design-system/cell-rende
       style="display:flex;flex-direction:column;height:100%;background:var(--bn-bg1);overflow:hidden"
     >
       <div style="flex:1;overflow:hidden">
-        <ag-grid-angular
+        <ag-grid-angular [modules]="agModules"
           style="width:100%;height:100%"
           [theme]="gridTheme"
           [rowData]="indices"

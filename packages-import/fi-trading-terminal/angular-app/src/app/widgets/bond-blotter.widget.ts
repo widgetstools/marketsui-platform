@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 
 import { ModuleRegistry, type ColDef, type GridApi, type GridReadyEvent } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { BONDS, type Bond } from '../services/trading-data.service';
 import { SharedStateService } from '../services/shared-state.service';
@@ -67,7 +68,7 @@ import {
     </div>
     <!-- Grid -->
     <div style="flex:1;overflow:hidden">
-      <ag-grid-angular
+      <ag-grid-angular [modules]="agModules"
         style="width:100%;height:100%"
         [theme]="gridTheme"
         [rowData]="filteredData"
