@@ -548,7 +548,7 @@ export class App implements OnDestroy {
   layoutVersion = signal(1);
   private lastDockState: DockManagerState | null = null;
   time = '';
-  tickerStrip: TickerItem[] = TICKER_STRIP.map(t => ({...t}));
+  tickerStrip: TickerItem[] = TICKER_STRIP.map((t) => ({ ...t }));
   widgets = WIDGETS;
   dockTheme: DockTheme = slateDark;
   private dockApi: DockviewApi | null = null;
@@ -622,13 +622,18 @@ export class App implements OnDestroy {
 
     // Tick the ticker strip values
     this.tickerId = setInterval(() => {
-      this.tickerStrip = this.tickerStrip.map(t => {
+      this.tickerStrip = this.tickerStrip.map((t) => {
         if (Math.random() < 0.3) {
           const delta = (Math.random() - 0.5) * 0.04;
           const oldVal = parseFloat(t.value);
           const newVal = +(oldVal + delta).toFixed(2);
           const chgVal = +(parseFloat(t.change) + delta).toFixed(2);
-          return { ...t, value: newVal.toFixed(2), change: (chgVal >= 0 ? '+' : '') + chgVal.toFixed(2), up: chgVal >= 0 };
+          return {
+            ...t,
+            value: newVal.toFixed(2),
+            change: (chgVal >= 0 ? '+' : '') + chgVal.toFixed(2),
+            up: chgVal >= 0,
+          };
         }
         return t;
       });

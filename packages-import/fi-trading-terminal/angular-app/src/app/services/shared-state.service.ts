@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, OnDestroy } from '@angular/core';
 import {
   type Bond,
   type RfqRequest,
@@ -10,7 +10,7 @@ import {
 } from './trading-data.service';
 
 @Injectable({ providedIn: 'root' })
-export class SharedStateService {
+export class SharedStateService implements OnDestroy {
   selectedBond = signal<Bond>(BONDS[0]);
   rfqRequests = signal<RfqRequest[]>([]);
   showRfq = signal(false);
@@ -24,4 +24,19 @@ export class SharedStateService {
   // Research tab shared state
   selectedNote = signal<ResearchNote>(RESEARCH_NOTES[0]);
   researchFilter = signal('All');
+
+  // Auto-fill partial orders (matches React behavior)
+  private fillInterval = setInterval(() => {
+    this.orders.update(orders =>
+      orders.map(o =>
+        o.status === 'Partial' && Math.random() < 0.3
+          ? { ...o, status: 'Filled', filled: o.qty }
+          : o
+      )
+    );
+  }, 5000);
+
+  ngOnDestroy() {
+    clearInterval(this.fillInterval);
+  }
 }
