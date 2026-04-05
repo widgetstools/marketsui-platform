@@ -1,20 +1,71 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import { fiGridTheme } from '@/lib/agGridTheme';
 import type { Bond } from '@/data/tradingData';
 import { INITIAL_ORDERS, INITIAL_TRADES } from '@/data/tradingData';
 
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+
 interface BottomOrderPanelProps { bond: Bond | null; }
+
+const statusCellRenderer = (p: ICellRendererParams) => {
+  const s = p.value as string;
+  const m: Record<string, string> = {
+    Filled: 'badge-filled', Partial: 'badge-partial',
+    Pending: 'badge-new', Cancelled: 'badge-cancel',
+  };
+  const cls = m[s] || 'badge-new';
+  return `<span class="font-mono-fi text-xs px-1.5 py-0.5 rounded-sm ${cls}">${s}</span>`;
+};
 
 export function BottomOrderPanel({ bond }: BottomOrderPanelProps) {
   const [tab, setTab] = useState('Order History');
   const TABS = ['Order History', 'Trade History', 'Open Orders (0)', 'Funds'];
 
-  const statusStyle = (s:string) => {
-    if(s==='Filled')    return 'badge-filled';
-    if(s==='Partial')   return 'badge-partial';
-    if(s==='Pending')   return 'badge-new';
-    if(s==='Cancelled') return 'badge-cancel';
-    return 'badge-new';
-  };
+  const orderColDefs = useMemo<ColDef[]>(() => [
+    { field: 'time',   headerName: 'Date',    width: 70,  cellStyle: { color: 'var(--bn-t1)' } },
+    { field: 'bond',   headerName: 'Pair',    flex: 1,    cellStyle: { color: 'var(--bn-t0)' } },
+    { field: 'type',   headerName: 'Type',    width: 60,  cellStyle: { color: 'var(--bn-t1)' } },
+    { field: 'side',   headerName: 'Side',    width: 55,  cellRenderer: (p: ICellRendererParams) => {
+      const color = p.value === 'Buy' ? 'var(--bn-green)' : 'var(--bn-red)';
+      return `<span style="font-weight:700;color:${color}">${p.value}</span>`;
+    }},
+    { field: 'px',     headerName: 'Price',   width: 80,  type: 'numericColumn', valueFormatter: p => p.value > 0 ? p.value.toFixed(3) : '—' },
+    { field: 'qty',    headerName: 'Amount',  width: 70,  type: 'numericColumn' },
+    { field: 'filled', headerName: 'Filled',  width: 70,  type: 'numericColumn', cellRenderer: (p: ICellRendererParams) => {
+      const color = p.value === p.data.qty ? 'var(--bn-green)' : 'var(--bn-yellow)';
+      return `<span style="color:${color}">${p.value}</span>`;
+    }},
+    { colId: 'total',  headerName: 'Total',   width: 80,  type: 'numericColumn',
+      valueGetter: p => p.data?.px > 0 ? (+p.data.px * parseFloat(p.data.qty.replace('$', ''))).toFixed(0) : '—',
+      cellStyle: { color: 'var(--bn-t1)' } },
+    { field: 'status', headerName: 'Status',  width: 85,  cellRenderer: statusCellRenderer },
+  ], []);
+
+  const tradeColDefs = useMemo<ColDef[]>(() => [
+    { field: 'time',   headerName: 'Date',   width: 70,  cellStyle: { color: 'var(--bn-t1)' } },
+    { field: 'bond',   headerName: 'Pair',   flex: 1,    cellStyle: { color: 'var(--bn-t0)' } },
+    { field: 'side',   headerName: 'Side',   width: 55,  cellRenderer: (p: ICellRendererParams) => {
+      const isBuy = p.value === 'B';
+      return `<span style="font-weight:700;color:${isBuy ? 'var(--bn-green)' : 'var(--bn-red)'}">${isBuy ? 'Buy' : 'Sell'}</span>`;
+    }},
+    { field: 'price',  headerName: 'Price',  width: 80,  type: 'numericColumn', valueFormatter: p => p.value?.toFixed(3) },
+    { field: 'size',   headerName: 'Amount', width: 70,  type: 'numericColumn' },
+    { colId: 'total',  headerName: 'Total',  width: 80,  type: 'numericColumn', valueGetter: () => '—', cellStyle: { color: 'var(--bn-t1)' } },
+    { colId: 'fee',    headerName: 'Fee',    width: 60,  type: 'numericColumn', valueGetter: () => '—', cellStyle: { color: 'var(--bn-t1)' } },
+    { field: 'status', headerName: 'Status', width: 85,  cellRenderer: statusCellRenderer },
+  ], []);
+
+  const defaultColDef = useMemo<ColDef>(() => ({
+    suppressMovable: true,
+    cellStyle: { fontFamily: 'JetBrains Mono,monospace', fontSize: 11, display: 'flex', alignItems: 'center' },
+  }), []);
+
+  const getOrderRowId = useCallback((p: { data: typeof INITIAL_ORDERS[0] }) => p.data.id, []);
+  const getTradeRowId = useCallback((p: { data: typeof INITIAL_TRADES[0] }) => p.data.id, []);
 
   return (
     <div className="flex flex-col h-full border-t" style={{background:'var(--bn-bg1)',borderColor:'var(--bn-border)'}}>
@@ -36,7 +87,7 @@ export function BottomOrderPanel({ bond }: BottomOrderPanelProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-hidden">
         {tab === 'Open Orders' && (
           <div className="flex-1 flex flex-col items-center justify-center py-8" style={{color:'var(--bn-t2)'}}>
             <div className="text-3xl mb-2 opacity-20">📋</div>
@@ -44,57 +95,26 @@ export function BottomOrderPanel({ bond }: BottomOrderPanelProps) {
           </div>
         )}
         {tab === 'Order History' && (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr style={{background:'var(--bn-bg2)',position:'sticky',top:0}}>
-                {['Date','Pair','Type','Side','Price','Amount','Filled','Total','Status'].map(h=>(
-                  <th key={h} className="text-xs px-3 py-2 text-left border-b" style={{color:'var(--bn-t1)',borderColor:'var(--bn-border)',fontWeight:400}}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {INITIAL_ORDERS.map(o=>(
-                <tr key={o.id} className="border-b hover:bg-[var(--bn-bg2)]" style={{borderColor:'rgba(43,49,57,0.5)'}}>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t1)'}}>{o.time}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t0)'}}>{o.bond}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t1)'}}>{o.type}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs font-bold" style={{color:o.side==='Buy'?'var(--bn-green)':'var(--bn-red)'}}>{o.side}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t0)'}}>{o.px>0?o.px.toFixed(3):'—'}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t0)'}}>{o.qty}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:o.filled===o.qty?'var(--bn-green)':'var(--bn-yellow)'}}>{o.filled}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t1)'}}>{o.px>0?(+o.px*parseFloat(o.qty.replace('$',''))).toFixed(0):'—'}</td>
-                  <td className="px-3 py-1.5">
-                    <span className={`font-mono-fi text-xs px-1.5 py-0.5 rounded-sm ${statusStyle(o.status)}`}>{o.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <AgGridReact
+            theme={fiGridTheme}
+            rowData={INITIAL_ORDERS}
+            columnDefs={orderColDefs}
+            defaultColDef={defaultColDef}
+            getRowId={getOrderRowId}
+            headerHeight={28}
+            rowHeight={26}
+          />
         )}
         {tab === 'Trade History' && (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr style={{background:'var(--bn-bg2)',position:'sticky',top:0}}>
-                {['Date','Pair','Side','Price','Amount','Total','Fee','Status'].map(h=>(
-                  <th key={h} className="text-xs px-3 py-2 text-left border-b" style={{color:'var(--bn-t1)',borderColor:'var(--bn-border)',fontWeight:400}}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {INITIAL_TRADES.map(t=>(
-                <tr key={t.id} className="border-b hover:bg-[var(--bn-bg2)]" style={{borderColor:'rgba(43,49,57,0.5)'}}>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t1)'}}>{t.time}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t0)'}}>{t.bond}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs font-bold" style={{color:t.side==='B'?'var(--bn-green)':'var(--bn-red)'}}>{t.side==='B'?'Buy':'Sell'}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t0)'}}>{t.price.toFixed(3)}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t0)'}}>{t.size}</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t1)'}}>—</td>
-                  <td className="font-mono-fi px-3 py-1.5 text-xs" style={{color:'var(--bn-t1)'}}>—</td>
-                  <td className="px-3 py-1.5"><span className={`font-mono-fi text-xs px-1.5 py-0.5 rounded-sm ${statusStyle(t.status)}`}>{t.status}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <AgGridReact
+            theme={fiGridTheme}
+            rowData={INITIAL_TRADES}
+            columnDefs={tradeColDefs}
+            defaultColDef={defaultColDef}
+            getRowId={getTradeRowId}
+            headerHeight={28}
+            rowHeight={26}
+          />
         )}
         {tab === 'Funds' && (
           <div className="p-4 grid grid-cols-4 gap-4">

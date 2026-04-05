@@ -1,5 +1,12 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, useMemo, useCallback, createContext, useContext } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import { fiGridTheme } from '@/lib/agGridTheme';
 import { INITIAL_ORDERS } from '@/data/tradingData';
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 const BD = '1px solid var(--bn-border)';
 type Order = typeof INITIAL_ORDERS[0];
@@ -118,7 +125,43 @@ export function OrderKpis() {
 export function OrderBlotter() {
   const {orders,selected,setSelected,filter,setFilter}=useContext(OrdersContext);
   const FILTERS=['All','Filled','Partial','Pending','Cancelled'];
-  const filtered=orders.filter(o=>filter==='All'||o.status===filter);
+  const filtered=useMemo(()=>orders.filter(o=>filter==='All'||o.status===filter),[orders,filter]);
+
+  const colDefs = useMemo<ColDef<Order>[]>(()=>[
+    {field:'time', headerName:'TIME',   width:60, cellStyle:{fontSize:9,color:'var(--bn-t2)'}},
+    {field:'bond', headerName:'BOND',   flex:1,   cellStyle:{color:'#00bcd4'}},
+    {field:'side', headerName:'SIDE',   width:55, cellRenderer:(p:ICellRendererParams)=>{
+      const v=p.value; const color=v==='Buy'?'var(--bn-green)':'var(--bn-red)';
+      return `<span style="font-size:9px;font-weight:700;color:${color}">${v.toUpperCase()}</span>`;
+    }},
+    {field:'type',   headerName:'TYPE',   width:55, cellStyle:{fontSize:9,color:'var(--bn-t1)'}, type:'numericColumn'},
+    {field:'qty',    headerName:'QTY',    width:65, type:'numericColumn'},
+    {field:'filled', headerName:'FILLED', width:65, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
+      const color=p.value===p.data.qty?'var(--bn-green)':'#f0b90b';
+      return `<span style="color:${color}">${p.value}</span>`;
+    }},
+    {field:'px',  headerName:'PX',  width:75, type:'numericColumn', valueFormatter:p=>p.value>0?p.value.toFixed(3):'—'},
+    {field:'ytm', headerName:'YTM', width:65, type:'numericColumn', valueFormatter:p=>p.value>0?p.value.toFixed(2)+'%':'—', cellStyle:{color:'var(--bn-t1)'}},
+    {field:'status', headerName:'STATUS', width:80, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
+      const s=p.value;
+      const m:Record<string,{bg:string,color:string,border:string}>={
+        Filled:{bg:'rgba(45,212,191,0.1)',color:'var(--bn-green)',border:'rgba(45,212,191,0.3)'},
+        Partial:{bg:'rgba(240,185,11,0.1)',color:'#f0b90b',border:'rgba(240,185,11,0.3)'},
+        Pending:{bg:'rgba(30,144,255,0.1)',color:'#1e90ff',border:'rgba(30,144,255,0.3)'},
+        Cancelled:{bg:'rgba(248,113,113,0.1)',color:'var(--bn-red)',border:'rgba(248,113,113,0.3)'},
+      };
+      const st=m[s]||m.Pending;
+      return `<span style="font-size:9px;padding:1px 6px;border-radius:2px;background:${st.bg};color:${st.color};border:1px solid ${st.border}">${s}</span>`;
+    }},
+  ],[]);
+
+  const defaultColDef = useMemo<ColDef>(()=>({
+    suppressMovable:true,
+    cellStyle:{fontFamily:'JetBrains Mono,monospace',fontSize:11,display:'flex',alignItems:'center'},
+  }),[]);
+
+  const getRowId = useCallback((p:{data:Order})=>p.data.id,[]);
+
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',background:'var(--bn-bg1)',overflow:'hidden'}}>
       {/* Filter toolbar (no title — dock header has it) */}
@@ -127,29 +170,18 @@ export function OrderBlotter() {
           <button key={f} onClick={()=>setFilter(f)} style={{fontSize:9,padding:'2px 8px',marginLeft:3,borderRadius:2,border:BD,background:filter===f?'var(--bn-border)':'transparent',color:filter===f?'var(--bn-t0)':'var(--bn-t1)',cursor:'pointer',fontFamily:'JetBrains Mono,monospace'}}>{f}</button>
         ))}
       </div>
-      <div style={{flex:1,overflowY:'auto'}}>
-        <table style={{width:'100%',borderCollapse:'collapse'}}>
-          <thead><tr style={{background:'var(--bn-bg2)',position:'sticky',top:0,zIndex:1}}>
-            {['TIME','BOND','SIDE','TYPE','QTY','FILLED','PX','YTM','STATUS'].map(h=>(
-              <th key={h} style={{fontSize:11,color:'var(--bn-t1)',padding:'5px 10px',borderBottom:BD,textAlign:h==='BOND'||h==='TIME'?'left':'right',fontWeight:400,letterSpacing:'0.04em'}}>{h}</th>
-            ))}
-          </tr></thead>
-          <tbody>
-            {filtered.map(o=>(
-              <tr key={o.id} onClick={()=>setSelected(o)} style={{borderBottom:'1px solid rgba(43,49,57,0.5)',cursor:'pointer',background:selected?.id===o.id?'var(--bn-bg2)':'transparent'}}>
-                <td style={{padding:'5px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:9,color:'var(--bn-t2)'}}>{o.time}</td>
-                <td style={{padding:'5px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:'#00bcd4'}}>{o.bond}</td>
-                <td style={{padding:'5px 10px'}}><span style={{fontSize:9,fontWeight:700,color:o.side==='Buy'?'var(--bn-green)':'var(--bn-red)',fontFamily:'JetBrains Mono,monospace'}}>{o.side.toUpperCase()}</span></td>
-                <td style={{padding:'5px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:9,color:'var(--bn-t1)',textAlign:'right'}}>{o.type}</td>
-                <td style={{padding:'5px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:'var(--bn-t0)',textAlign:'right'}}>{o.qty}</td>
-                <td style={{padding:'5px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:o.filled===o.qty?'var(--bn-green)':'#f0b90b',textAlign:'right'}}>{o.filled}</td>
-                <td style={{padding:'5px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:'var(--bn-t0)',textAlign:'right'}}>{o.px>0?o.px.toFixed(3):'—'}</td>
-                <td style={{padding:'5px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:'var(--bn-t1)',textAlign:'right'}}>{o.ytm>0?o.ytm.toFixed(2)+'%':'—'}</td>
-                <td style={{padding:'5px 10px',textAlign:'right'}}>{statusBadge(o.status)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{flex:1,overflow:'hidden'}}>
+        <AgGridReact<Order>
+          theme={fiGridTheme}
+          rowData={filtered}
+          columnDefs={colDefs}
+          defaultColDef={defaultColDef}
+          getRowId={getRowId}
+          headerHeight={28}
+          rowHeight={26}
+          onRowClicked={p=>p.data&&setSelected(p.data)}
+          onGridReady={()=>{}}
+        />
       </div>
     </div>
   );

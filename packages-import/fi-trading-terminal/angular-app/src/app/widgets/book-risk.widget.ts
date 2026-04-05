@@ -1,6 +1,13 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AgGridAngular } from 'ag-grid-angular';
+import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
+import { fiGridTheme } from '../services/ag-grid-theme';
 import { RISK_POSITIONS, BONDS } from '../services/trading-data.service';
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+LicenseManager.setLicenseKey('');
 
 const HEAT_COLORS = ['#1e90ff', '#00bcd4', '#f0b90b', '#f59e0b', 'var(--bn-red)', '#dc2626'];
 const heatLevel = (oas: number) =>
@@ -9,57 +16,22 @@ const heatLevel = (oas: number) =>
 @Component({
   selector: 'book-risk-widget',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AgGridAngular],
   host: { style: 'display:flex;flex-direction:column;height:100%;width:100%' },
   template: `
     <div
       style="display:flex;flex-direction:column;height:100%;background:var(--bn-bg1);overflow:hidden"
     >
-      <div style="flex:1;overflow-y:auto">
-        <table style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="background:var(--bn-bg2);position:sticky;top:0">
-              <th
-                *ngFor="let h of headers"
-                style="font-size:11px;color:var(--bn-t1);padding:5px 10px;border-bottom:1px solid var(--bn-border);font-weight:400;letter-spacing:0.04em"
-                [style.textAlign]="h === 'BOOK' ? 'left' : 'right'"
-              >
-                {{ h }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let p of positions" style="border-bottom:1px solid rgba(43,49,57,0.5)">
-              <td
-                style="padding:6px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:#00bcd4"
-              >
-                {{ p.book }}
-              </td>
-              <td
-                style="padding:6px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:var(--bn-t0);text-align:right"
-              >
-                {{ p.mv }}
-              </td>
-              <td
-                style="padding:6px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:#1e90ff;text-align:right"
-              >
-                {{ p.dv01.toLocaleString() }}
-              </td>
-              <td
-                style="padding:6px 10px;font-family:JetBrains Mono,monospace;font-size:11px;text-align:right"
-                [style.color]="p.oas > 100 ? '#f0b90b' : 'var(--bn-green)'"
-              >
-                {{ p.oas > 0 ? '+' + p.oas : p.oas }}
-              </td>
-              <td
-                style="padding:6px 10px;font-family:JetBrains Mono,monospace;font-size:11px;text-align:right"
-                [style.color]="p.pnl >= 0 ? 'var(--bn-green)' : 'var(--bn-red)'"
-              >
-                {{ p.pnl >= 0 ? '+' : '' }}{{ p.pnl }}K
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div style="flex:1;overflow:hidden">
+        <ag-grid-angular
+          style="width:100%;height:100%"
+          [theme]="gridTheme"
+          [rowData]="positions"
+          [columnDefs]="colDefs"
+          [defaultColDef]="defaultColDef"
+          [headerHeight]="28"
+          [rowHeight]="26"
+        />
       </div>
       <!-- OAS heatmap -->
       <div style="border-top:1px solid var(--bn-border);flex-shrink:0">
@@ -88,9 +60,67 @@ const heatLevel = (oas: number) =>
 export class BookRiskWidget {
   @Input() api: any;
   @Input() panel: any;
-  headers = ['BOOK', 'MV', 'DV01', 'OAS', 'P&L'];
+
+  gridTheme = fiGridTheme;
   positions = RISK_POSITIONS;
   heatBonds = BONDS.slice(0, 16);
+
+  colDefs: ColDef[] = [
+    {
+      field: 'book',
+      headerName: 'BOOK',
+      flex: 1,
+      cellStyle: { color: '#00bcd4' },
+    },
+    {
+      field: 'mv',
+      headerName: 'MV',
+      flex: 0.7,
+      type: 'numericColumn',
+    },
+    {
+      field: 'dv01',
+      headerName: 'DV01',
+      flex: 0.7,
+      type: 'numericColumn',
+      cellStyle: { color: '#1e90ff' },
+      valueFormatter: (p) => p.value?.toLocaleString(),
+    },
+    {
+      field: 'oas',
+      headerName: 'OAS',
+      flex: 0.7,
+      type: 'numericColumn',
+      cellRenderer: (p: ICellRendererParams) => {
+        const v = Number(p.value);
+        const c = v > 100 ? '#f0b90b' : 'var(--bn-green)';
+        return `<span style="color:${c}">${v > 0 ? '+' + v : v}</span>`;
+      },
+    },
+    {
+      field: 'pnl',
+      headerName: 'P&L',
+      flex: 0.7,
+      type: 'numericColumn',
+      cellRenderer: (p: ICellRendererParams) => {
+        const v = Number(p.value);
+        const c = v >= 0 ? 'var(--bn-green)' : 'var(--bn-red)';
+        return `<span style="color:${c}">${v >= 0 ? '+' : ''}${v}K</span>`;
+      },
+    },
+  ];
+
+  defaultColDef: ColDef = {
+    sortable: true,
+    resizable: true,
+    suppressMovable: true,
+    cellStyle: {
+      fontFamily: 'JetBrains Mono,monospace',
+      fontSize: '11px',
+      display: 'flex',
+      alignItems: 'center',
+    },
+  };
 
   getHeatColor(oas: number) {
     return HEAT_COLORS[heatLevel(oas)];

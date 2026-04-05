@@ -1,5 +1,13 @@
+import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line, CartesianGrid } from 'recharts';
+import { AgGridReact } from 'ag-grid-react';
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import { fiGridTheme } from '@/lib/agGridTheme';
 import { RISK_POSITIONS, BONDS } from '@/data/tradingData';
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 const BD = '1px solid var(--bn-border)';
 const HEAT_COLORS = ['#1e90ff','#00bcd4','#f0b90b','#f59e0b','var(--bn-red)','#dc2626'];
@@ -45,27 +53,35 @@ export function RiskKpiStrip() {
 }
 
 export function BookRiskSummary() {
+  const colDefs = useMemo<ColDef[]>(()=>[
+    {field:'book', headerName:'BOOK', flex:1, cellRenderer:(p:ICellRendererParams)=>`<span style="color:#00bcd4">${p.value}</span>`},
+    {field:'mv',   headerName:'MV',   width:70, type:'numericColumn'},
+    {field:'dv01', headerName:'DV01', width:80, type:'numericColumn', valueFormatter:p=>p.value?.toLocaleString(), cellStyle:{color:'#1e90ff'}},
+    {field:'oas',  headerName:'OAS',  width:70, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
+      const v=p.value; const color=v>100?'#f0b90b':'var(--bn-green)';
+      return `<span style="color:${color}">${v>0?'+'+v:v}</span>`;
+    }},
+    {field:'pnl',  headerName:'P&L',  width:80, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
+      const v=p.value; const color=v>=0?'var(--bn-green)':'var(--bn-red)';
+      return `<span style="color:${color}">${v>=0?'+':''}${v}K</span>`;
+    }},
+  ],[]);
+  const defaultColDef = useMemo<ColDef>(()=>({
+    suppressMovable:true,
+    cellStyle:{fontFamily:'JetBrains Mono,monospace',fontSize:11,display:'flex',alignItems:'center'},
+  }),[]);
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',background:'var(--bn-bg1)',overflow:'hidden'}}>
-      <div style={{flex:1,overflowY:'auto'}}>
-        <table style={{width:'100%',borderCollapse:'collapse'}}>
-          <thead><tr style={{background:'var(--bn-bg2)',position:'sticky',top:0}}>
-            {['BOOK','MV','DV01','OAS','P&L'].map(h=>(
-              <th key={h} style={{fontSize:11,color:'var(--bn-t1)',padding:'5px 10px',borderBottom:BD,textAlign:h==='BOOK'?'left':'right',fontWeight:400,letterSpacing:'0.04em'}}>{h}</th>
-            ))}
-          </tr></thead>
-          <tbody>
-            {RISK_POSITIONS.map(p=>(
-              <tr key={p.book} style={{borderBottom:'1px solid rgba(43,49,57,0.5)'}}>
-                <td style={{padding:'6px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:'#00bcd4'}}>{p.book}</td>
-                <td style={{padding:'6px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:'var(--bn-t0)',textAlign:'right'}}>{p.mv}</td>
-                <td style={{padding:'6px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:'#1e90ff',textAlign:'right'}}>{p.dv01.toLocaleString()}</td>
-                <td style={{padding:'6px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:p.oas>100?'#f0b90b':'var(--bn-green)',textAlign:'right'}}>{p.oas>0?`+${p.oas}`:p.oas}</td>
-                <td style={{padding:'6px 10px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:p.pnl>=0?'var(--bn-green)':'var(--bn-red)',textAlign:'right'}}>{p.pnl>=0?'+':''}{p.pnl}K</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{flex:1,overflow:'hidden'}}>
+        <AgGridReact
+          theme={fiGridTheme}
+          rowData={RISK_POSITIONS}
+          columnDefs={colDefs}
+          defaultColDef={defaultColDef}
+          headerHeight={28}
+          rowHeight={26}
+          domLayout='autoHeight'
+        />
       </div>
       {/* OAS heatmap */}
       <div style={{borderTop:BD,flexShrink:0}}>

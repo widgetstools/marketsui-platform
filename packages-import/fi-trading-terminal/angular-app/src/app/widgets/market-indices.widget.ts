@@ -1,56 +1,41 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AgGridAngular } from 'ag-grid-angular';
+import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+import {
+  ModuleRegistry,
+  type ColDef,
+  type GridApi,
+  type GridReadyEvent,
+  type ICellRendererParams,
+} from 'ag-grid-community';
+import { fiGridTheme } from '../services/ag-grid-theme';
 import { MARKET_INDICES, type MarketIndex } from '../services/trading-data.service';
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+LicenseManager.setLicenseKey('');
 
 @Component({
   selector: 'market-indices-widget',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AgGridAngular],
   host: { style: 'display:flex;flex-direction:column;height:100%;width:100%' },
   template: `
     <div
       style="display:flex;flex-direction:column;height:100%;background:var(--bn-bg1);overflow:hidden"
     >
-      <div style="flex:1;overflow-y:auto">
-        <table style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="background:var(--bn-bg2);position:sticky;top:0">
-              <th
-                *ngFor="let h of headers"
-                style="font-size:11px;color:var(--bn-t1);padding:5px 10px;border-bottom:1px solid var(--bn-border);font-weight:400;letter-spacing:0.04em"
-                [style.textAlign]="h === 'INDEX' ? 'left' : 'right'"
-              >
-                {{ h }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let idx of indices" style="border-bottom:1px solid rgba(43,49,57,0.5)">
-              <td
-                style="padding:6px 10px;font-size:11px;color:var(--bn-t0);font-family:JetBrains Mono,monospace"
-              >
-                {{ idx.name }}
-              </td>
-              <td
-                style="padding:6px 10px;font-size:11px;font-family:JetBrains Mono,monospace;color:var(--bn-t0);text-align:right"
-              >
-                {{ idx.val.toFixed(2) }}
-              </td>
-              <td
-                style="padding:6px 10px;font-size:11px;font-family:JetBrains Mono,monospace;text-align:right"
-                [style.color]="idx.chg >= 0 ? 'var(--bn-green)' : 'var(--bn-red)'"
-              >
-                {{ idx.chg >= 0 ? '+' : '' }}{{ idx.chg.toFixed(2) }}
-              </td>
-              <td
-                style="padding:6px 10px;font-size:11px;font-family:JetBrains Mono,monospace;text-align:right"
-                [style.color]="idx.ytd.startsWith('+') ? 'var(--bn-green)' : 'var(--bn-red)'"
-              >
-                {{ idx.ytd }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div style="flex:1;overflow:hidden">
+        <ag-grid-angular
+          style="width:100%;height:100%"
+          [theme]="gridTheme"
+          [rowData]="indices"
+          [columnDefs]="colDefs"
+          [defaultColDef]="defaultColDef"
+          [headerHeight]="28"
+          [rowHeight]="26"
+          [getRowId]="getRowId"
+          (gridReady)="onGridReady($event)"
+        />
       </div>
     </div>
   `,
@@ -58,9 +43,67 @@ import { MARKET_INDICES, type MarketIndex } from '../services/trading-data.servi
 export class MarketIndicesWidget implements OnInit, OnDestroy {
   @Input() api: any;
   @Input() panel: any;
-  headers = ['INDEX', 'LAST', 'CHG', 'YTD'];
+
+  gridTheme = fiGridTheme;
+  gridApi: GridApi | null = null;
   indices: MarketIndex[] = [];
   private tickId: any;
+
+  colDefs: ColDef<MarketIndex>[] = [
+    {
+      field: 'name',
+      headerName: 'INDEX',
+      flex: 1.5,
+      cellStyle: { color: 'var(--bn-t0)' },
+    },
+    {
+      field: 'val',
+      headerName: 'LAST',
+      flex: 0.8,
+      type: 'numericColumn',
+      valueFormatter: (p) => p.value?.toFixed(2),
+    },
+    {
+      field: 'chg',
+      headerName: 'CHG',
+      flex: 0.8,
+      type: 'numericColumn',
+      cellRenderer: (p: ICellRendererParams<MarketIndex>) => {
+        const v = Number(p.value);
+        const c = v >= 0 ? 'var(--bn-green)' : 'var(--bn-red)';
+        return `<span style="color:${c}">${v >= 0 ? '+' : ''}${v.toFixed(2)}</span>`;
+      },
+    },
+    {
+      field: 'ytd',
+      headerName: 'YTD',
+      flex: 0.8,
+      type: 'numericColumn',
+      cellRenderer: (p: ICellRendererParams<MarketIndex>) => {
+        const v = String(p.value);
+        const c = v.startsWith('+') ? 'var(--bn-green)' : 'var(--bn-red)';
+        return `<span style="color:${c}">${v}</span>`;
+      },
+    },
+  ];
+
+  defaultColDef: ColDef = {
+    sortable: true,
+    resizable: true,
+    suppressMovable: true,
+    cellStyle: {
+      fontFamily: 'JetBrains Mono,monospace',
+      fontSize: '11px',
+      display: 'flex',
+      alignItems: 'center',
+    },
+  };
+
+  getRowId = (p: { data: MarketIndex }) => p.data.name;
+
+  onGridReady(e: GridReadyEvent) {
+    this.gridApi = e.api;
+  }
 
   ngOnInit() {
     this.indices = MARKET_INDICES.map((i) => ({ ...i }));
@@ -74,6 +117,7 @@ export class MarketIndicesWidget implements OnInit, OnDestroy {
       });
     }, 1800);
   }
+
   ngOnDestroy() {
     if (this.tickId) clearInterval(this.tickId);
   }

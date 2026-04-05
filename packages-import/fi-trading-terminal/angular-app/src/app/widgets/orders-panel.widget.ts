@@ -1,11 +1,18 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AgGridAngular } from 'ag-grid-angular';
+import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
+import { fiGridTheme } from '../services/ag-grid-theme';
 import { INITIAL_ORDERS, INITIAL_TRADES } from '../services/trading-data.service';
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+LicenseManager.setLicenseKey('');
 
 @Component({
   selector: 'orders-panel-widget',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AgGridAngular],
   host: { style: 'display:flex;flex-direction:column;height:100%;width:100%' },
   template: `
     <div style="display:flex;flex-direction:column;height:100%;background:var(--bn-bg1)">
@@ -35,114 +42,29 @@ import { INITIAL_ORDERS, INITIAL_TRADES } from '../services/trading-data.service
         </div>
       </div>
       <!-- Content -->
-      <div style="flex:1;overflow-y:auto">
+      <div style="flex:1;overflow:hidden">
         <!-- Order History -->
-        <table *ngIf="tab === 'orders'" style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="background:var(--bn-bg2);position:sticky;top:0">
-              <th
-                *ngFor="let h of orderHeaders"
-                style="font-size:11px;color:var(--bn-t1);padding:5px 12px;border-bottom:1px solid var(--bn-border);text-align:left;font-weight:400"
-              >
-                {{ h }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let o of orders" style="border-bottom:1px solid rgba(43,49,57,0.5)">
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t1)">
-                {{ o.time }}
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t0)">
-                {{ o.bond }}
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t1)">
-                {{ o.type }}
-              </td>
-              <td
-                class="font-mono-fi font-bold"
-                style="padding:6px 12px;font-size:11px"
-                [style.color]="o.side === 'Buy' ? 'var(--bn-green)' : 'var(--bn-red)'"
-              >
-                {{ o.side }}
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t0)">
-                {{ o.px > 0 ? o.px.toFixed(3) : '---' }}
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t0)">
-                {{ o.qty }}
-              </td>
-              <td
-                class="font-mono-fi"
-                style="padding:6px 12px;font-size:11px"
-                [style.color]="o.filled === o.qty ? 'var(--bn-green)' : 'var(--bn-yellow)'"
-              >
-                {{ o.filled }}
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t1)">
-                {{ o.px > 0 ? calcTotal(o) : '---' }}
-              </td>
-              <td style="padding:6px 12px">
-                <span
-                  class="font-mono-fi"
-                  style="font-size:11px;padding:1px 6px;border-radius:2px"
-                  [ngClass]="statusClass(o.status)"
-                  >{{ o.status }}</span
-                >
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <ag-grid-angular
+          *ngIf="tab === 'orders'"
+          style="width:100%;height:100%"
+          [theme]="gridTheme"
+          [rowData]="orders"
+          [columnDefs]="orderColDefs"
+          [defaultColDef]="defaultColDef"
+          [headerHeight]="28"
+          [rowHeight]="26"
+        />
         <!-- Trade History -->
-        <table *ngIf="tab === 'trades'" style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="background:var(--bn-bg2);position:sticky;top:0">
-              <th
-                *ngFor="let h of tradeHeaders"
-                style="font-size:11px;color:var(--bn-t1);padding:5px 12px;border-bottom:1px solid var(--bn-border);text-align:left;font-weight:400"
-              >
-                {{ h }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let t of trades" style="border-bottom:1px solid rgba(43,49,57,0.5)">
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t1)">
-                {{ t.time }}
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t0)">
-                {{ t.bond }}
-              </td>
-              <td
-                class="font-mono-fi font-bold"
-                style="padding:6px 12px;font-size:11px"
-                [style.color]="t.side === 'B' ? 'var(--bn-green)' : 'var(--bn-red)'"
-              >
-                {{ t.side === 'B' ? 'Buy' : 'Sell' }}
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t0)">
-                {{ t.price.toFixed(3) }}
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t0)">
-                {{ t.size }}
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t1)">
-                ---
-              </td>
-              <td class="font-mono-fi" style="padding:6px 12px;font-size:11px;color:var(--bn-t1)">
-                ---
-              </td>
-              <td style="padding:6px 12px">
-                <span
-                  class="font-mono-fi"
-                  style="font-size:11px;padding:1px 6px;border-radius:2px"
-                  [ngClass]="statusClass(t.status)"
-                  >{{ t.status }}</span
-                >
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <ag-grid-angular
+          *ngIf="tab === 'trades'"
+          style="width:100%;height:100%"
+          [theme]="gridTheme"
+          [rowData]="trades"
+          [columnDefs]="tradeColDefs"
+          [defaultColDef]="defaultColDef"
+          [headerHeight]="28"
+          [rowHeight]="26"
+        />
         <!-- Funds -->
         <div
           *ngIf="tab === 'funds'"
@@ -169,6 +91,7 @@ export class OrdersPanelWidget {
   @Input() api: any;
   @Input() panel: any;
 
+  gridTheme = fiGridTheme;
   tab = 'orders';
   tabNames = [
     { key: 'orders', label: 'Order History' },
@@ -176,8 +99,6 @@ export class OrdersPanelWidget {
     { key: 'open', label: 'Open Orders (0)' },
     { key: 'funds', label: 'Funds' },
   ];
-  orderHeaders = ['Date', 'Pair', 'Type', 'Side', 'Price', 'Amount', 'Filled', 'Total', 'Status'];
-  tradeHeaders = ['Date', 'Pair', 'Side', 'Price', 'Amount', 'Total', 'Fee', 'Status'];
   orders = INITIAL_ORDERS;
   trades = INITIAL_TRADES;
   funds = [
@@ -186,16 +107,158 @@ export class OrdersPanelWidget {
     { asset: 'AAPL', avail: '0.00', locked: '0.00' },
   ];
 
-  calcTotal(o: any): string {
-    const val = parseFloat(o.qty.replace(/[$MM,]/g, ''));
-    return (o.px * val).toFixed(0);
-  }
+  orderColDefs: ColDef[] = [
+    {
+      field: 'time',
+      headerName: 'Date',
+      flex: 0.6,
+      cellStyle: { color: 'var(--bn-t1)' },
+    },
+    {
+      field: 'bond',
+      headerName: 'Pair',
+      flex: 1,
+    },
+    {
+      field: 'type',
+      headerName: 'Type',
+      flex: 0.6,
+      cellStyle: { color: 'var(--bn-t1)' },
+    },
+    {
+      field: 'side',
+      headerName: 'Side',
+      flex: 0.5,
+      cellRenderer: (p: ICellRendererParams) => {
+        const c = p.value === 'Buy' ? 'var(--bn-green)' : 'var(--bn-red)';
+        return `<span style="font-weight:700;color:${c}">${p.value}</span>`;
+      },
+    },
+    {
+      field: 'px',
+      headerName: 'Price',
+      flex: 0.7,
+      type: 'numericColumn',
+      valueFormatter: (p) => (p.value > 0 ? Number(p.value).toFixed(3) : '---'),
+    },
+    {
+      field: 'qty',
+      headerName: 'Amount',
+      flex: 0.6,
+      type: 'numericColumn',
+    },
+    {
+      field: 'filled',
+      headerName: 'Filled',
+      flex: 0.6,
+      type: 'numericColumn',
+      cellRenderer: (p: ICellRendererParams) => {
+        const row = p.data;
+        const c = row.filled === row.qty ? 'var(--bn-green)' : 'var(--bn-yellow)';
+        return `<span style="color:${c}">${p.value}</span>`;
+      },
+    },
+    {
+      headerName: 'Total',
+      flex: 0.7,
+      type: 'numericColumn',
+      cellStyle: { color: 'var(--bn-t1)' },
+      valueGetter: (p) => {
+        if (!p.data || p.data.px <= 0) return '---';
+        const val = parseFloat(String(p.data.qty).replace(/[$MM,]/g, ''));
+        return (p.data.px * val).toFixed(0);
+      },
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 0.6,
+      cellRenderer: (p: ICellRendererParams) => {
+        const s = p.value;
+        let cls = 'badge-new';
+        if (s === 'Filled') cls = 'badge-filled';
+        else if (s === 'Partial') cls = 'badge-partial';
+        else if (s === 'Pending') cls = 'badge-new';
+        else if (s === 'Cancelled') cls = 'badge-cancel';
+        return `<span class="font-mono-fi ${cls}" style="font-size:11px;padding:1px 6px;border-radius:2px">${s}</span>`;
+      },
+    },
+  ];
 
-  statusClass(s: string): string {
-    if (s === 'Filled') return 'badge-filled';
-    if (s === 'Partial') return 'badge-partial';
-    if (s === 'Pending') return 'badge-new';
-    if (s === 'Cancelled') return 'badge-cancel';
-    return 'badge-new';
-  }
+  tradeColDefs: ColDef[] = [
+    {
+      field: 'time',
+      headerName: 'Date',
+      flex: 0.6,
+      cellStyle: { color: 'var(--bn-t1)' },
+    },
+    {
+      field: 'bond',
+      headerName: 'Pair',
+      flex: 1,
+    },
+    {
+      field: 'side',
+      headerName: 'Side',
+      flex: 0.5,
+      cellRenderer: (p: ICellRendererParams) => {
+        const c = p.value === 'B' ? 'var(--bn-green)' : 'var(--bn-red)';
+        const label = p.value === 'B' ? 'Buy' : 'Sell';
+        return `<span style="font-weight:700;color:${c}">${label}</span>`;
+      },
+    },
+    {
+      field: 'price',
+      headerName: 'Price',
+      flex: 0.7,
+      type: 'numericColumn',
+      valueFormatter: (p) => Number(p.value).toFixed(3),
+    },
+    {
+      field: 'size',
+      headerName: 'Amount',
+      flex: 0.6,
+      type: 'numericColumn',
+    },
+    {
+      headerName: 'Total',
+      flex: 0.6,
+      type: 'numericColumn',
+      cellStyle: { color: 'var(--bn-t1)' },
+      valueGetter: () => '---',
+    },
+    {
+      headerName: 'Fee',
+      flex: 0.5,
+      type: 'numericColumn',
+      cellStyle: { color: 'var(--bn-t1)' },
+      valueGetter: () => '---',
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 0.6,
+      cellRenderer: (p: ICellRendererParams) => {
+        const s = p.value;
+        let cls = 'badge-new';
+        if (s === 'Filled') cls = 'badge-filled';
+        else if (s === 'Partial') cls = 'badge-partial';
+        else if (s === 'Pending') cls = 'badge-new';
+        else if (s === 'Cancelled') cls = 'badge-cancel';
+        return `<span class="font-mono-fi ${cls}" style="font-size:11px;padding:1px 6px;border-radius:2px">${s}</span>`;
+      },
+    },
+  ];
+
+  defaultColDef: ColDef = {
+    sortable: true,
+    resizable: true,
+    suppressMovable: true,
+    cellStyle: {
+      fontFamily: 'JetBrains Mono,monospace',
+      fontSize: '11px',
+      display: 'flex',
+      alignItems: 'center',
+    },
+  };
 }

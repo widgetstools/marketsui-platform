@@ -298,7 +298,7 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
   defaultColDef: ColDef = {
     sortable: true,
     resizable: true,
-    suppressMovable: false,
+    suppressMovable: true,
     cellStyle: {
       fontFamily: 'JetBrains Mono,monospace',
       fontSize: '11px',

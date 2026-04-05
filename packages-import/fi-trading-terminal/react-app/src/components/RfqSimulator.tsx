@@ -1,9 +1,16 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
+import { AgGridReact } from 'ag-grid-react';
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import { fiGridTheme } from '@/lib/agGridTheme';
 import type { Bond, RfqRequest, RfqQuote } from '@/data/tradingData';
 import { BONDS, DEALERS } from '@/data/tradingData';
 import { Badge } from '@/components/ui/badge';
 import { X, CheckCircle, Clock, Zap, Search } from 'lucide-react';
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 let rfqCounter = 1;
 
@@ -13,6 +20,92 @@ function makeQuote(bond: Bond, side: 'Buy' | 'Sell', dealer: string): RfqQuote {
   const bid = +(mid - spread / 2 + (Math.random() - 0.5) * 0.02).toFixed(3);
   const ask = +(mid + spread / 2 + (Math.random() - 0.5) * 0.02).toFixed(3);
   return { dealer, bid, ask, bidSize: `$${(Math.floor(Math.random()*8+2))}MM`, askSize: `$${(Math.floor(Math.random()*8+2))}MM`, ts: Date.now(), status: 'live' };
+}
+
+/* ── AG Grid sub-component for RFQ quote ladder ── */
+function RfqQuoteGrid({ quotes, bestBid, bestAsk, rfqId, rfqStatus, onHitLift }: {
+  quotes: RfqQuote[]; bestBid: number; bestAsk: number; rfqId: string; rfqStatus: string;
+  onHitLift: (rfqId: string, dealer: string, action: 'hit' | 'lift') => void;
+}) {
+  const sorted = useMemo(() => [...quotes].sort((a, b) => b.bid - a.bid), [quotes]);
+
+  const ActionCell = useCallback((p: ICellRendererParams<RfqQuote>) => {
+    const q = p.data!;
+    const isDone = q.status === 'done';
+    const isStale = q.status === 'stale';
+    if (isDone) return <CheckCircle size={14} style={{ color: 'var(--fi-green)' }} />;
+    if (isStale || rfqStatus === 'done') return null;
+    return (
+      <div className="flex gap-1.5">
+        <button onClick={() => onHitLift(rfqId, q.dealer, 'hit')}
+          className="font-mono-fi px-2.5 py-1 rounded-sm font-bold"
+          style={{ fontSize: 11, background: 'rgba(61,158,255,0.15)', color: 'var(--fi-blue)', border: '1px solid rgba(61,158,255,0.35)' }}>
+          HIT
+        </button>
+        <button onClick={() => onHitLift(rfqId, q.dealer, 'lift')}
+          className="font-mono-fi px-2.5 py-1 rounded-sm font-bold"
+          style={{ fontSize: 11, background: 'rgba(0,229,160,0.15)', color: 'var(--fi-green)', border: '1px solid rgba(0,229,160,0.35)' }}>
+          LIFT
+        </button>
+      </div>
+    );
+  }, [rfqId, rfqStatus, onHitLift]);
+
+  const colDefs = useMemo<ColDef<RfqQuote>[]>(() => [
+    { field: 'dealer', headerName: 'DEALER', flex: 1, cellStyle: { fontWeight: 700, color: 'var(--fi-cyan)' } },
+    { field: 'bid', headerName: 'BID', width: 110, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
+      const q = p.data!; const isBest = q.bid === bestBid; const isStale = q.status === 'stale';
+      return `<span style="font-weight:${isBest ? 700 : 400};color:${isBest ? 'var(--fi-blue)' : '#5a7090'};opacity:${isStale ? 0.4 : 1}">${q.bid.toFixed(3)}${isBest ? '<span style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-blue)">▲BEST</span>' : ''}</span>`;
+    }},
+    { field: 'bidSize', headerName: 'BID SIZE', width: 80, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
+      const isStale = p.data!.status === 'stale';
+      return `<span style="color:var(--fi-t1);opacity:${isStale ? 0.4 : 1}">${p.value}</span>`;
+    }},
+    { field: 'ask', headerName: 'ASK', width: 110, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
+      const q = p.data!; const isBest = q.ask === bestAsk; const isStale = q.status === 'stale';
+      return `<span style="font-weight:${isBest ? 700 : 400};color:${isBest ? 'var(--fi-red)' : '#7a4050'};opacity:${isStale ? 0.4 : 1}">${q.ask.toFixed(3)}${isBest ? '<span style="margin-left:4px;font-size:9px;font-weight:700;color:var(--fi-red)">▼BEST</span>' : ''}</span>`;
+    }},
+    { field: 'askSize', headerName: 'ASK SIZE', width: 80, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
+      const isStale = p.data!.status === 'stale';
+      return `<span style="color:var(--fi-t1);opacity:${isStale ? 0.4 : 1}">${p.value}</span>`;
+    }},
+    { colId: 'spread', headerName: 'SPREAD', width: 80, type: 'numericColumn',
+      valueGetter: p => p.data ? ((p.data.ask - p.data.bid) * 100).toFixed(1) : '',
+      cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
+        const isStale = p.data!.status === 'stale';
+        return `<span style="color:var(--fi-amber);opacity:${isStale ? 0.4 : 1}">${p.value}¢</span>`;
+      }},
+    { field: 'status', headerName: 'STATUS', width: 75, type: 'numericColumn', cellRenderer: (p: ICellRendererParams<RfqQuote>) => {
+      const s = p.value as string;
+      const isDone = s === 'done'; const isStale = s === 'stale';
+      const bg = isDone ? 'rgba(0,229,160,0.12)' : isStale ? 'rgba(74,82,117,0.2)' : 'rgba(61,158,255,0.1)';
+      const color = isDone ? 'var(--fi-green)' : isStale ? 'var(--fi-t2)' : 'var(--fi-blue)';
+      const border = isDone ? 'rgba(0,229,160,0.25)' : isStale ? 'rgba(74,82,117,0.25)' : 'rgba(61,158,255,0.25)';
+      const label = isDone ? 'DONE' : isStale ? 'STALE' : 'LIVE';
+      return `<span style="font-size:9px;padding:1px 6px;border-radius:2px;background:${bg};color:${color};border:1px solid ${border}">${label}</span>`;
+    }},
+    { colId: 'action', headerName: 'ACTION', width: 130, cellRenderer: ActionCell },
+  ], [bestBid, bestAsk, ActionCell]);
+
+  const defaultColDef = useMemo<ColDef>(() => ({
+    suppressMovable: true,
+    cellStyle: { fontFamily: 'JetBrains Mono,monospace', fontSize: 11, display: 'flex', alignItems: 'center' },
+  }), []);
+
+  const getRowId = useCallback((p: { data: RfqQuote }) => p.data.dealer, []);
+
+  return (
+    <AgGridReact<RfqQuote>
+      theme={fiGridTheme}
+      rowData={sorted}
+      columnDefs={colDefs}
+      defaultColDef={defaultColDef}
+      getRowId={getRowId}
+      headerHeight={28}
+      rowHeight={34}
+      domLayout='autoHeight'
+    />
+  );
 }
 
 interface RfqPanelProps {
@@ -353,7 +446,7 @@ export function RfqPanel({ selectedBond, requests, setRequests, onClose }: RfqPa
               )}
 
               {/* Quote table */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-hidden">
                 {activeReq.quotes.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -362,65 +455,14 @@ export function RfqPanel({ selectedBond, requests, setRequests, onClose }: RfqPa
                     </div>
                   </div>
                 ) : (
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr style={{ background: 'var(--fi-bg2)', position: 'sticky', top: 0, zIndex: 1 }}>
-                        {['DEALER','BID','BID SIZE','ASK','ASK SIZE','SPREAD','STATUS','ACTION'].map(h => (
-                          <th key={h} className="col-hdr px-4 py-2 border-b text-right" style={{ borderColor: 'var(--fi-border)', textAlign: h === 'DEALER' || h === 'ACTION' ? 'left' : 'right' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...activeReq.quotes].sort((a, b) => b.bid - a.bid).map((q, i) => {
-                        const isBestBid = q.bid === bestBid;
-                        const isBestAsk = q.ask === bestAsk;
-                        const isDone = q.status === 'done';
-                        const isStale = q.status === 'stale';
-                        return (
-                          <tr key={q.dealer} className="border-b rfq-arrive" style={{ borderColor: 'var(--fi-border)', animationDelay: `${i * 0.1}s`, background: isDone ? 'rgba(0,229,160,0.05)' : 'transparent' }}>
-                            <td className="font-mono-fi px-4 py-2.5 font-bold" style={{ fontSize: 11, color: 'var(--fi-cyan)' }}>{q.dealer}</td>
-                            <td className="font-mono-fi px-4 py-2.5 text-right">
-                              <span style={{ fontSize:11, fontWeight: isBestBid ? 700 : 400, color: isBestBid ? 'var(--fi-blue)' : '#5a7090', opacity: isStale ? 0.4 : 1 }}>
-                                {q.bid.toFixed(3)}
-                                {isBestBid && <span className="ml-1 font-bold" style={{ fontSize:9, color: 'var(--fi-blue)' }}>▲BEST</span>}
-                              </span>
-                            </td>
-                            <td className="font-mono-fi px-4 py-2.5 text-right" style={{ fontSize:11, color: 'var(--fi-t1)', opacity: isStale ? 0.4 : 1 }}>{q.bidSize}</td>
-                            <td className="font-mono-fi px-4 py-2.5 text-right">
-                              <span style={{ fontSize:11, fontWeight: isBestAsk ? 700 : 400, color: isBestAsk ? 'var(--fi-red)' : '#7a4050', opacity: isStale ? 0.4 : 1 }}>
-                                {q.ask.toFixed(3)}
-                                {isBestAsk && <span className="ml-1 font-bold" style={{ fontSize:9, color: 'var(--fi-red)' }}>▼BEST</span>}
-                              </span>
-                            </td>
-                            <td className="font-mono-fi px-4 py-2.5 text-right" style={{ fontSize:11, color: 'var(--fi-t1)', opacity: isStale ? 0.4 : 1 }}>{q.askSize}</td>
-                            <td className="font-mono-fi px-4 py-2.5 text-right" style={{ fontSize:11, color: 'var(--fi-amber)', opacity: isStale ? 0.4 : 1 }}>{((q.ask - q.bid) * 100).toFixed(1)}¢</td>
-                            <td className="px-4 py-2.5 text-right">
-                              <span className="font-mono-fi px-1.5 py-0.5 rounded-sm" style={{ fontSize: 9, background: isDone ? 'rgba(0,229,160,0.12)' : isStale ? 'rgba(74,82,117,0.2)' : 'rgba(61,158,255,0.1)', color: isDone ? 'var(--fi-green)' : isStale ? 'var(--fi-t2)' : 'var(--fi-blue)', border: `1px solid ${isDone ? 'rgba(0,229,160,0.25)' : isStale ? 'rgba(74,82,117,0.25)' : 'rgba(61,158,255,0.25)'}` }}>
-                                {isDone ? 'DONE' : isStale ? 'STALE' : 'LIVE'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-2.5">
-                              {!isDone && !isStale && activeReq.status !== 'done' && (
-                                <div className="flex gap-1.5">
-                                  <button onClick={() => hitLift(activeReq.id, q.dealer, 'hit')}
-                                    className="font-mono-fi px-2.5 py-1 rounded-sm font-bold"
-                                    style={{ fontSize:11, background: 'rgba(61,158,255,0.15)', color: 'var(--fi-blue)', border: '1px solid rgba(61,158,255,0.35)' }}>
-                                    HIT
-                                  </button>
-                                  <button onClick={() => hitLift(activeReq.id, q.dealer, 'lift')}
-                                    className="font-mono-fi px-2.5 py-1 rounded-sm font-bold"
-                                    style={{ fontSize:11, background: 'rgba(0,229,160,0.15)', color: 'var(--fi-green)', border: '1px solid rgba(0,229,160,0.35)' }}>
-                                    LIFT
-                                  </button>
-                                </div>
-                              )}
-                              {isDone && <CheckCircle size={14} style={{ color: 'var(--fi-green)' }} />}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <RfqQuoteGrid
+                    quotes={activeReq.quotes}
+                    bestBid={bestBid}
+                    bestAsk={bestAsk}
+                    rfqId={activeReq.id}
+                    rfqStatus={activeReq.status}
+                    onHitLift={hitLift}
+                  />
                 )}
               </div>
 

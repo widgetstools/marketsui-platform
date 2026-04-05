@@ -1,6 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { AgGridReact } from 'ag-grid-react';
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams } from 'ag-grid-community';
+import { fiGridTheme } from '@/lib/agGridTheme';
 import { MARKET_INDICES, YC_CHART_DATA } from '@/data/tradingData';
+
+ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 const BD = '1px solid var(--bn-border)';
 const TT = (props:any) => {
@@ -24,41 +31,66 @@ const ECON_EVENTS=[
 ];
 const impactColor=(i:string)=>i==='High'?'var(--bn-red)':i==='Med'?'#f0b90b':'var(--bn-green)';
 
+type MarketIndex = typeof MARKET_INDICES[0];
+
 export function MarketIndices() {
-  const [indices,setIndices]=useState(MARKET_INDICES);
+  const gridApiRef = useRef<GridApi<MarketIndex>|null>(null);
+  const [rowData,setRowData]=useState<MarketIndex[]>(()=>MARKET_INDICES.map(idx=>({...idx})));
+
   useEffect(()=>{
     const id=setInterval(()=>{
-      setIndices(prev=>prev.map(idx=>{
-        if(Math.random()<0.3){
-          const delta=(Math.random()-.5)*0.08;
-          return{...idx,val:+(idx.val+delta).toFixed(2),chg:+(idx.chg+delta).toFixed(2)};
-        }
-        return idx;
-      }));
+      setRowData(prev=>{
+        const updates:MarketIndex[]=[];
+        const next=prev.map(idx=>{
+          if(Math.random()<0.3){
+            const delta=(Math.random()-.5)*0.08;
+            const updated={...idx,val:+(idx.val+delta).toFixed(2),chg:+(idx.chg+delta).toFixed(2)};
+            updates.push(updated);
+            return updated;
+          }
+          return idx;
+        });
+        if(gridApiRef.current&&updates.length) gridApiRef.current.applyTransactionAsync({update:updates});
+        return next;
+      });
     },1800);
     return()=>clearInterval(id);
   },[]);
 
+  const getRowId = useCallback((p:{data:MarketIndex})=>p.data.name,[]);
+
+  const colDefs = useMemo<ColDef<MarketIndex>[]>(()=>[
+    {field:'name', headerName:'INDEX', flex:1},
+    {field:'val',  headerName:'LAST',  width:90, type:'numericColumn', valueFormatter:p=>p.value?.toFixed(2)},
+    {field:'chg',  headerName:'CHG',   width:80, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
+      const v=p.value; const color=v>=0?'var(--bn-green)':'var(--bn-red)';
+      return `<span style="color:${color}">${v>=0?'+':''}${v.toFixed(2)}</span>`;
+    }},
+    {field:'ytd',  headerName:'YTD',   width:80, type:'numericColumn', cellRenderer:(p:ICellRendererParams)=>{
+      const v=p.value as string; const color=v.startsWith('+')?'var(--bn-green)':'var(--bn-red)';
+      return `<span style="color:${color}">${v}</span>`;
+    }},
+  ],[]);
+
+  const defaultColDef = useMemo<ColDef>(()=>({
+    suppressMovable:true,
+    cellStyle:{fontFamily:'JetBrains Mono,monospace',fontSize:11,display:'flex',alignItems:'center'},
+  }),[]);
+
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',background:'var(--bn-bg1)',overflow:'hidden'}}>
-      <div style={{flex:1,overflowY:'auto'}}>
-        <table style={{width:'100%',borderCollapse:'collapse'}}>
-          <thead><tr style={{background:'var(--bn-bg2)',position:'sticky',top:0}}>
-            {['INDEX','LAST','CHG','YTD'].map(h=>(
-              <th key={h} style={{fontSize:11,color:'var(--bn-t1)',padding:'5px 10px',borderBottom:BD,textAlign:h==='INDEX'?'left':'right',fontWeight:400,letterSpacing:'0.04em'}}>{h}</th>
-            ))}
-          </tr></thead>
-          <tbody>
-            {indices.map(idx=>(
-              <tr key={idx.name} style={{borderBottom:'1px solid rgba(43,49,57,0.5)'}}>
-                <td style={{padding:'6px 10px',fontSize:11,color:'var(--bn-t0)',fontFamily:'JetBrains Mono,monospace'}}>{idx.name}</td>
-                <td style={{padding:'6px 10px',fontSize:11,fontFamily:'JetBrains Mono,monospace',color:'var(--bn-t0)',textAlign:'right'}}>{idx.val.toFixed(2)}</td>
-                <td style={{padding:'6px 10px',fontSize:11,fontFamily:'JetBrains Mono,monospace',color:idx.chg>=0?'var(--bn-green)':'var(--bn-red)',textAlign:'right'}}>{idx.chg>=0?'+':''}{idx.chg.toFixed(2)}</td>
-                <td style={{padding:'6px 10px',fontSize:11,fontFamily:'JetBrains Mono,monospace',color:idx.ytd.startsWith('+')?'var(--bn-green)':'var(--bn-red)',textAlign:'right'}}>{idx.ytd}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{flex:1,overflow:'hidden'}}>
+        <AgGridReact<MarketIndex>
+          theme={fiGridTheme}
+          rowData={rowData}
+          columnDefs={colDefs}
+          defaultColDef={defaultColDef}
+          getRowId={getRowId}
+          headerHeight={28}
+          rowHeight={26}
+          domLayout='autoHeight'
+          onGridReady={(e:GridReadyEvent)=>{gridApiRef.current=e.api;}}
+        />
       </div>
     </div>
   );
