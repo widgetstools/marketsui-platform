@@ -361,6 +361,7 @@ export class RfqWidget implements OnInit, OnDestroy {
   private staleInterval: any;
 
   gridTheme = fiGridTheme;
+  agModules = [AllEnterpriseModule];
   dealers = DEALERS;
   rfqSide: 'Buy' | 'Sell' = 'Buy';
   rfqSize = '5';

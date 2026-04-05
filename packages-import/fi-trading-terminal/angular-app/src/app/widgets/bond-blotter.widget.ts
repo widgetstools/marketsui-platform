@@ -92,6 +92,7 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
   private tickInterval: any;
 
   gridTheme = fiGridTheme;
+  agModules = [AllEnterpriseModule];
   gridApi: GridApi<Bond> | null = null;
   rowData: Bond[] = [];
   search = '';

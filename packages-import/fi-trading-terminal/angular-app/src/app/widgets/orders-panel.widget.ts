@@ -96,6 +96,7 @@ export class OrdersPanelWidget {
   @Input() panel: any;
 
   gridTheme = fiGridTheme;
+  agModules = [AllEnterpriseModule];
   tab = 'orders';
   tabNames = [
     { key: 'orders', label: 'Order History' },

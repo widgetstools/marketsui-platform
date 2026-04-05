@@ -39,6 +39,7 @@ export class MarketIndicesWidget implements OnInit, OnDestroy {
   @Input() panel: any;
 
   gridTheme = fiGridTheme;
+  agModules = [AllEnterpriseModule];
   gridApi: GridApi | null = null;
   indices: MarketIndex[] = [];
   private tickId: any;

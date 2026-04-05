@@ -57,7 +57,7 @@ export class OrderBlotterWidget {
   filters = ['All', 'Filled', 'Partial', 'Pending', 'Cancelled'];
 
   gridTheme = fiGridTheme;
-
+  agModules = [AllEnterpriseModule];
   colDefs: ColDef[] = [
     {
       field: 'time',

@@ -66,6 +66,7 @@ export class BookRiskWidget {
   @Input() panel: any;
 
   gridTheme = fiGridTheme;
+  agModules = [AllEnterpriseModule];
   positions = RISK_POSITIONS;
   heatBonds = BONDS.slice(0, 16);
 
