@@ -39,6 +39,7 @@ import { OasDistributionWidget } from './widgets/oas-distribution.widget';
 import { PnlAttributionWidget } from './widgets/pnl-attribution.widget';
 import { ResearchListWidget } from './widgets/research-list.widget';
 import { NoteDetailWidget } from './widgets/note-detail.widget';
+import { DesignSystemWidget } from './widgets/design-system.widget';
 
 // ── Widget registry ──
 const WIDGETS: Record<string, Type<any>> = {
@@ -69,6 +70,7 @@ const WIDGETS: Record<string, Type<any>> = {
   pnl: PnlAttributionWidget,
   researchList: ResearchListWidget,
   noteDetail: NoteDetailWidget,
+  designSystem: DesignSystemWidget,
 };
 
 // ── Layout helpers ──
@@ -297,6 +299,16 @@ function researchLayout(): DockManagerState {
   );
 }
 
+function designSystemLayout(): DockManagerState {
+  return base(
+    tg('tg-ds', ['designSystem']),
+    {
+      designSystem: p('designSystem', 'Design System', 'designSystem'),
+    },
+    'designSystem',
+  );
+}
+
 const TAB_LAYOUTS: Record<string, () => DockManagerState> = {
   Trade: tradeLayout,
   Prices: pricesLayout,
@@ -305,9 +317,10 @@ const TAB_LAYOUTS: Record<string, () => DockManagerState> = {
   Research: researchLayout,
   Orders: ordersLayout,
   Analytics: analyticsLayout,
+  'Design System': designSystemLayout,
 };
 
-const NAV_TABS = ['Prices', 'Trade', 'Risk', 'Market', 'Research', 'Orders', 'Analytics'];
+const NAV_TABS = ['Prices', 'Trade', 'Risk', 'Market', 'Research', 'Orders', 'Analytics', 'Design System'];
 
 @Component({
   selector: 'app-root',

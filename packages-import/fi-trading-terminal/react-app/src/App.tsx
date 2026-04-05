@@ -20,6 +20,7 @@ import { MarketIndices, EconomicCalendar, IntradayChart, YieldCurvePanel } from 
 import { OrdersProvider, OrderKpis, OrderBlotter, OrderDetail } from '@/components/panels/OrdersPanels';
 import { OasVsDuration, DurationBuckets, SectorAllocation, HistoricalOas, OasDistribution, PnlAttribution } from '@/components/panels/AnalyticsPanels';
 import { ResearchProvider, ResearchList, NoteDetail } from '@/components/panels/ResearchPanels';
+import { DesignSystemTab } from '@/components/DesignSystemTab';
 
 // ── Shared state ──
 interface SharedState {
@@ -70,6 +71,8 @@ function W_ResearchList(_p: WidgetProps) { return <ResearchList />; }
 function W_NoteDetail(_p: WidgetProps) { return <NoteDetail />; }
 // Prices
 function W_BondBlotter(_p: WidgetProps) { const s = getShared(); return <BondBlotter onSelectBond={s.setSelectedBond} />; }
+// Design System
+function W_DesignSystem(_p: WidgetProps) { return <DesignSystemTab />; }
 
 const WIDGETS: Record<string, React.ComponentType<WidgetProps>> = {
   chart: W_Chart, orderBook: W_OrderBook, tradeTicket: W_TradeTicket, blotter: W_Blotter, rfq: W_Rfq,
@@ -79,6 +82,7 @@ const WIDGETS: Record<string, React.ComponentType<WidgetProps>> = {
   oasDur: W_OasDur, durBuckets: W_DurBuckets, sectors: W_Sectors, histOas: W_HistOas, oasDist: W_OasDist, pnl: W_Pnl,
   researchList: W_ResearchList, noteDetail: W_NoteDetail,
   bondBlotter: W_BondBlotter,
+  designSystem: W_DesignSystem,
 };
 
 // ── Helpers ──
@@ -220,11 +224,19 @@ function researchLayout(): DockManagerState {
   );
 }
 
+function designSystemLayout(): DockManagerState {
+  return base(
+    tg('tg-ds', ['designSystem']),
+    { designSystem: p('designSystem', 'Design System', 'designSystem') },
+    'designSystem',
+  );
+}
+
 const TAB_LAYOUTS: Record<string, () => DockManagerState> = {
   Trade: tradeLayout, Prices: pricesLayout,
   Risk: riskLayout, Market: marketLayout,
   Research: researchLayout, Orders: ordersLayout,
-  Analytics: analyticsLayout,
+  Analytics: analyticsLayout, 'Design System': designSystemLayout,
 };
 
 // ── Tabs that need context providers wrapping the dock manager ──
@@ -238,6 +250,7 @@ const TAB_WRAPPERS: Record<string, React.ComponentType<{children: React.ReactNod
   Orders: OrdersProvider,
   Research: ResearchProvider,
   Analytics: PassThrough,
+  'Design System': PassThrough,
 };
 
 export default function App() {
