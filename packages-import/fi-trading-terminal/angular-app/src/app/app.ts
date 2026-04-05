@@ -2,7 +2,12 @@ import { Component, signal, effect, PLATFORM_ID, inject, Type } from '@angular/c
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DockManagerCoreComponent, type DockTheme } from '@widgetstools/angular-dock-manager';
-import { type DockManagerState, type DockviewApi, slateDark, vsCodeLight } from '@widgetstools/dock-manager-core';
+import {
+  type DockManagerState,
+  type DockviewApi,
+  slateDark,
+  vsCodeLight,
+} from '@widgetstools/dock-manager-core';
 import { TICKER_STRIP, type TickerItem } from './services/trading-data.service';
 import { SharedStateService } from './services/shared-state.service';
 
@@ -37,104 +42,269 @@ import { NoteDetailWidget } from './widgets/note-detail.widget';
 
 // ── Widget registry ──
 const WIDGETS: Record<string, Type<any>> = {
-  chart: ChartWidget, orderBook: OrderBookWidget, tradeTicket: TradeTicketWidget,
-  blotter: OrdersPanelWidget, rfq: RfqWidget, bondBlotter: BondBlotterWidget,
-  riskKpi: RiskKpiWidget, bookRisk: BookRiskWidget, dv01: Dv01ChartWidget,
-  scenario: ScenarioChartWidget, varTrend: VarTrendWidget, riskLimits: RiskLimitsWidget,
-  indices: MarketIndicesWidget, econCal: EconCalendarWidget, intraday: IntradayChartWidget, yieldCurve: YieldCurveWidget,
-  orderKpi: OrderKpiWidget, orderBlotter: OrderBlotterWidget, orderDetail: OrderDetailWidget,
-  oasDur: OasDurationWidget, durBuckets: DurationBucketsWidget, sectors: SectorAllocationWidget,
-  histOas: HistoricalOasWidget, oasDist: OasDistributionWidget, pnl: PnlAttributionWidget,
-  researchList: ResearchListWidget, noteDetail: NoteDetailWidget,
+  chart: ChartWidget,
+  orderBook: OrderBookWidget,
+  tradeTicket: TradeTicketWidget,
+  blotter: OrdersPanelWidget,
+  rfq: RfqWidget,
+  bondBlotter: BondBlotterWidget,
+  riskKpi: RiskKpiWidget,
+  bookRisk: BookRiskWidget,
+  dv01: Dv01ChartWidget,
+  scenario: ScenarioChartWidget,
+  varTrend: VarTrendWidget,
+  riskLimits: RiskLimitsWidget,
+  indices: MarketIndicesWidget,
+  econCal: EconCalendarWidget,
+  intraday: IntradayChartWidget,
+  yieldCurve: YieldCurveWidget,
+  orderKpi: OrderKpiWidget,
+  orderBlotter: OrderBlotterWidget,
+  orderDetail: OrderDetailWidget,
+  oasDur: OasDurationWidget,
+  durBuckets: DurationBucketsWidget,
+  sectors: SectorAllocationWidget,
+  histOas: HistoricalOasWidget,
+  oasDist: OasDistributionWidget,
+  pnl: PnlAttributionWidget,
+  researchList: ResearchListWidget,
+  noteDetail: NoteDetailWidget,
 };
 
 // ── Layout helpers ──
-const p = (id: string, title: string, wt: string, closable = false) => ({ id, title, widgetType: wt, closable });
-const tg = (id: string, panels: string[], active?: string) => ({ type: 'tabgroup' as const, id, panels, activePanel: active || panels[0] });
-const sp = (id: string, dir: 'horizontal' | 'vertical', sizes: number[], children: any[]) => ({ type: 'split' as const, id, direction: dir, sizes, children });
+const p = (id: string, title: string, wt: string, closable = false) => ({
+  id,
+  title,
+  widgetType: wt,
+  closable,
+});
+const tg = (id: string, panels: string[], active?: string) => ({
+  type: 'tabgroup' as const,
+  id,
+  panels,
+  activePanel: active || panels[0],
+});
+const sp = (id: string, dir: 'horizontal' | 'vertical', sizes: number[], children: any[]) => ({
+  type: 'split' as const,
+  id,
+  direction: dir,
+  sizes,
+  children,
+});
 const base = (layout: any, panels: Record<string, any>, active: string): DockManagerState => ({
-  layout, panels, floatingPanels: [], popoutPanels: [], unpinnedPanels: [], nextZIndex: 100, activePaneId: active,
+  layout,
+  panels,
+  floatingPanels: [],
+  popoutPanels: [],
+  unpinnedPanels: [],
+  nextZIndex: 100,
+  activePaneId: active,
 });
 
 // ── Per-tab layouts (identical to React) ──
 function tradeLayout(): DockManagerState {
   return base(
-    sp('root', 'vertical', [55, 45], [
-      sp('top', 'horizontal', [32, 68], [tg('tg-blotter', ['bondBlotter']), tg('tg-chart', ['chart'])]),
-      sp('bottom', 'horizontal', [32, 68], [tg('tg-ob', ['orderBook']), tg('tg-orders', ['blotter'])]),
-    ]),
-    { bondBlotter: p('bondBlotter','Bond Blotter','bondBlotter'), chart: p('chart','Chart','chart'), orderBook: p('orderBook','Order Book','orderBook'), blotter: p('blotter','Orders','blotter') },
+    sp(
+      'root',
+      'vertical',
+      [55, 45],
+      [
+        sp(
+          'top',
+          'horizontal',
+          [32, 68],
+          [tg('tg-blotter', ['bondBlotter']), tg('tg-chart', ['chart'])],
+        ),
+        sp(
+          'bottom',
+          'horizontal',
+          [32, 68],
+          [tg('tg-ob', ['orderBook']), tg('tg-orders', ['blotter'])],
+        ),
+      ],
+    ),
+    {
+      bondBlotter: p('bondBlotter', 'Bond Blotter', 'bondBlotter'),
+      chart: p('chart', 'Chart', 'chart'),
+      orderBook: p('orderBook', 'Order Book', 'orderBook'),
+      blotter: p('blotter', 'Orders', 'blotter'),
+    },
     'bondBlotter',
   );
 }
 function pricesLayout(): DockManagerState {
   return base(
-    sp('root', 'vertical', [65, 35], [
-      tg('tg-blotter', ['bondBlotter']),
-      sp('bottom', 'horizontal', [60, 40], [tg('tg-chart', ['chart']), tg('tg-ob', ['orderBook'])]),
-    ]),
-    { bondBlotter: p('bondBlotter','Bond Blotter','bondBlotter'), chart: p('chart','Chart','chart'), orderBook: p('orderBook','Order Book','orderBook') },
+    sp(
+      'root',
+      'vertical',
+      [65, 35],
+      [
+        tg('tg-blotter', ['bondBlotter']),
+        sp(
+          'bottom',
+          'horizontal',
+          [60, 40],
+          [tg('tg-chart', ['chart']), tg('tg-ob', ['orderBook'])],
+        ),
+      ],
+    ),
+    {
+      bondBlotter: p('bondBlotter', 'Bond Blotter', 'bondBlotter'),
+      chart: p('chart', 'Chart', 'chart'),
+      orderBook: p('orderBook', 'Order Book', 'orderBook'),
+    },
     'bondBlotter',
   );
 }
 function riskLayout(): DockManagerState {
   return base(
-    sp('root', 'vertical', [12, 88], [
-      tg('tg-kpi', ['riskKpi']),
-      sp('body', 'horizontal', [25, 50, 25], [
-        tg('tg-book', ['bookRisk']),
-        sp('charts', 'vertical', [50, 50], [
-          sp('charts-top', 'horizontal', [50, 50], [tg('tg-dv01', ['dv01']), tg('tg-scenario', ['scenario'])]),
-          tg('tg-var', ['varTrend']),
-        ]),
-        tg('tg-limits', ['riskLimits']),
-      ]),
-    ]),
-    { riskKpi: p('riskKpi','Risk KPIs','riskKpi'), bookRisk: p('bookRisk','Book Risk & Heatmap','bookRisk'), dv01: p('dv01','DV01 by Book','dv01'), scenario: p('scenario','Rate Scenarios','scenario'), varTrend: p('varTrend','VaR Trend','varTrend'), riskLimits: p('riskLimits','Risk Limits','riskLimits') },
+    sp(
+      'root',
+      'vertical',
+      [12, 88],
+      [
+        tg('tg-kpi', ['riskKpi']),
+        sp(
+          'body',
+          'horizontal',
+          [25, 50, 25],
+          [
+            tg('tg-book', ['bookRisk']),
+            sp(
+              'charts',
+              'vertical',
+              [50, 50],
+              [
+                sp(
+                  'charts-top',
+                  'horizontal',
+                  [50, 50],
+                  [tg('tg-dv01', ['dv01']), tg('tg-scenario', ['scenario'])],
+                ),
+                tg('tg-var', ['varTrend']),
+              ],
+            ),
+            tg('tg-limits', ['riskLimits']),
+          ],
+        ),
+      ],
+    ),
+    {
+      riskKpi: p('riskKpi', 'Risk KPIs', 'riskKpi'),
+      bookRisk: p('bookRisk', 'Book Risk & Heatmap', 'bookRisk'),
+      dv01: p('dv01', 'DV01 by Book', 'dv01'),
+      scenario: p('scenario', 'Rate Scenarios', 'scenario'),
+      varTrend: p('varTrend', 'VaR Trend', 'varTrend'),
+      riskLimits: p('riskLimits', 'Risk Limits', 'riskLimits'),
+    },
     'riskKpi',
   );
 }
 function marketLayout(): DockManagerState {
   return base(
-    sp('root', 'horizontal', [30, 70], [
-      sp('left', 'vertical', [60, 40], [tg('tg-idx', ['indices']), tg('tg-cal', ['econCal'])]),
-      sp('right', 'vertical', [55, 45], [tg('tg-intra', ['intraday']), tg('tg-yc', ['yieldCurve'])]),
-    ]),
-    { indices: p('indices','Market Indices','indices'), econCal: p('econCal','Economic Calendar','econCal'), intraday: p('intraday','Intraday Chart','intraday'), yieldCurve: p('yieldCurve','Yield Curve','yieldCurve') },
+    sp(
+      'root',
+      'horizontal',
+      [30, 70],
+      [
+        sp('left', 'vertical', [60, 40], [tg('tg-idx', ['indices']), tg('tg-cal', ['econCal'])]),
+        sp(
+          'right',
+          'vertical',
+          [55, 45],
+          [tg('tg-intra', ['intraday']), tg('tg-yc', ['yieldCurve'])],
+        ),
+      ],
+    ),
+    {
+      indices: p('indices', 'Market Indices', 'indices'),
+      econCal: p('econCal', 'Economic Calendar', 'econCal'),
+      intraday: p('intraday', 'Intraday Chart', 'intraday'),
+      yieldCurve: p('yieldCurve', 'Yield Curve', 'yieldCurve'),
+    },
     'indices',
   );
 }
 function ordersLayout(): DockManagerState {
   return base(
-    sp('root', 'vertical', [12, 88], [
-      tg('tg-kpi', ['orderKpi']),
-      sp('body', 'horizontal', [75, 25], [tg('tg-blot', ['orderBlotter']), tg('tg-det', ['orderDetail'])]),
-    ]),
-    { orderKpi: p('orderKpi','Order KPIs','orderKpi'), orderBlotter: p('orderBlotter','Order Blotter','orderBlotter'), orderDetail: p('orderDetail','Order Detail','orderDetail') },
+    sp(
+      'root',
+      'vertical',
+      [12, 88],
+      [
+        tg('tg-kpi', ['orderKpi']),
+        sp(
+          'body',
+          'horizontal',
+          [75, 25],
+          [tg('tg-blot', ['orderBlotter']), tg('tg-det', ['orderDetail'])],
+        ),
+      ],
+    ),
+    {
+      orderKpi: p('orderKpi', 'Order KPIs', 'orderKpi'),
+      orderBlotter: p('orderBlotter', 'Order Blotter', 'orderBlotter'),
+      orderDetail: p('orderDetail', 'Order Detail', 'orderDetail'),
+    },
     'orderBlotter',
   );
 }
 function analyticsLayout(): DockManagerState {
   return base(
-    sp('root', 'vertical', [50, 50], [
-      sp('row1', 'horizontal', [34, 33, 33], [tg('tg-oas', ['oasDur']), tg('tg-dur', ['durBuckets']), tg('tg-sec', ['sectors'])]),
-      sp('row2', 'horizontal', [34, 33, 33], [tg('tg-hist', ['histOas']), tg('tg-dist', ['oasDist']), tg('tg-pnl', ['pnl'])]),
-    ]),
-    { oasDur: p('oasDur','OAS vs Duration','oasDur'), durBuckets: p('durBuckets','Duration Buckets','durBuckets'), sectors: p('sectors','Sector Allocation','sectors'), histOas: p('histOas','CDX IG/HY Historical','histOas'), oasDist: p('oasDist','OAS Distribution','oasDist'), pnl: p('pnl','P&L Attribution','pnl') },
+    sp(
+      'root',
+      'vertical',
+      [50, 50],
+      [
+        sp(
+          'row1',
+          'horizontal',
+          [34, 33, 33],
+          [tg('tg-oas', ['oasDur']), tg('tg-dur', ['durBuckets']), tg('tg-sec', ['sectors'])],
+        ),
+        sp(
+          'row2',
+          'horizontal',
+          [34, 33, 33],
+          [tg('tg-hist', ['histOas']), tg('tg-dist', ['oasDist']), tg('tg-pnl', ['pnl'])],
+        ),
+      ],
+    ),
+    {
+      oasDur: p('oasDur', 'OAS vs Duration', 'oasDur'),
+      durBuckets: p('durBuckets', 'Duration Buckets', 'durBuckets'),
+      sectors: p('sectors', 'Sector Allocation', 'sectors'),
+      histOas: p('histOas', 'CDX IG/HY Historical', 'histOas'),
+      oasDist: p('oasDist', 'OAS Distribution', 'oasDist'),
+      pnl: p('pnl', 'P&L Attribution', 'pnl'),
+    },
     'oasDur',
   );
 }
 function researchLayout(): DockManagerState {
   return base(
-    sp('root', 'horizontal', [30, 70], [tg('tg-list', ['researchList']), tg('tg-detail', ['noteDetail'])]),
-    { researchList: p('researchList','Research Notes','researchList'), noteDetail: p('noteDetail','Note Detail','noteDetail') },
+    sp(
+      'root',
+      'horizontal',
+      [30, 70],
+      [tg('tg-list', ['researchList']), tg('tg-detail', ['noteDetail'])],
+    ),
+    {
+      researchList: p('researchList', 'Research Notes', 'researchList'),
+      noteDetail: p('noteDetail', 'Note Detail', 'noteDetail'),
+    },
     'researchList',
   );
 }
 
 const TAB_LAYOUTS: Record<string, () => DockManagerState> = {
-  Trade: tradeLayout, Prices: pricesLayout, Risk: riskLayout, Market: marketLayout,
-  Research: researchLayout, Orders: ordersLayout, Analytics: analyticsLayout,
+  Trade: tradeLayout,
+  Prices: pricesLayout,
+  Risk: riskLayout,
+  Market: marketLayout,
+  Research: researchLayout,
+  Orders: ordersLayout,
+  Analytics: analyticsLayout,
 };
 
 const NAV_TABS = ['Prices', 'Trade', 'Risk', 'Market', 'Research', 'Orders', 'Analytics'];
@@ -147,63 +317,137 @@ const NAV_TABS = ['Prices', 'Trade', 'Risk', 'Market', 'Research', 'Orders', 'An
     <!-- Top Bar -->
     <div style="flex-shrink:0;background:var(--bn-bg1);border-bottom:1px solid var(--bn-border)">
       <!-- Main nav bar -->
-      <div style="display:flex;align-items:center;height:44px;padding:0 16px;gap:0;border-bottom:1px solid var(--bn-border)">
+      <div
+        style="display:flex;align-items:center;height:44px;padding:0 16px;gap:0;border-bottom:1px solid var(--bn-border)"
+      >
         <!-- Logo -->
         <div style="display:flex;align-items:center;gap:8px;margin-right:24px;flex-shrink:0">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <rect width="22" height="22" rx="4" fill="var(--bn-yellow)"/>
-            <path d="M11 4l2.5 2.5L11 9 8.5 6.5 11 4zM4 11l2.5-2.5L9 11l-2.5 2.5L4 11zM11 18l-2.5-2.5L11 13l2.5 2.5L11 18zM18 11l-2.5 2.5L13 11l2.5-2.5L18 11zM11 9.5L12.5 11 11 12.5 9.5 11 11 9.5z" fill="var(--bn-logo-bg)"/>
+            <rect width="22" height="22" rx="4" fill="var(--bn-yellow)" />
+            <path
+              d="M11 4l2.5 2.5L11 9 8.5 6.5 11 4zM4 11l2.5-2.5L9 11l-2.5 2.5L4 11zM11 18l-2.5-2.5L11 13l2.5 2.5L11 18zM18 11l-2.5 2.5L13 11l2.5-2.5L18 11zM11 9.5L12.5 11 11 12.5 9.5 11 11 9.5z"
+              fill="var(--bn-logo-bg)"
+            />
           </svg>
-          <span style="font-weight:700;font-size:13px;letter-spacing:0.04em;color:var(--bn-t0)">MarketsUI <span style="color:var(--bn-yellow)">FI</span></span>
+          <span style="font-weight:700;font-size:13px;letter-spacing:0.04em;color:var(--bn-t0)"
+            >MarketsUI <span style="color:var(--bn-yellow)">FI</span></span
+          >
         </div>
         <!-- Nav tabs -->
-        <button *ngFor="let t of navTabs" (click)="setActiveTab(t)" class="bn-tab" [class.active]="activeTab()===t">{{t}}</button>
+        <button
+          *ngFor="let t of navTabs"
+          (click)="setActiveTab(t)"
+          class="bn-tab"
+          [class.active]="activeTab() === t"
+        >
+          {{ t }}
+        </button>
         <!-- Right side -->
         <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
           <ng-container *ngIf="isTrading">
-            <button (click)="handleNewOrder()" style="font-size:11px;padding:4px 12px;border-radius:3px;background:var(--bn-bg3);color:var(--bn-t0);cursor:pointer;border:1px solid var(--bn-border2);white-space:nowrap;font-family:JetBrains Mono,monospace;font-weight:600">+ New Order</button>
-            <button (click)="handleOpenRfq()" style="font-size:11px;padding:4px 12px;border-radius:3px;background:var(--bn-bg3);color:var(--bn-t0);cursor:pointer;border:1px solid var(--bn-border2);white-space:nowrap;font-family:JetBrains Mono,monospace;font-weight:600">RFQ</button>
+            <button
+              (click)="handleNewOrder()"
+              style="font-size:11px;padding:4px 12px;border-radius:3px;background:var(--bn-bg3);color:var(--bn-t0);cursor:pointer;border:1px solid var(--bn-border2);white-space:nowrap;font-family:JetBrains Mono,monospace;font-weight:600"
+            >
+              + New Order
+            </button>
+            <button
+              (click)="handleOpenRfq()"
+              style="font-size:11px;padding:4px 12px;border-radius:3px;background:var(--bn-bg3);color:var(--bn-t0);cursor:pointer;border:1px solid var(--bn-border2);white-space:nowrap;font-family:JetBrains Mono,monospace;font-weight:600"
+            >
+              RFQ
+            </button>
             <div style="width:1px;height:14px;background:var(--bn-border);flex-shrink:0"></div>
           </ng-container>
           <!-- LIVE indicator -->
           <div style="display:flex;align-items:center;gap:6px">
-            <div class="live-dot" style="width:6px;height:6px;border-radius:50%;background:var(--bn-green)"></div>
+            <div
+              class="live-dot"
+              style="width:6px;height:6px;border-radius:50%;background:var(--bn-green)"
+            ></div>
             <span class="font-mono-fi" style="color:var(--bn-green);font-size:11px">LIVE</span>
           </div>
           <div style="width:1px;height:14px;background:var(--bn-border);flex-shrink:0"></div>
           <!-- Clock -->
-          <span class="font-mono-fi" style="color:var(--bn-t1);font-size:11px">{{time}}</span>
+          <span class="font-mono-fi" style="color:var(--bn-t1);font-size:11px">{{ time }}</span>
           <div style="width:1px;height:14px;background:var(--bn-border);flex-shrink:0"></div>
           <!-- Theme toggle -->
-          <button (click)="toggleTheme()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;background:var(--bn-bg3);color:var(--bn-t1);border:none;cursor:pointer;font-size:13px"
-            [title]="isDark()?'Switch to light mode':'Switch to dark mode'">{{isDark()?'\u2600':'\u263D'}}</button>
+          <button
+            (click)="toggleTheme()"
+            style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;background:var(--bn-bg3);color:var(--bn-t1);border:none;cursor:pointer;font-size:13px"
+            [title]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+          >
+            {{ isDark() ? '☀' : '☽' }}
+          </button>
         </div>
       </div>
 
       <!-- Instrument stats strip (Trade/Prices tabs) -->
-      <div *ngIf="isTrading" style="display:flex;align-items:center;height:36px;border-bottom:1px solid var(--bn-border);padding:0 16px;gap:16px">
-        <div *ngFor="let s of statsStrip; let i = index; let last = last" style="display:flex;align-items:center;flex-shrink:0;gap:5px"
-          [style.paddingRight.px]="last?0:12" [style.borderRight]="last?'none':'1px solid var(--bn-border)'" [style.width.px]="s.w">
-          <span style="font-size:9px;color:var(--bn-t2);white-space:nowrap;flex-shrink:0">{{s.label}}</span>
-          <span class="font-mono-fi font-semibold" style="font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums" [style.color]="s.color">{{s.val}}</span>
+      <div
+        *ngIf="isTrading"
+        style="display:flex;align-items:center;height:36px;border-bottom:1px solid var(--bn-border);padding:0 16px;gap:16px"
+      >
+        <div
+          *ngFor="let s of statsStrip; let i = index; let last = last"
+          style="display:flex;align-items:center;flex-shrink:0;gap:5px"
+          [style.paddingRight.px]="last ? 0 : 12"
+          [style.borderRight]="last ? 'none' : '1px solid var(--bn-border)'"
+          [style.width.px]="s.w"
+        >
+          <span style="font-size:9px;color:var(--bn-t2);white-space:nowrap;flex-shrink:0">{{
+            s.label
+          }}</span>
+          <span
+            class="font-mono-fi font-semibold"
+            style="font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums"
+            [style.color]="s.color"
+            >{{ s.val }}</span
+          >
         </div>
         <div style="width:1px;height:18px;background:var(--bn-border);flex-shrink:0"></div>
         <!-- Ticker strip (compact, right side) -->
         <div style="display:flex;align-items:center;overflow:hidden;gap:4px;margin-left:auto">
-          <div *ngFor="let t of tickerStrip.slice(0,8)" style="display:flex;align-items:center;padding:3px 7px;border-radius:3px;gap:5px;background:var(--bn-bg2);flex-shrink:0">
-            <span style="font-size:9px;color:var(--bn-t2);white-space:nowrap">{{t.label}}</span>
-            <span class="font-mono-fi font-semibold" style="font-size:11px;color:var(--bn-t0);white-space:nowrap">{{t.value}}</span>
-            <span class="font-mono-fi" style="font-size:9px;white-space:nowrap" [style.color]="t.up?'var(--bn-green)':'var(--bn-red)'">{{t.change}}</span>
+          <div
+            *ngFor="let t of tickerStrip.slice(0, 8)"
+            style="display:flex;align-items:center;padding:3px 7px;border-radius:3px;gap:5px;background:var(--bn-bg2);flex-shrink:0"
+          >
+            <span style="font-size:9px;color:var(--bn-t2);white-space:nowrap">{{ t.label }}</span>
+            <span
+              class="font-mono-fi font-semibold"
+              style="font-size:11px;color:var(--bn-t0);white-space:nowrap"
+              >{{ t.value }}</span
+            >
+            <span
+              class="font-mono-fi"
+              style="font-size:9px;white-space:nowrap"
+              [style.color]="t.up ? 'var(--bn-green)' : 'var(--bn-red)'"
+              >{{ t.change }}</span
+            >
           </div>
         </div>
       </div>
 
       <!-- Ticker strip only (non-trade tabs) -->
-      <div *ngIf="!isTrading" style="display:flex;align-items:stretch;overflow:hidden;height:38px;border-bottom:1px solid var(--bn-border)">
-        <div *ngFor="let t of tickerStrip" style="display:flex;align-items:center;gap:8px;padding:0 12px;border-right:1px solid var(--bn-border)">
-          <span style="font-size:11px;color:var(--bn-t2);white-space:nowrap">{{t.label}}</span>
-          <span class="font-mono-fi font-semibold" style="font-size:11px;color:var(--bn-t0);white-space:nowrap">{{t.value}}</span>
-          <span class="font-mono-fi" style="font-size:11px;white-space:nowrap" [style.color]="t.up?'var(--bn-green)':'var(--bn-red)'">{{t.change}}</span>
+      <div
+        *ngIf="!isTrading"
+        style="display:flex;align-items:stretch;overflow:hidden;height:38px;border-bottom:1px solid var(--bn-border)"
+      >
+        <div
+          *ngFor="let t of tickerStrip"
+          style="display:flex;align-items:center;gap:8px;padding:0 12px;border-right:1px solid var(--bn-border)"
+        >
+          <span style="font-size:11px;color:var(--bn-t2);white-space:nowrap">{{ t.label }}</span>
+          <span
+            class="font-mono-fi font-semibold"
+            style="font-size:11px;color:var(--bn-t0);white-space:nowrap"
+            >{{ t.value }}</span
+          >
+          <span
+            class="font-mono-fi"
+            style="font-size:11px;white-space:nowrap"
+            [style.color]="t.up ? 'var(--bn-green)' : 'var(--bn-red)'"
+            >{{ t.change }}</span
+          >
         </div>
       </div>
     </div>
@@ -222,16 +466,18 @@ const NAV_TABS = ['Prices', 'Trade', 'Risk', 'Market', 'Research', 'Orders', 'An
       }
     </div>
   `,
-  styles: [`
-    :host {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      width: 100vw;
-      overflow: hidden;
-      background: var(--bn-bg);
-    }
-  `],
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+        background: var(--bn-bg);
+      }
+    `,
+  ],
 })
 export class App {
   private platformId = inject(PLATFORM_ID);
@@ -247,20 +493,42 @@ export class App {
   private dockApi: DockviewApi | null = null;
   private clockId: any;
 
-  get isTrading() { return this.activeTab() === 'Trade' || this.activeTab() === 'Prices'; }
+  get isTrading() {
+    return this.activeTab() === 'Trade' || this.activeTab() === 'Prices';
+  }
 
   get statsStrip() {
     const bond = this.shared.selectedBond();
     const mid = (bond.bid + bond.ask) / 2;
     const change24h = +(Math.random() * 0.4 - 0.2).toFixed(2);
-    const pctChg = +(change24h / mid * 100).toFixed(2);
+    const pctChg = +((change24h / mid) * 100).toFixed(2);
     return [
-      { label: 'Security', val: `${bond.ticker} ${bond.cpn.toFixed(3)} ${bond.mat}`, color: 'var(--bn-cyan)', w: 130 },
-      { label: 'Mid', val: mid.toFixed(3), color: pctChg >= 0 ? 'var(--bn-green)' : 'var(--bn-red)', w: 72 },
+      {
+        label: 'Security',
+        val: `${bond.ticker} ${bond.cpn.toFixed(3)} ${bond.mat}`,
+        color: 'var(--bn-cyan)',
+        w: 130,
+      },
+      {
+        label: 'Mid',
+        val: mid.toFixed(3),
+        color: pctChg >= 0 ? 'var(--bn-green)' : 'var(--bn-red)',
+        w: 72,
+      },
       { label: 'Bid', val: bond.bid.toFixed(3), color: 'var(--bn-t0)', w: 72 },
       { label: 'Ask', val: bond.ask.toFixed(3), color: 'var(--bn-t0)', w: 72 },
-      { label: 'Chg', val: `${pctChg >= 0 ? '+' : ''}${change24h.toFixed(2)} (${pctChg >= 0 ? '+' : ''}${pctChg.toFixed(2)}%)`, color: pctChg >= 0 ? 'var(--bn-green)' : 'var(--bn-red)', w: 120 },
-      { label: 'OAS', val: bond.oas > 0 ? `+${bond.oas}bp` : '---', color: bond.oas > 80 ? 'var(--bn-yellow)' : 'var(--bn-green)', w: 52 },
+      {
+        label: 'Chg',
+        val: `${pctChg >= 0 ? '+' : ''}${change24h.toFixed(2)} (${pctChg >= 0 ? '+' : ''}${pctChg.toFixed(2)}%)`,
+        color: pctChg >= 0 ? 'var(--bn-green)' : 'var(--bn-red)',
+        w: 120,
+      },
+      {
+        label: 'OAS',
+        val: bond.oas > 0 ? `+${bond.oas}bp` : '---',
+        color: bond.oas > 80 ? 'var(--bn-yellow)' : 'var(--bn-green)',
+        w: 52,
+      },
       { label: 'Dur', val: `${bond.dur?.toFixed(2) ?? '---'}yr`, color: 'var(--bn-t0)', w: 56 },
     ];
   }
@@ -276,7 +544,14 @@ export class App {
     });
     // Clock
     const updateClock = () => {
-      this.time = new Date().toLocaleTimeString('en-US', { hour12: false, timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' ET';
+      this.time =
+        new Date().toLocaleTimeString('en-US', {
+          hour12: false,
+          timeZone: 'America/New_York',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        }) + ' ET';
     };
     updateClock();
     this.clockId = setInterval(updateClock, 1000);
@@ -287,7 +562,9 @@ export class App {
     if (t !== 'Trade') this.shared.showRfq.set(false);
   }
 
-  toggleTheme() { this.isDark.update(v => !v); }
+  toggleTheme() {
+    this.isDark.update((v) => !v);
+  }
 
   getLayout(tab: string): DockManagerState {
     return (TAB_LAYOUTS[tab] || tradeLayout)();
@@ -304,7 +581,13 @@ export class App {
       if (gid) this.dockApi.setActivePanel(gid, 'tradeTicket');
       this.dockApi.setActivePane('tradeTicket');
     } else {
-      this.dockApi.addPanel({ id: 'tradeTicket', title: 'Trade Ticket', widgetType: 'tradeTicket', closable: true, dockable: false });
+      this.dockApi.addPanel({
+        id: 'tradeTicket',
+        title: 'Trade Ticket',
+        widgetType: 'tradeTicket',
+        closable: true,
+        dockable: false,
+      });
       this.dockApi.floatPanel({ panelId: 'tradeTicket', x: 300, y: 80, width: 280, height: 520 });
     }
   }
@@ -317,7 +600,13 @@ export class App {
       this.dockApi.setActivePane('rfq');
       this.dockApi.bringToFront('rfq');
     } else {
-      this.dockApi.addPanel({ id: 'rfq', title: 'RFQ Workbench', widgetType: 'rfq', closable: true, dockable: false });
+      this.dockApi.addPanel({
+        id: 'rfq',
+        title: 'RFQ Workbench',
+        widgetType: 'rfq',
+        closable: true,
+        dockable: false,
+      });
       this.dockApi.floatPanel({ panelId: 'rfq', x: 120, y: 60, width: 720, height: 520 });
     }
   }

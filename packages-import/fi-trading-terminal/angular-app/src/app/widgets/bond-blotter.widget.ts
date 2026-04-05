@@ -103,114 +103,68 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
     {
       field: 'ticker',
       headerName: 'TICKER',
-      width: 68,
+      minWidth: 60,
+      flex: 0.7,
       pinned: 'left',
       cellStyle: { color: 'var(--fi-cyan)', fontWeight: 700, fontSize: '11px' },
     },
     {
       field: 'issuer',
       headerName: 'ISSUER',
-      width: 140,
-      pinned: 'left',
+      minWidth: 100,
+      flex: 1.2,
       cellStyle: { color: 'var(--bn-t1)', fontSize: '11px' },
     },
     {
       field: 'cpn',
       headerName: 'CPN',
-      width: 62,
+      minWidth: 55,
+      flex: 0.6,
       valueFormatter: (p) => p.value?.toFixed(3),
       type: 'numericColumn',
     },
-    { field: 'mat', headerName: 'MAT', width: 52, cellStyle: { color: 'var(--bn-t1)' } },
+    { field: 'mat', headerName: 'MAT', minWidth: 50, flex: 0.5, cellStyle: { color: 'var(--bn-t1)' } },
     {
       field: 'cusip',
       headerName: 'CUSIP',
-      width: 90,
+      minWidth: 80,
+      flex: 0.8,
+      hide: true,
       cellStyle: { color: 'var(--bn-t2)', fontSize: '9px' },
     },
     {
       field: 'rtg',
       headerName: 'RTG',
-      width: 50,
+      minWidth: 45, flex: 0.5,
       cellRenderer: (p: ICellRendererParams<Bond>) => {
         const m: Record<string, { bg: string; color: string; border: string }> = {
-          aaa: {
-            bg: 'rgba(0,203,129,0.1)',
-            color: 'var(--bn-green)',
-            border: 'rgba(0,203,129,0.25)',
-          },
-          aa: {
-            bg: 'rgba(0,203,129,0.06)',
-            color: 'var(--bn-green)',
-            border: 'rgba(0,203,129,0.2)',
-          },
-          a: { bg: 'rgba(190,242,100,0.08)', color: '#86cc16', border: 'rgba(132,204,22,0.25)' },
-          bbb: {
-            bg: 'rgba(245,166,35,0.08)',
-            color: 'var(--bn-yellow)',
-            border: 'rgba(245,166,35,0.25)',
-          },
-          hy: {
-            bg: 'rgba(246,70,93,0.08)',
-            color: 'var(--bn-red)',
-            border: 'rgba(246,70,93,0.25)',
-          },
+          aaa: { bg: 'rgba(45,212,191,0.1)', color: 'var(--bn-green)', border: 'rgba(45,212,191,0.25)' },
+          aa:  { bg: 'rgba(45,212,191,0.06)', color: 'var(--bn-green)', border: 'rgba(45,212,191,0.2)' },
+          a:   { bg: 'rgba(190,242,100,0.08)', color: '#86cc16', border: 'rgba(132,204,22,0.25)' },
+          bbb: { bg: 'rgba(245,166,35,0.08)', color: 'var(--bn-yellow)', border: 'rgba(245,166,35,0.25)' },
+          hy:  { bg: 'rgba(248,113,113,0.08)', color: 'var(--bn-red)', border: 'rgba(248,113,113,0.25)' },
         };
         const s = m[p.data?.rtgClass || 'bbb'] || m['bbb'];
         return `<span style="font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;letter-spacing:0.04em;padding:1px 6px;border-radius:2px;background:${s.bg};color:${s.color};border:1px solid ${s.border}">${p.value}</span>`;
       },
     },
+    { field: 'sector', headerName: 'SECTOR', minWidth: 70, flex: 0.8, hide: true, cellStyle: { color: 'var(--bn-t1)', fontSize: '9px' } },
     {
-      field: 'sector',
-      headerName: 'SECTOR',
-      width: 90,
-      cellStyle: { color: 'var(--bn-t1)', fontSize: '9px' },
-    },
-    {
-      field: 'bid',
-      headerName: 'BID',
-      width: 80,
-      type: 'numericColumn',
+      field: 'bid', headerName: 'BID', minWidth: 65, flex: 0.7, type: 'numericColumn',
       cellStyle: { color: 'var(--bn-blue)', fontWeight: 600 },
       valueFormatter: (p) => Number(p.value).toFixed(3),
     },
     {
-      field: 'ask',
-      headerName: 'ASK',
-      width: 80,
-      type: 'numericColumn',
+      field: 'ask', headerName: 'ASK', minWidth: 65, flex: 0.7, type: 'numericColumn',
       cellStyle: { color: 'var(--bn-red)', fontWeight: 600 },
       valueFormatter: (p) => Number(p.value).toFixed(3),
     },
     {
-      colId: 'mid',
-      headerName: 'MID',
-      width: 80,
-      type: 'numericColumn',
-      cellStyle: { color: 'var(--bn-t1)' },
-      valueGetter: (p) => (p.data ? (p.data.bid + p.data.ask) / 2 : 0),
-      valueFormatter: (p) => Number(p.value).toFixed(3),
+      field: 'ytm', headerName: 'YTM', minWidth: 50, flex: 0.6,
+      valueFormatter: (p) => p.value?.toFixed(3), type: 'numericColumn',
     },
     {
-      field: 'ytm',
-      headerName: 'YTM',
-      width: 60,
-      valueFormatter: (p) => p.value?.toFixed(3),
-      type: 'numericColumn',
-    },
-    {
-      field: 'ytw',
-      headerName: 'YTW',
-      width: 60,
-      valueFormatter: (p) => p.value?.toFixed(3),
-      type: 'numericColumn',
-      cellStyle: { color: 'var(--bn-t1)' },
-    },
-    {
-      field: 'oas',
-      headerName: 'OAS',
-      width: 56,
-      type: 'numericColumn',
+      field: 'oas', headerName: 'OAS', minWidth: 50, flex: 0.5, type: 'numericColumn',
       cellRenderer: (p: ICellRendererParams) => {
         const v = Number(p.value);
         const c = v > 80 ? 'var(--fi-amber)' : 'var(--fi-green)';
@@ -218,50 +172,22 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
       },
     },
     {
-      field: 'gSpd',
-      headerName: 'G-SPD',
-      width: 58,
-      type: 'numericColumn',
-      cellRenderer: (p: ICellRendererParams) => {
-        const v = Number(p.value);
-        return `<span style="color:var(--bn-t1)">${v > 0 ? '+' + v : v}</span>`;
-      },
+      field: 'dur', headerName: 'DUR', minWidth: 50, flex: 0.5,
+      valueFormatter: (p) => p.value?.toFixed(2), type: 'numericColumn',
     },
     {
-      field: 'dur',
-      headerName: 'DUR',
-      width: 54,
-      valueFormatter: (p) => p.value?.toFixed(2),
-      type: 'numericColumn',
+      field: 'dv01', headerName: 'DV01', minWidth: 50, flex: 0.6,
+      valueFormatter: (p) => p.value?.toLocaleString(), type: 'numericColumn',
     },
     {
-      field: 'dv01',
-      headerName: 'DV01',
-      width: 62,
-      valueFormatter: (p) => p.value?.toLocaleString(),
-      type: 'numericColumn',
-    },
-    {
-      field: 'cvx',
-      headerName: 'CVX',
-      width: 50,
-      valueFormatter: (p) => p.value?.toFixed(2),
-      type: 'numericColumn',
-    },
-    { field: 'face', headerName: 'FACE', width: 58, cellStyle: { color: 'var(--bn-t1)' } },
-    {
-      field: 'side',
-      headerName: 'SIDE',
-      width: 56,
+      field: 'side', headerName: 'SIDE', minWidth: 45, flex: 0.5,
       cellRenderer: (p: ICellRendererParams) => {
         const c = p.value === 'Buy' ? 'var(--fi-green)' : 'var(--fi-red)';
         return `<span style="font-size:9px;font-weight:700;letter-spacing:0.05em;color:${c}">${p.value === 'Buy' ? 'BUY' : 'SELL'}</span>`;
       },
     },
     {
-      field: 'axes',
-      headerName: 'AXES',
-      width: 62,
+      field: 'axes', headerName: 'AXES', minWidth: 50, flex: 0.5, hide: true,
       cellStyle: { color: 'var(--bn-t2)', fontSize: '9px' },
     },
   ];

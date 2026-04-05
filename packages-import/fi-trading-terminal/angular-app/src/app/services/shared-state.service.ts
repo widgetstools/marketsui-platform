@@ -1,5 +1,13 @@
 import { Injectable, signal } from '@angular/core';
-import { type Bond, type RfqRequest, type Order, BONDS, INITIAL_ORDERS, RESEARCH_NOTES, type ResearchNote } from './trading-data.service';
+import {
+  type Bond,
+  type RfqRequest,
+  type Order,
+  BONDS,
+  INITIAL_ORDERS,
+  RESEARCH_NOTES,
+  type ResearchNote,
+} from './trading-data.service';
 
 @Injectable({ providedIn: 'root' })
 export class SharedStateService {
