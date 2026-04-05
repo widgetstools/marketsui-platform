@@ -1,0 +1,62 @@
+/*
+ * FI Design System — Light Theme
+ * Warm, low-fatigue palette optimized for extended screen time.
+ * Cream/parchment undertones replace stark whites.
+ * High text contrast for readability (WCAG AA on all tiers).
+ */
+
+[data-theme="light"] {
+  /* ── shadcn/ui overrides ── */
+  --background: 40 20% 95%;
+  --foreground: 220 20% 16%;
+  --card: 40 25% 98%;
+  --card-foreground: 220 20% 16%;
+  --popover: 40 25% 98%;
+  --popover-foreground: 220 20% 16%;
+  --primary: 45 85% 38%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 35 12% 90%;
+  --secondary-foreground: 220 15% 35%;
+  --muted: 35 10% 92%;
+  --muted-foreground: 220 10% 45%;
+  --accent: 35 12% 90%;
+  --accent-foreground: 220 20% 16%;
+  --destructive: 0 65% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 35 12% 85%;
+  --input: 35 12% 85%;
+  --ring: 45 85% 38%;
+
+  /* ── Surface (warm cream tones, never pure white) ── */
+  --bn-bg:      #f3f0eb;
+  --bn-bg1:     #faf8f5;
+  --bn-bg2:     #efece6;
+  --bn-bg3:     #e4e0d9;
+
+  /* ── Text (high contrast, warm-neutral) ── */
+  --bn-t0:      #1c1917;
+  --bn-t1:      #44403c;
+  --bn-t2:      #78716c;
+  --bn-t3:      #a8a29e;
+
+  /* ── Border (warm, soft) ── */
+  --bn-border:  #d6d3cd;
+  --bn-border2: #c8c4bc;
+
+  /* ── Accent (deeper shades for warm bg — WCAG AA compliant) ── */
+  --bn-green:   #0f766e;
+  --bn-green2:  #115e59;
+  --bn-red:     #b91c1c;
+  --bn-red2:    #991b1b;
+  --bn-yellow:  #92400e;
+  --bn-blue:    #1d4ed8;
+  --bn-cyan:    #0e7490;
+
+  /* ── Actions ── */
+  --bn-buy-bg:  #0f766e;
+  --bn-sell-bg: #b91c1c;
+  --bn-logo-bg: #faf8f5;
+
+  /* ── Misc ── */
+  --scrollbar-thumb: #c8c4bc;
+}

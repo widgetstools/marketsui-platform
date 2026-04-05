@@ -3,7 +3,7 @@ import { TICKER_STRIP, type Bond } from '@/data/tradingData';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
-const NAV_TABS = ['Prices','Trade','Risk','Market','Research','Orders','Analytics'];
+const NAV_TABS = ['Prices','Trade','Risk','Market','Research','Orders','Analytics','Design System'];
 
 interface TopBarProps {
   activeTab: string;
