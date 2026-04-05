@@ -2,7 +2,7 @@ import { Component, Input, OnInit, OnDestroy, inject, effect } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
-import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+
 import { ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { SharedStateService } from '../services/shared-state.service';
@@ -15,8 +15,6 @@ import {
   type RfqQuote,
 } from '../services/trading-data.service';
 
-ModuleRegistry.registerModules([AllEnterpriseModule]);
-LicenseManager.setLicenseKey('');
 
 let rfqCounter = 1;
 function makeQuote(bond: Bond, side: 'Buy' | 'Sell', dealer: string): RfqQuote {

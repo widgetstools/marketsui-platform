@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
-import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+
 import { ModuleRegistry, type ColDef } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { INITIAL_ORDERS, INITIAL_TRADES } from '../services/trading-data.service';
@@ -11,8 +11,6 @@ import {
   StatusBadgeRenderer,
 } from '@design-system/cell-renderers';
 
-ModuleRegistry.registerModules([AllEnterpriseModule]);
-LicenseManager.setLicenseKey('');
 
 @Component({
   selector: 'orders-panel-widget',

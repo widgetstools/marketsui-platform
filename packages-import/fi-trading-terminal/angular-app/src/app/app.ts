@@ -319,10 +319,14 @@ function getSavedLayout(tab: string): DockManagerState | null {
   return null;
 }
 function saveLayoutToStorage(tab: string, state: DockManagerState) {
-  try { localStorage.setItem(STORAGE_PREFIX + tab, JSON.stringify(state)); } catch {}
+  try {
+    localStorage.setItem(STORAGE_PREFIX + tab, JSON.stringify(state));
+  } catch {}
 }
 function clearSavedLayout(tab: string) {
-  try { localStorage.removeItem(STORAGE_PREFIX + tab); } catch {}
+  try {
+    localStorage.removeItem(STORAGE_PREFIX + tab);
+  } catch {}
 }
 
 const TAB_LAYOUTS: Record<string, () => DockManagerState> = {

@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
-import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+
 import { ModuleRegistry, type ColDef } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { RISK_POSITIONS, BONDS } from '../services/trading-data.service';
@@ -11,8 +11,6 @@ import {
   PnlValueRenderer,
 } from '@design-system/cell-renderers';
 
-ModuleRegistry.registerModules([AllEnterpriseModule]);
-LicenseManager.setLicenseKey('');
 
 const HEAT_COLORS = ['#1e90ff', '#00bcd4', '#f0b90b', '#f59e0b', 'var(--bn-red)', '#dc2626'];
 const heatLevel = (oas: number) =>

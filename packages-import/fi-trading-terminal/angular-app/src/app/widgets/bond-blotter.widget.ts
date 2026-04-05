@@ -2,7 +2,7 @@ import { Component, Input, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
-import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+
 import { ModuleRegistry, type ColDef, type GridApi, type GridReadyEvent } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { BONDS, type Bond } from '../services/trading-data.service';
@@ -15,8 +15,6 @@ import {
   SideCellRenderer,
 } from '@design-system/cell-renderers';
 
-ModuleRegistry.registerModules([AllEnterpriseModule]);
-LicenseManager.setLicenseKey('');
 
 @Component({
   selector: 'bond-blotter-widget',

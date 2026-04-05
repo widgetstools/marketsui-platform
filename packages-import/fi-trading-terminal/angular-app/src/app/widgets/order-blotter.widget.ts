@@ -1,7 +1,7 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
-import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+
 import { ModuleRegistry, type ColDef } from 'ag-grid-community';
 import { fiGridTheme } from '../services/ag-grid-theme';
 import { SharedStateService } from '../services/shared-state.service';
@@ -11,8 +11,6 @@ import {
   StatusBadgeRenderer,
 } from '@design-system/cell-renderers';
 
-ModuleRegistry.registerModules([AllEnterpriseModule]);
-LicenseManager.setLicenseKey('');
 
 @Component({
   selector: 'order-blotter-widget',
