@@ -198,19 +198,22 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
       valueFormatter: (p) => Number(p.value).toFixed(3),
     },
     {
-      field: 'ytm',
-      headerName: 'YTM',
-      minWidth: 50,
-      flex: 0.6,
-      valueFormatter: (p) => p.value?.toFixed(3),
-      type: 'numericColumn',
+      colId: 'mid', headerName: 'MID', minWidth: 60, flex: 0.7, type: 'numericColumn',
+      cellStyle: { color: 'var(--bn-t1)' },
+      valueGetter: (p) => (p.data ? (p.data.bid + p.data.ask) / 2 : 0),
+      valueFormatter: (p) => Number(p.value).toFixed(3),
     },
     {
-      field: 'oas',
-      headerName: 'OAS',
-      minWidth: 50,
-      flex: 0.5,
-      type: 'numericColumn',
+      field: 'ytm', headerName: 'YTM', minWidth: 50, flex: 0.6,
+      valueFormatter: (p) => p.value?.toFixed(3), type: 'numericColumn',
+    },
+    {
+      field: 'ytw', headerName: 'YTW', minWidth: 50, flex: 0.6, hide: true,
+      valueFormatter: (p) => p.value?.toFixed(3), type: 'numericColumn',
+      cellStyle: { color: 'var(--bn-t1)' },
+    },
+    {
+      field: 'oas', headerName: 'OAS', minWidth: 50, flex: 0.5, type: 'numericColumn',
       cellRenderer: (p: ICellRendererParams) => {
         const v = Number(p.value);
         const c = v > 80 ? 'var(--fi-amber)' : 'var(--fi-green)';
@@ -233,6 +236,18 @@ export class BondBlotterWidget implements OnInit, OnDestroy {
       valueFormatter: (p) => p.value?.toLocaleString(),
       type: 'numericColumn',
     },
+    {
+      field: 'gSpd', headerName: 'G-SPD', minWidth: 50, flex: 0.5, hide: true, type: 'numericColumn',
+      cellRenderer: (p: ICellRendererParams) => {
+        const v = Number(p.value);
+        return `<span style="color:var(--bn-t1)">${v > 0 ? '+' + v : v}</span>`;
+      },
+    },
+    {
+      field: 'cvx', headerName: 'CVX', minWidth: 45, flex: 0.5, hide: true,
+      valueFormatter: (p) => p.value?.toFixed(2), type: 'numericColumn',
+    },
+    { field: 'face', headerName: 'FACE', minWidth: 50, flex: 0.5, hide: true, cellStyle: { color: 'var(--bn-t1)' } },
     {
       field: 'side',
       headerName: 'SIDE',
