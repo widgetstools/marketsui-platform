@@ -538,6 +538,38 @@ test.describe('Toolbar Buttons — Headers', () => {
     expect(await getHeaderStyle(page, colId, 'text-decoration')).toContain('underline');
   });
 
+  // ── Alignment on Header ──
+
+  test('left align applies justify-content:flex-start to header', async ({ page }) => {
+    const colId = await getFirstDataColId(page);
+    await selectCell(page, colId);
+    await toggleToHDR(page);
+    await clickToolbarBtn(page, 'Left');
+    await page.waitForTimeout(500);
+    const rules = await getHeaderCSSRules(page, colId);
+    expect(rules.join(' ')).toContain('justify-content: flex-start');
+  });
+
+  test('center align applies justify-content:center to header', async ({ page }) => {
+    const colId = await getFirstDataColId(page);
+    await selectCell(page, colId);
+    await toggleToHDR(page);
+    await clickToolbarBtn(page, 'Center');
+    await page.waitForTimeout(500);
+    const rules = await getHeaderCSSRules(page, colId);
+    expect(rules.join(' ')).toContain('justify-content: center');
+  });
+
+  test('right align applies justify-content:flex-end to header', async ({ page }) => {
+    const colId = await getFirstDataColId(page);
+    await selectCell(page, colId);
+    await toggleToHDR(page);
+    await clickToolbarBtn(page, 'Right');
+    await page.waitForTimeout(500);
+    const rules = await getHeaderCSSRules(page, colId);
+    expect(rules.join(' ')).toContain('justify-content: flex-end');
+  });
+
   // ── Font Size on Header ──
 
   test('font size applies to header', async ({ page }) => {
