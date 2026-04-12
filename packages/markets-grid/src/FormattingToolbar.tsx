@@ -92,7 +92,7 @@ function useFlashConfirm(): [boolean, () => void] {
   const flash = useCallback(() => {
     setConfirmed(true);
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setConfirmed(false), 1200);
+    timerRef.current = setTimeout(() => setConfirmed(false), 400);
   }, []);
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
   return [confirmed, flash];
