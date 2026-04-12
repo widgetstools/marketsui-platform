@@ -540,7 +540,7 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
 
   return (
     <div
-      className="flex items-center gap-1.5 h-[38px] px-2.5 shrink-0 border-b text-xs relative z-[10000]"
+      className={cn('flex items-center gap-1.5 h-[38px] px-2.5 shrink-0 border-b text-xs relative z-[10000]', !disabled && 'gc-toolbar-enabled')}
       style={{ background: 'var(--card, #161a1e)', borderColor: 'var(--border, #1e2329)' }}
       onMouseDown={(e) => {
         const tag = (e.target as HTMLElement).tagName;
