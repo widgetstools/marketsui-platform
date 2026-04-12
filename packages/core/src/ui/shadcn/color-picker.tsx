@@ -181,15 +181,16 @@ export function ColorPicker({ value, onChange, allowClear = true, compact = fals
           className="flex-1 h-6 px-1.5 rounded-[3px] bg-[#0b0e11] text-[10px] font-mono text-[#eaecef] placeholder-[#4a5568] ring-1 ring-[#313944] focus:ring-[#f0b90b]/50 focus:outline-none transition-all min-w-0"
         />
 
-        {/* No color */}
+        {/* No color — prominent clear button */}
         {allowClear && (
           <button
             onClick={clear}
             onMouseDown={(e) => e.preventDefault()}
-            className="h-6 w-6 rounded-[3px] shrink-0 ring-1 ring-[#313944]/60 hover:ring-[#f87171]/20 hover:bg-[#f87171]/8 cursor-pointer transition-all flex items-center justify-center group/clear"
+            className="h-6 px-1.5 rounded-[3px] shrink-0 bg-[#f87171]/10 ring-1 ring-[#f87171]/25 hover:bg-[#f87171]/20 hover:ring-[#f87171]/40 cursor-pointer transition-all flex items-center justify-center gap-1"
             title="No color"
           >
-            <Droplet size={12} strokeWidth={1.5} className="text-[#4a5568] group-hover/clear:text-[#f87171] transition-colors" />
+            <Droplet size={11} strokeWidth={2} className="text-[#f87171]" />
+            <span className="text-[9px] font-medium text-[#f87171] tracking-wide">Clear</span>
           </button>
         )}
 
