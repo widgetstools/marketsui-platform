@@ -941,6 +941,24 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
           store.getState().setModuleState('column-customization', () => ({ assignments: {} }));
           // Clear all injected CSS rules immediately
           core.cssInjector.clear();
+          // AG-Grid caches headerStyle inline results on the DOM. Even when React
+          // passes new columnDefs, AG-Grid won't re-evaluate headerStyle for existing
+          // columns. We must strip the stale inline styles directly from header elements.
+          try {
+            const api = core.getGridApi();
+            if (api) {
+              document.querySelectorAll(`.ag-header-cell`).forEach((el) => {
+                const s = (el as HTMLElement).style;
+                s.removeProperty('font-weight');
+                s.removeProperty('font-style');
+                s.removeProperty('font-size');
+                s.removeProperty('font-family');
+                s.removeProperty('text-decoration');
+                s.removeProperty('color');
+                s.removeProperty('background-color');
+              });
+            }
+          } catch { /* */ }
         }}>
           <Trash2 size={12} strokeWidth={1.5} />
         </TBtn>

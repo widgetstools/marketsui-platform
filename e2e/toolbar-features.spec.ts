@@ -459,6 +459,169 @@ test.describe('Formatting Toolbar — All Features', () => {
     expect(fw === '700' || fw === 'bold').toBe(true);
   });
 
+  test('single clear-all click removes all header customizations (bold, italic, underline, color, bg, font size, borders)', async ({ page }) => {
+    const colId = await getFirstDataColId(page);
+    await selectCell(page, colId);
+
+    // ── Apply header styles: bold + italic + underline ──
+    await toggleCellHeader(page);
+    expect(await getTargetMode(page)).toBe('HDR');
+    await clickToolbarBtn(page, 'Bold');
+    await clickToolbarBtn(page, 'Italic');
+    await clickToolbarBtn(page, 'Underline');
+    await page.waitForTimeout(300);
+
+    // ── Apply header text color (red) ──
+    await page.evaluate(() => {
+      const toolbar = document.querySelector('[class*="z-[10000]"]');
+      const wrappers = toolbar?.querySelectorAll('.relative.inline-flex') ?? [];
+      // Text color popover — find by position (first ColorPopover in Typography group)
+      for (let i = 0; i < wrappers.length; i++) {
+        const w = wrappers[i];
+        if (!w.classList.contains('group') && w.querySelector('.cursor-pointer')) {
+          const btn = w.querySelector('button');
+          if (btn && !btn.textContent?.trim()) {
+            const cursor = w.querySelector('.cursor-pointer');
+            if (cursor) { (cursor as HTMLElement).click(); break; }
+          }
+        }
+      }
+    });
+    await page.waitForTimeout(300);
+    // Click the red swatch
+    const redSwatch = page.locator('button[style*="background: rgb(248, 113, 113)"]').first();
+    if (await redSwatch.count() > 0) {
+      await redSwatch.click({ force: true });
+      await page.waitForTimeout(300);
+    }
+    await closePopover(page);
+
+    // ── Apply header font size ──
+    const fontSizeTrigger = page.locator('[class*="z-[10000]"] button').filter({ hasText: /^\d+px/ }).first();
+    if (await fontSizeTrigger.count() > 0) {
+      await fontSizeTrigger.click({ force: true });
+      await page.waitForTimeout(300);
+      const sz16 = page.locator('button').filter({ hasText: '16px' }).last();
+      if (await sz16.count() > 0) await sz16.click({ force: true });
+      await page.waitForTimeout(300);
+    }
+
+    // ── Apply header borders ──
+    await page.evaluate(() => {
+      const toolbar = document.querySelector('[class*="z-[10000]"]');
+      const wrappers = toolbar?.querySelectorAll('.relative.inline-flex') ?? [];
+      for (let i = wrappers.length - 1; i >= 0; i--) {
+        const w = wrappers[i];
+        if (!w.classList.contains('group') && w.querySelector('.cursor-pointer')) {
+          const btn = w.querySelector('button');
+          if (btn && !btn.textContent?.trim() && btn.querySelector('svg')) {
+            const cursor = w.querySelector('.cursor-pointer');
+            if (cursor) { (cursor as HTMLElement).click(); break; }
+          }
+        }
+      }
+    });
+    await page.waitForTimeout(300);
+    const allBordersBtn = page.getByRole('button', { name: /All/i }).first();
+    if (await allBordersBtn.count() > 0) {
+      await allBordersBtn.click({ force: true });
+      await page.waitForTimeout(300);
+    }
+    await closePopover(page);
+    await page.waitForTimeout(300);
+
+    // ── Verify header has customizations applied ──
+    const fwBefore = await getHeaderStyle(page, colId, 'font-weight');
+    const fsBefore = await getHeaderStyle(page, colId, 'font-style');
+    const tdBefore = await getHeaderStyle(page, colId, 'text-decoration');
+    expect(fwBefore === '700' || fwBefore === 'bold').toBe(true);
+    expect(fsBefore).toBe('italic');
+    expect(tdBefore).toContain('underline');
+
+    // ── Also apply cell styles ──
+    await toggleCellHeader(page); // back to CELL
+    await clickToolbarBtn(page, 'Bold');
+    await clickToolbarBtn(page, 'Right');
+    await page.waitForTimeout(500);
+
+    // Verify cell styles applied
+    let cellRules = await getColumnCSSRules(page, colId);
+    expect(cellRules.some(r => r.includes('font-weight'))).toBe(true);
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── SINGLE CLICK: Clear all ──
+    // ══════════════════════════════════════════════════════════════════════════
+    await clickToolbarBtn(page, 'Clear all styles');
+    await page.waitForTimeout(1000);
+
+    // ── Verify ALL header styles are cleared ──
+    const fwAfter = await getHeaderStyle(page, colId, 'font-weight');
+    const fsAfter = await getHeaderStyle(page, colId, 'font-style');
+    const tdAfter = await getHeaderStyle(page, colId, 'text-decoration');
+    const colorAfter = await getHeaderStyle(page, colId, 'color');
+    const bgAfter = await getHeaderStyle(page, colId, 'background-color');
+    const szAfter = await getHeaderStyle(page, colId, 'font-size');
+
+    // Header should revert to theme defaults (not retain custom values)
+    expect(fwAfter !== '700' && fwAfter !== 'bold').toBe(true);
+    expect(fsAfter === 'normal' || fsAfter === '').toBe(true);
+    expect(tdAfter === 'none' || tdAfter === '' || !tdAfter.includes('underline')).toBe(true);
+    // Custom color should be cleared (not red)
+    expect(colorAfter !== 'rgb(248, 113, 113)').toBe(true);
+    // Custom font-size should be cleared (not 16px)
+    expect(szAfter !== '16px').toBe(true);
+
+    // ── Verify inline style attributes are clean ──
+    const inlineStyle = await page.evaluate(({ id }) => {
+      const hdr = document.querySelector(`.ag-header-cell[col-id="${id}"]`);
+      return hdr?.getAttribute('style') ?? '';
+    }, { id: colId });
+    expect(inlineStyle).not.toContain('font-weight: 700');
+    expect(inlineStyle).not.toContain('font-style: italic');
+    expect(inlineStyle).not.toContain('text-decoration: underline');
+
+    // ── Verify cell styles are also gone ──
+    const cellHasClass = await page.evaluate(({ id }) => {
+      const cell = document.querySelector(`.ag-row[row-index="0"] .ag-cell[col-id="${id}"]`);
+      return cell?.className.includes('gc-col-c-') ?? false;
+    }, { id: colId });
+    expect(cellHasClass).toBe(false);
+
+    // ── Verify no header CSS rules remain ──
+    const hdrRules = await page.evaluate((id) => {
+      const found: string[] = [];
+      for (const sheet of document.styleSheets) {
+        try {
+          for (const rule of sheet.cssRules) {
+            if (rule.cssText.includes(`gc-hdr-c-${id}`)) found.push(rule.cssText);
+          }
+        } catch {}
+      }
+      return found;
+    }, colId);
+    expect(hdrRules.length).toBe(0);
+
+    // ── Verify header class is removed from DOM ──
+    const hdrHasClass = await page.evaluate(({ id }) => {
+      const hdr = document.querySelector(`.ag-header-cell[col-id="${id}"]`);
+      return hdr?.className.includes('gc-hdr-c-') ?? false;
+    }, { id: colId });
+    expect(hdrHasClass).toBe(false);
+
+    // ── Verify no border overlay on header ──
+    const hdrBorderOverlay = await page.evaluate((id) => {
+      for (const sheet of document.styleSheets) {
+        try {
+          for (const rule of sheet.cssRules) {
+            if (rule.cssText.includes(`gc-hdr-c-${id}`) && rule.cssText.includes('::after')) return true;
+          }
+        } catch {}
+      }
+      return false;
+    }, colId);
+    expect(hdrBorderOverlay).toBe(false);
+  });
+
   // ── Multiple Styles Compose ──
 
   test('multiple styles compose on the same column', async ({ page }) => {

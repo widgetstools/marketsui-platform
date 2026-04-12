@@ -347,9 +347,13 @@ function applyToColumnDefs(
     } else {
       cssInjector.removeRule(`hdr-align-${colId}`);
       cssInjector.removeRule(`hdr-bo-${colId}`);
-      // Explicitly clear headerStyle/headerClass so AG-Grid doesn't keep stale values
-      // from a previous transformColumnDefs pass
-      merged.headerStyle = undefined;
+      // AG-Grid caches headerStyle results as inline styles on the DOM element.
+      // Setting headerStyle to undefined doesn't clear existing inline styles.
+      // We must return explicit resets for all properties we may have previously set.
+      merged.headerStyle = () => ({
+        backgroundColor: '', color: '', fontWeight: '', fontStyle: '',
+        fontSize: '', fontFamily: '', textDecoration: '',
+      });
       merged.headerClass = undefined;
     }
 
