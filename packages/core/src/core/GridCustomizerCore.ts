@@ -53,6 +53,20 @@ export class GridCustomizerCore {
     }
   }
 
+  /** Update store references (needed when React strict mode recreates the store) */
+  updateStoreBindings(
+    getModuleState: <T>(moduleId: string) => T,
+    setModuleState: <T>(moduleId: string, updater: (prev: T) => T) => void,
+  ): void {
+    this.getModuleStateFn = getModuleState;
+    this.setModuleStateFn = setModuleState;
+    // Re-register modules so they pick up new getModuleState references
+    const ctx = this.createModuleContext();
+    for (const mod of this.sortedModules) {
+      mod.onRegister?.(ctx);
+    }
+  }
+
   onGridReady(api: GridApi): void {
     this.gridApi = api;
     const ctx = this.createGridContext();

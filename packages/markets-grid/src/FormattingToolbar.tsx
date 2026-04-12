@@ -640,7 +640,7 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
           onClick={() => {
             const cur = getCurrentStyle(store, colIdsRef.current, targetRef.current);
             const isBold = cur.fontWeight === 'bold' || cur.fontWeight === '700' || cur.fontWeight === '900';
-            doStyle({ fontWeight: isBold ? 'normal' : '700' });
+            doStyle({ fontWeight: isBold ? undefined : '700' });
           }}>
           <Bold size={13} strokeWidth={2.5} />
         </TBtn>

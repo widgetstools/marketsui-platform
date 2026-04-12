@@ -39,6 +39,7 @@ export class CssInjector implements CssInjectorInstance {
     }
     this.styleElement = null;
     this.rules.clear();
+    this.dirty = false; // Reset so scheduleFlush works after re-initialization
   }
 
   private scheduleFlush(): void {
@@ -61,7 +62,8 @@ export class CssInjector implements CssInjectorInstance {
   }
 
   private ensureStyleElement(): void {
-    if (this.styleElement) return;
+    // Recreate if destroyed or detached from DOM (e.g. React strict mode double-mount)
+    if (this.styleElement?.parentNode) return;
     this.styleElement = document.createElement('style');
     this.styleElement.setAttribute(STYLE_ATTR, this.gridId);
     document.head.appendChild(this.styleElement);

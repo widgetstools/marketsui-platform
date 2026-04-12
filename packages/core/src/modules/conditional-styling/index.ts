@@ -123,10 +123,7 @@ export const conditionalStylingModule: GridCustomizerModule<ConditionalStylingSt
     }
   },
 
-  onGridDestroy(ctx: GridContext): void {
-    _gridEngines.delete(ctx.gridId);
-    if (_lastGridId === ctx.gridId) _lastGridId = null;
-  },
+  // Don't delete from _gridEngines — React strict mode reuses the core instance
 
   transformColumnDefs(
     defs: (ColDef | ColGroupDef)[],

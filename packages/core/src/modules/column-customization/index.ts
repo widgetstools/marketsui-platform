@@ -443,10 +443,10 @@ export const columnCustomizationModule: GridCustomizerModule<ColumnCustomization
     _lastRegisteredGridId = ctx.gridId;
   },
 
-  onGridDestroy(_ctx: GridContext): void {
-    _ctxMap.delete(_ctx.gridId);
-    if (_lastRegisteredGridId === _ctx.gridId) _lastRegisteredGridId = null;
-  },
+  // Note: we intentionally do NOT delete from _ctxMap in onGridDestroy.
+  // In React strict mode, onGridDestroy fires on the first cleanup but the
+  // core instance (and its cssInjector) is reused on the second mount.
+  // Deleting here would leave transformColumnDefs without a context.
 
   transformColumnDefs(
     defs: (ColDef | ColGroupDef)[],

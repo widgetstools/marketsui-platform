@@ -57,6 +57,9 @@ export function useGridCustomizer(options: UseGridCustomizerOptions): UseGridCus
   }
   const core = coreRef.current;
 
+  // Keep core's store bindings in sync (React strict mode may recreate the store)
+  core.updateStoreBindings(store.getState().getModuleState, store.getState().setModuleState);
+
   // Subscribe to module state changes to trigger re-render
   const moduleStates = store((s: GridCustomizerStore) => s.modules);
 

@@ -96,10 +96,7 @@ export const entitlementsModule: GridCustomizerModule<EntitlementsState> = {
     _lastGridId = ctx.gridId;
   },
 
-  onGridDestroy(ctx: GridContext): void {
-    _engines.delete(ctx.gridId);
-    if (_lastGridId === ctx.gridId) _lastGridId = null;
-  },
+  // Don't delete from _engines — React strict mode reuses the core instance
 
   transformColumnDefs(
     defs: (ColDef | ColGroupDef)[],

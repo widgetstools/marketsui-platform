@@ -206,8 +206,8 @@ export const cellFlashingModule: GridCustomizerModule<CellFlashingState> = {
 
   onGridDestroy(ctx: GridContext): void {
     const entry = _gridCtx.get(ctx.gridId);
-    if (entry?.cleanup) entry.cleanup();
-    _gridCtx.delete(ctx.gridId);
+    if (entry?.cleanup) { entry.cleanup(); entry.cleanup = undefined; }
+    // Don't delete from _gridCtx — React strict mode reuses the core instance
   },
 
   serialize: (state) => state,
