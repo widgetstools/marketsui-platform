@@ -53,9 +53,9 @@ function TBtn({ children, active, disabled, tooltip, onClick, className }: {
       size="icon-sm"
       disabled={disabled}
       className={cn(
-        'shrink-0 rounded-[3px] text-[#7a8494] hover:text-[#eaecef] hover:bg-[#2b3139] transition-all duration-150',
-        active && 'bg-[#f0b90b]/10 text-[#f0b90b] hover:bg-[#f0b90b]/16 hover:text-[#fcd34d] ring-1 ring-[#f0b90b]/20',
-        disabled && 'opacity-20 pointer-events-none',
+        'shrink-0 rounded-[3px] text-[#a0a8b4] hover:text-[#ffffff] hover:bg-[#2b3139] transition-all duration-150',
+        active && 'bg-[#f0b90b]/12 text-[#f0b90b] hover:bg-[#f0b90b]/18 hover:text-[#fcd34d] ring-1 ring-[#f0b90b]/25',
+        disabled && 'opacity-25 pointer-events-none',
         className,
       )}
       onMouseDown={(e) => {
@@ -574,7 +574,7 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
             'flex items-center gap-[3px] px-1.5 py-[2px] rounded-[3px] text-[8px] font-mono font-bold tracking-[0.08em] uppercase transition-all duration-150 cursor-pointer',
             target === 'header'
               ? 'bg-[#f0b90b]/15 text-[#f0b90b] ring-1 ring-[#f0b90b]/25'
-              : 'bg-[#2b3139]/80 text-[#7a8494] hover:text-[#a0a8b4] hover:bg-[#2b3139]',
+              : 'bg-[#2b3139]/80 text-[#a0a8b4] hover:text-[#eaecef] hover:bg-[#2b3139]',
           )}
           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setTarget(target === 'cell' ? 'header' : 'cell'); }}
         >
@@ -589,7 +589,7 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
         <Popover
           trigger={
             <Button variant="ghost" size="icon-sm" disabled={disabled}
-              className={cn('shrink-0 rounded-[3px] text-[#7a8494] hover:text-[#eaecef] hover:bg-[#2b3139] transition-all duration-150', disabled && 'opacity-20 pointer-events-none')}
+              className={cn('shrink-0 rounded-[3px] text-[#a0a8b4] hover:text-[#ffffff] hover:bg-[#2b3139] transition-all duration-150', disabled && 'opacity-25 pointer-events-none')}
               onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
               <DollarSign size={13} strokeWidth={1.5} />
             </Button>
@@ -686,7 +686,7 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
         trigger={
           <button disabled={disabled}
             className={cn(
-              'flex items-center gap-1 px-2 py-[3px] rounded-[4px] bg-[#161a1e]/60 text-[10px] font-mono text-[#7a8494] hover:text-[#eaecef] hover:bg-[#2b3139]/80 transition-all duration-150 cursor-pointer',
+              'flex items-center gap-1 px-2 py-[3px] rounded-[4px] bg-[#161a1e]/60 text-[10px] font-mono text-[#a0a8b4] hover:text-[#ffffff] hover:bg-[#2b3139]/80 transition-all duration-150 cursor-pointer',
               disabled && 'opacity-20 pointer-events-none',
             )}
             onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
@@ -716,7 +716,7 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
       <Popover
         trigger={
           <Button variant="ghost" size="icon-sm" disabled={disabled}
-            className={cn('shrink-0 rounded-[3px] text-[#7a8494] hover:text-[#eaecef] hover:bg-[#2b3139] transition-all duration-150', disabled && 'opacity-20 pointer-events-none')}
+            className={cn('shrink-0 rounded-[3px] text-[#a0a8b4] hover:text-[#ffffff] hover:bg-[#2b3139] transition-all duration-150', disabled && 'opacity-25 pointer-events-none')}
             onMouseDown={(e) => { e.preventDefault(); }}>
             <Grid3X3 size={13} strokeWidth={1.5} />
           </Button>

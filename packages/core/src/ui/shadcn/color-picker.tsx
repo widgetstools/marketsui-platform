@@ -260,7 +260,7 @@ export function ColorPickerPopover({ value, onChange, icon, disabled, allowClear
         <button
           disabled={disabled}
           className={cn(
-            'shrink-0 rounded-[3px] text-[#7a8494] hover:text-[#eaecef] hover:bg-[#2b3139] transition-all duration-150 inline-flex items-center justify-center w-6 h-6',
+            'shrink-0 rounded-[3px] text-[#a0a8b4] hover:text-[#ffffff] hover:bg-[#2b3139] transition-all duration-150 inline-flex items-center justify-center w-6 h-6',
             disabled && 'opacity-20 pointer-events-none',
           )}
         >
