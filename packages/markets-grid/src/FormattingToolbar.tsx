@@ -10,7 +10,7 @@ import {
   DollarSign, Percent, Hash,
   Columns3, Rows3,
   PanelTop, PanelBottom, PanelLeft, PanelRight,
-  Square, X,
+  Square, X, LayoutTemplate, Plus,
 } from 'lucide-react';
 
 // ─── Value Formatter Presets ─────────────────────────────────────────────────
@@ -436,6 +436,83 @@ function applyFormatter(store: GridStore, core: GridCustomizerCore, colIds: stri
   });
 }
 
+/** Apply an existing template to the selected columns */
+function applyTemplateToColumns(store: GridStore, core: GridCustomizerCore, colIds: string[], templateId: string) {
+  if (!colIds.length || !templateId) return;
+  store.getState().pushUndoPoint(`Apply template to ${colIds.join(', ')}`);
+
+  // Ensure each column has an assignment
+  store.getState().setModuleState('column-customization', (prev: any) => {
+    const assignments = { ...prev.assignments };
+    for (const colId of colIds) {
+      if (!assignments[colId]) {
+        assignments[colId] = { colId, templateIds: [templateId] };
+      } else {
+        const existing = assignments[colId].templateIds ?? (assignments[colId].templateId ? [assignments[colId].templateId] : []);
+        if (!existing.includes(templateId)) {
+          assignments[colId] = { ...assignments[colId], templateIds: [...existing, templateId] };
+        }
+      }
+    }
+    return { ...prev, assignments };
+  });
+}
+
+/** Save the current column's resolved styles as a new named template */
+function saveCurrentAsTemplate(store: GridStore, core: GridCustomizerCore, colIds: string[], name: string) {
+  if (!colIds.length || !name.trim()) return;
+
+  // Read current resolved styles from the first selected column
+  const colTpls = store.getState().getModuleState<any>('column-templates');
+  const colCust = store.getState().getModuleState<any>('column-customization');
+  const a = colCust?.assignments?.[colIds[0]];
+  const tplIds = a?.templateIds ?? (a?.templateId ? [a.templateId] : []);
+
+  // Merge all template styles
+  let mergedCellStyle: CellStyleProperties = {};
+  let mergedHeaderStyle: CellStyleProperties = {};
+  let valueFormatterTemplate: string | undefined;
+
+  for (const tplId of tplIds) {
+    const tpl = colTpls?.templates?.[tplId];
+    if (!tpl) continue;
+    if (tpl.cellStyle) mergedCellStyle = { ...mergedCellStyle, ...tpl.cellStyle };
+    if (tpl.headerStyle) mergedHeaderStyle = { ...mergedHeaderStyle, ...tpl.headerStyle };
+    if (tpl.valueFormatterTemplate) valueFormatterTemplate = tpl.valueFormatterTemplate;
+  }
+
+  // Apply per-column overrides
+  if (a?.cellStyleOverrides) mergedCellStyle = { ...mergedCellStyle, ...a.cellStyleOverrides };
+  if (a?.headerStyleOverrides) mergedHeaderStyle = { ...mergedHeaderStyle, ...a.headerStyleOverrides };
+  if (a?.valueFormatterTemplate) valueFormatterTemplate = a.valueFormatterTemplate;
+
+  // Skip if no styles
+  const hasCell = Object.keys(mergedCellStyle).length > 0;
+  const hasHeader = Object.keys(mergedHeaderStyle).length > 0;
+  if (!hasCell && !hasHeader && !valueFormatterTemplate) return;
+
+  const now = Date.now();
+  const newId = `tpl_${now}_${Math.random().toString(36).slice(2, 6)}`;
+  const newTemplate = {
+    id: newId,
+    name: name.trim(),
+    description: `Saved from ${colIds[0]} column`,
+    createdAt: now,
+    updatedAt: now,
+    ...(hasCell ? { cellStyle: mergedCellStyle } : {}),
+    ...(hasHeader ? { headerStyle: mergedHeaderStyle } : {}),
+    ...(valueFormatterTemplate ? { valueFormatterTemplate } : {}),
+  };
+
+  store.getState().pushUndoPoint(`Save template "${name}"`);
+  store.getState().setModuleState('column-templates', (prev: any) => ({
+    ...prev,
+    templates: { ...prev.templates, [newId]: newTemplate },
+  }));
+
+  return newId;
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export interface FormattingToolbarProps {
@@ -454,6 +531,15 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
   const disabled = colIds.length === 0;
   const [clearConfirmed, flashClear] = useFlashConfirm();
   const [saveConfirmed, flashSave] = useFlashConfirm();
+  const [saveAsTplConfirmed, flashSaveAsTpl] = useFlashConfirm();
+  const [saveAsTplName, setSaveAsTplName] = useState('');
+
+  // Read available templates for the dropdown
+  const templates = store((s: GridCustomizerStore) => {
+    const tplState = (s.modules as any)?.['column-templates'];
+    return (tplState?.templates ?? {}) as Record<string, { id: string; name: string }>;
+  });
+  const templateList = useMemo(() => Object.values(templates).sort((a, b) => a.name.localeCompare(b.name)), [templates]);
 
   // Style applies to cell or header based on target toggle
   const doStyle = useCallback((patch: Partial<CellStyleProperties>) => {
@@ -584,6 +670,80 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
           {target === 'cell' ? 'CELL' : 'HDR'}
         </button>
       </div>
+
+      <div className="gc-toolbar-sep h-5" />
+
+      {/* ── Templates ── */}
+      {!disabled && (
+        <TGroup>
+          <LayoutTemplate size={11} strokeWidth={1.5} className="gc-tbtn mx-0.5 shrink-0" />
+          <select
+            className="h-6 text-[10px] font-mono rounded-[3px] px-1 cursor-pointer transition-all gc-tbtn"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', maxWidth: 110 }}
+            value=""
+            onChange={(e) => {
+              const tplId = e.target.value;
+              if (tplId) {
+                applyTemplateToColumns(store, core, colIdsRef.current, tplId);
+                e.target.value = ''; // Reset to placeholder
+              }
+            }}
+          >
+            <option value="" disabled>Templates</option>
+            {templateList.map((tpl) => (
+              <option key={tpl.id} value={tpl.id}>{tpl.name}</option>
+            ))}
+            {templateList.length === 0 && <option disabled>No templates yet</option>}
+          </select>
+          <Popover
+            trigger={
+              <TBtn tooltip="Save as template" className={saveAsTplConfirmed ? 'gc-tbtn-confirm' : undefined}>
+                {saveAsTplConfirmed
+                  ? <Check size={12} strokeWidth={2.5} style={{ color: 'var(--bn-green, #2dd4bf)' }} />
+                  : <Plus size={12} strokeWidth={2} />
+                }
+              </TBtn>
+            }
+          >
+            <div className="p-2.5 w-[220px]" onMouseDown={(e) => {
+              if ((e.target as HTMLElement).tagName !== 'INPUT') e.preventDefault();
+            }}>
+              <div className="text-[9px] uppercase tracking-[0.08em] mb-1.5" style={{ color: 'var(--muted-foreground)' }}>
+                Save as template
+              </div>
+              <input
+                type="text"
+                value={saveAsTplName}
+                onChange={(e) => setSaveAsTplName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && saveAsTplName.trim()) {
+                    saveCurrentAsTemplate(store, core, colIdsRef.current, saveAsTplName);
+                    setSaveAsTplName('');
+                    flashSaveAsTpl();
+                  }
+                }}
+                placeholder={colLabel + ' Style'}
+                className="w-full h-7 px-2 rounded-[3px] text-[11px] mb-2"
+                style={{ background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--border)', outline: 'none' }}
+                autoFocus
+              />
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  const name = saveAsTplName.trim() || `${colLabel} Style`;
+                  saveCurrentAsTemplate(store, core, colIdsRef.current, name);
+                  setSaveAsTplName('');
+                  flashSaveAsTpl();
+                }}
+                className="w-full h-7 rounded-[3px] text-[10px] font-medium cursor-pointer transition-all"
+                style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+              >
+                Save Template
+              </button>
+            </div>
+          </Popover>
+        </TGroup>
+      )}
 
       <div className="gc-toolbar-sep h-5" />
 
