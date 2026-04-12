@@ -86,9 +86,16 @@ const builtins: FunctionDefinition[] = [
   { name: 'TRIM', category: 'String', description: 'Trim whitespace', signature: 'TRIM(s)', minArgs: 1, maxArgs: 1,
     evaluate: ([s]) => toStr(s).trim() },
   { name: 'SUBSTRING', category: 'String', description: 'Extract substring', signature: 'SUBSTRING(s, start, len?)', minArgs: 2, maxArgs: 3,
-    evaluate: ([s, start, len]) => len !== undefined ? toStr(s).substr(toNum(start), toNum(len)) : toStr(s).substr(toNum(start)) },
+    evaluate: ([s, start, len]) => {
+      const str = toStr(s);
+      const startIdx = toNum(start);
+      return len !== undefined ? str.substring(startIdx, startIdx + toNum(len)) : str.substring(startIdx);
+    } },
   { name: 'REPLACE', category: 'String', description: 'Replace text', signature: 'REPLACE(s, from, to)', minArgs: 3, maxArgs: 3,
-    evaluate: ([s, from, to]) => toStr(s).replace(new RegExp(toStr(from), 'g'), toStr(to)) },
+    evaluate: ([s, from, to]) => {
+      const escaped = toStr(from).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return toStr(s).replace(new RegExp(escaped, 'g'), toStr(to));
+    } },
   { name: 'LEN', category: 'String', description: 'String length', signature: 'LEN(s)', minArgs: 1, maxArgs: 1,
     evaluate: ([s]) => toStr(s).length },
   { name: 'STARTS_WITH', category: 'String', description: 'Check prefix', signature: 'STARTS_WITH(s, prefix)', minArgs: 2, maxArgs: 2,

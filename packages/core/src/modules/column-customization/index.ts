@@ -1,6 +1,7 @@
 import type { ColDef, ColGroupDef } from 'ag-grid-community';
 import type { GridCustomizerModule } from '../../types/module';
 import type { GridContext, ModuleContext, CellStyleProperties, ColumnTemplate, ColumnAssignment } from '../../types/common';
+import { ExpressionEngine } from '../../expression';
 import { INITIAL_COLUMN_CUSTOMIZATION, migrateFromLegacy, type ColumnCustomizationState } from './state';
 import type { ColumnTemplatesState } from '../column-templates/state';
 import { ColumnCustomizationPanel } from './ColumnCustomizationPanel';
@@ -206,41 +207,6 @@ function stripUndefined(obj: CellStyleProperties): CellStyleProperties {
 
 // ─── CSS Injection ───────────────────────────────────────────────────────────
 
-function injectAllStyles(
-  state: ColumnCustomizationState,
-  templates: Record<string, ColumnTemplate>,
-  cssInjector: { addRule(id: string, css: string): void; removeRule(id: string): void },
-) {
-  // Template styles (shared)
-  for (const [tplId, tpl] of Object.entries(templates)) {
-    if (hasAnyProp(tpl.cellStyle)) {
-      const css = stylePropsToCSS(tpl.cellStyle!);
-      if (css) cssInjector.addRule(`tpl-c-${tplId}`, `.gc-tpl-c-${tplId} { ${css} !important; }`);
-      // Border overlay via ::after — doesn't touch box-shadow, so AG-Grid selection works
-      const overlay = borderOverlayCSS(`.gc-tpl-c-${tplId}`, tpl.cellStyle!);
-      if (overlay) cssInjector.addRule(`tpl-bo-${tplId}`, overlay);
-      else cssInjector.removeRule(`tpl-bo-${tplId}`);
-    }
-  }
-  // Per-column override styles
-  for (const [colId, assignment] of Object.entries(state.assignments)) {
-    const resolved = resolveColumn(assignment, templates);
-    if (hasAnyProp(resolved.cellStyle)) {
-      const css = stylePropsToCSS(resolved.cellStyle!);
-      if (css) cssInjector.addRule(`col-c-${colId}`, `.gc-col-c-${colId} { ${css} !important; }`);
-      // Border overlay via ::after
-      const overlay = borderOverlayCSS(`.gc-col-c-${colId}`, resolved.cellStyle!);
-      if (overlay) cssInjector.addRule(`col-bo-${colId}`, overlay);
-      else cssInjector.removeRule(`col-bo-${colId}`);
-    } else {
-      cssInjector.removeRule(`col-c-${colId}`);
-      cssInjector.removeRule(`col-bo-${colId}`);
-    }
-  }
-}
-
-// ─── Apply to ColDefs ────────────────────────────────────────────────────────
-
 // ─── Data Type Detection ─────────────────────────────────────────────────────
 
 type DataType = 'numeric' | 'date' | 'string' | 'boolean' | 'unknown';
@@ -272,12 +238,14 @@ function applyToColumnDefs(
   defs: (ColDef | ColGroupDef)[],
   state: ColumnCustomizationState,
   templates: Record<string, ColumnTemplate>,
+  cssInjector: ModuleContext['cssInjector'],
+  expressionEngine: ExpressionEngine,
   typeDefaults?: TypeDefaults,
   rowData?: any[],
 ): (ColDef | ColGroupDef)[] {
   return defs.map((def) => {
     if ('children' in def && def.children) {
-      return { ...def, children: applyToColumnDefs(def.children, state, templates, typeDefaults, rowData) };
+      return { ...def, children: applyToColumnDefs(def.children, state, templates, cssInjector, expressionEngine, typeDefaults, rowData) };
     }
     const colDef = def as ColDef;
     const colId = colDef.colId ?? colDef.field;
@@ -313,14 +281,19 @@ function applyToColumnDefs(
     if (resolved.cellRendererName !== undefined) merged.cellRenderer = resolved.cellRendererName;
 
     // Value formatter from template/assignment
+    // Safe value formatter — uses expression engine instead of new Function
+    // Pre-parse the expression once, then evaluate per-cell
     if (resolved.valueFormatterTemplate) {
       const fmtExpr = resolved.valueFormatterTemplate;
       try {
-        const fn = new Function('x', `'use strict'; if(x==null) return ''; try { return ${fmtExpr}; } catch { return String(x); }`) as (x: unknown) => string;
-        fn(12345.678); // Test compilation
+        const testResult = expressionEngine.parseAndEvaluate(fmtExpr, { x: 12345.678, value: 12345.678, data: {}, columns: {} });
+        // Expression works — create formatter
         merged.valueFormatter = (params) => {
           if (params.value == null) return '';
-          return fn(params.value);
+          try {
+            const result = expressionEngine.parseAndEvaluate(fmtExpr, { x: params.value, value: params.value, data: params.data ?? {}, columns: params.data ?? {} });
+            return String(result);
+          } catch { return String(params.value); }
         };
         // Clear cellRenderer so AG-Grid uses valueFormatter instead
         // (cellRenderer takes precedence over valueFormatter in AG-Grid)
@@ -339,26 +312,24 @@ function applyToColumnDefs(
       // AG-Grid headers use flexbox — textAlign must be converted to justify-content
       // via CSS on .ag-header-cell-label (headerStyle inline can't reach this child)
       const textAlign = headerProps.textAlign;
-      if (textAlign && _cssInjector) {
+      if (textAlign) {
         delete headerProps.textAlign;
         const justifyMap: Record<string, string> = { left: 'flex-start', center: 'center', right: 'flex-end' };
         const justify = justifyMap[textAlign] ?? 'flex-start';
-        _cssInjector.addRule(`hdr-align-${colId}`, `.${cls} .ag-header-cell-label { justify-content: ${justify} !important; }`);
-      } else if (_cssInjector) {
-        _cssInjector.removeRule(`hdr-align-${colId}`);
+        cssInjector.addRule(`hdr-align-${colId}`, `.${cls} .ag-header-cell-label { justify-content: ${justify} !important; }`);
+      } else {
+        cssInjector.removeRule(`hdr-align-${colId}`);
       }
 
       // Border overlay via ::after on header (CSS injection, not inline)
-      if (_cssInjector) {
-        const borderOverlay = borderOverlayCSS(`.${cls}`, headerProps);
-        if (borderOverlay) _cssInjector.addRule(`hdr-bo-${colId}`, borderOverlay);
-        else _cssInjector.removeRule(`hdr-bo-${colId}`);
-        // Remove border keys from inline style — they're handled by ::after
-        for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) {
-          delete (headerProps as any)[`border${side}Width`];
-          delete (headerProps as any)[`border${side}Style`];
-          delete (headerProps as any)[`border${side}Color`];
-        }
+      const borderOverlay = borderOverlayCSS(`.${cls}`, headerProps);
+      if (borderOverlay) cssInjector.addRule(`hdr-bo-${colId}`, borderOverlay);
+      else cssInjector.removeRule(`hdr-bo-${colId}`);
+      // Remove border keys from inline style — they're handled by ::after
+      for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) {
+        delete (headerProps as any)[`border${side}Width`];
+        delete (headerProps as any)[`border${side}Style`];
+        delete (headerProps as any)[`border${side}Color`];
       }
 
       // Remaining properties applied via functional headerStyle (excludes floating filters)
@@ -373,15 +344,15 @@ function applyToColumnDefs(
       // Add class for alignment + border overlay targeting
       const existing = typeof merged.headerClass === 'string' ? merged.headerClass : '';
       merged.headerClass = [existing, cls].filter(Boolean).join(' ');
-    } else if (_cssInjector) {
-      _cssInjector.removeRule(`hdr-align-${colId}`);
-      _cssInjector.removeRule(`hdr-bo-${colId}`);
+    } else {
+      cssInjector.removeRule(`hdr-align-${colId}`);
+      cssInjector.removeRule(`hdr-bo-${colId}`);
     }
 
     // Cell styling — single approach: cellClass + CSS injection
     // All properties (inheritable + non-inheritable) go through ONE CSS class
     // with !important to override both theme defaults and renderer inline styles
-    if (hasAnyProp(resolved.cellStyle) && _cssInjector) {
+    if (hasAnyProp(resolved.cellStyle)) {
       const style = resolved.cellStyle!;
       const cls = `gc-col-c-${colId}`;
       const rules: string[] = [];
@@ -395,9 +366,9 @@ function applyToColumnDefs(
 
       // Borders — rendered via ::after overlay so they don't interfere with
       // AG-Grid's box-shadow cell selection or column separators.
-      const borderOverlay = borderOverlayCSS(`.${cls}`, style);
-      if (borderOverlay) _cssInjector.addRule(`col-bo-${colId}`, borderOverlay);
-      else _cssInjector.removeRule(`col-bo-${colId}`);
+      const borderOverlayVal = borderOverlayCSS(`.${cls}`, style);
+      if (borderOverlayVal) cssInjector.addRule(`col-bo-${colId}`, borderOverlayVal);
+      else cssInjector.removeRule(`col-bo-${colId}`);
 
       // Inheritable (apply to cell AND all descendants to override renderer inline styles)
       const inheritRules: string[] = [];
@@ -416,17 +387,17 @@ function applyToColumnDefs(
         if (inheritRules.length > 0) {
           cssText += `\n.${cls} * { ${inheritRules.join('; ')}; }`;
         }
-        _cssInjector.addRule(`col-c-${colId}`, cssText);
+        cssInjector.addRule(`col-c-${colId}`, cssText);
       }
 
       // Always add cellClass when any style prop exists (including border-only)
       // so the ::after overlay selector matches the cell.
       const existing = typeof merged.cellClass === 'string' ? merged.cellClass : '';
       merged.cellClass = [existing, cls].filter(Boolean).join(' ');
-    } else if (_cssInjector) {
+    } else {
       // No styles — remove any previously injected CSS rules
-      _cssInjector.removeRule(`col-c-${colId}`);
-      _cssInjector.removeRule(`col-bo-${colId}`);
+      cssInjector.removeRule(`col-c-${colId}`);
+      cssInjector.removeRule(`col-bo-${colId}`);
     }
 
     return merged;
@@ -435,8 +406,15 @@ function applyToColumnDefs(
 
 // ─── Module Definition ───────────────────────────────────────────────────────
 
-let _cssInjector: ModuleContext['cssInjector'] | null = null;
-let _getModuleState: ModuleContext['getModuleState'] | null = null;
+/** Per-grid module context — supports multi-grid without singletons */
+interface ColumnModuleCtx {
+  cssInjector: ModuleContext['cssInjector'];
+  getModuleState: ModuleContext['getModuleState'];
+  expressionEngine: ExpressionEngine;
+}
+const _ctxMap = new Map<string, ColumnModuleCtx>();
+/** Last registered gridId — used as fallback when GridContext is null (before gridApi ready) */
+let _lastRegisteredGridId: string | null = null;
 
 export const columnCustomizationModule: GridCustomizerModule<ColumnCustomizationState> = {
   id: 'column-customization',
@@ -448,8 +426,17 @@ export const columnCustomizationModule: GridCustomizerModule<ColumnCustomization
   getInitialState: () => ({ ...INITIAL_COLUMN_CUSTOMIZATION }),
 
   onRegister(ctx: ModuleContext): void {
-    _cssInjector = ctx.cssInjector;
-    _getModuleState = ctx.getModuleState;
+    _ctxMap.set(ctx.gridId, {
+      cssInjector: ctx.cssInjector,
+      getModuleState: ctx.getModuleState,
+      expressionEngine: new ExpressionEngine(),
+    });
+    _lastRegisteredGridId = ctx.gridId;
+  },
+
+  onGridDestroy(_ctx: GridContext): void {
+    _ctxMap.delete(_ctx.gridId);
+    if (_lastRegisteredGridId === _ctx.gridId) _lastRegisteredGridId = null;
   },
 
   transformColumnDefs(
@@ -457,8 +444,15 @@ export const columnCustomizationModule: GridCustomizerModule<ColumnCustomization
     state: ColumnCustomizationState,
     _ctx: GridContext,
   ): (ColDef | ColGroupDef)[] {
+    // Resolve module context: use GridContext.gridId if available, fall back to last registered
+    const gridId = _ctx?.gridId ?? _lastRegisteredGridId;
+    if (!gridId) return defs;
+    const mctx = _ctxMap.get(gridId);
+    if (!mctx) return defs;
+    const { cssInjector, getModuleState, expressionEngine } = mctx;
+
     // Read templates + type defaults from the column-templates module
-    const tplState = _getModuleState?.<ColumnTemplatesState>('column-templates');
+    const tplState = getModuleState<ColumnTemplatesState>('column-templates');
     const templates = tplState?.templates ?? {};
     const typeDefaults = tplState?.typeDefaults;
 
@@ -475,7 +469,7 @@ export const columnCustomizationModule: GridCustomizerModule<ColumnCustomization
     const hasTypeDefaults = typeDefaults && Object.values(typeDefaults).some(Boolean);
 
     if (!hasAssignments && !hasTypeDefaults) return defs;
-    return applyToColumnDefs(defs, state, templates, typeDefaults, rowData);
+    return applyToColumnDefs(defs, state, templates, cssInjector, expressionEngine, typeDefaults, rowData);
   },
 
   serialize: (state) => state,

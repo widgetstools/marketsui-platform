@@ -16,6 +16,23 @@ export interface GridColumnInfo {
 
 export function useGridColumns(): GridColumnInfo[] {
   const core = useGridCustomizerCore();
+  const [columnVersion, setColumnVersion] = useState(0);
+
+  useEffect(() => {
+    const api = core.getGridApi();
+    if (!api) return;
+    const handler = () => setColumnVersion(n => n + 1);
+    const events = ['displayedColumnsChanged', 'columnEverythingChanged'] as const;
+    for (const evt of events) {
+      try { api.addEventListener(evt, handler); } catch {}
+    }
+    return () => {
+      for (const evt of events) {
+        try { api.removeEventListener(evt, handler); } catch {}
+      }
+    };
+  }, [core]);
+
   return useMemo(() => {
     const api = core.getGridApi();
     if (!api) return [];
@@ -34,7 +51,7 @@ export function useGridColumns(): GridColumnInfo[] {
     } catch {
       return [];
     }
-  }, [core]);
+  }, [core, columnVersion]);
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────

@@ -935,9 +935,10 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
       {/* ── Actions ── */}
       <TGroup>
         <TBtn tooltip="Clear all styles" onClick={() => {
+          // Push undo point so user can recover via Ctrl+Z
+          store.getState().pushUndoPoint('Before Clear All');
           store.getState().setModuleState('column-templates', () => ({ templates: {}, typeDefaults: {} }));
           store.getState().setModuleState('column-customization', () => ({ assignments: {} }));
-          store.setState({ undoStack: [], redoStack: [] });
         }}>
           <Trash2 size={12} strokeWidth={1.5} />
         </TBtn>

@@ -50,6 +50,11 @@ function SettingsSheetInner({
   const activeModuleId = realStore((s: GridCustomizerStore) => s.activeSettingsModule);
   const sheetRef = useRef<HTMLDivElement>(null);
 
+  const handleClose = useCallback(() => {
+    discard();
+    realStore.getState().setSettingsOpen(false);
+  }, [discard, realStore]);
+
   // ESC to close
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -57,12 +62,7 @@ function SettingsSheetInner({
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, []);
-
-  const handleClose = useCallback(() => {
-    discard();
-    realStore.getState().setSettingsOpen(false);
-  }, [discard, realStore]);
+  }, [handleClose]);
 
   const handleApply = useCallback(() => {
     apply();

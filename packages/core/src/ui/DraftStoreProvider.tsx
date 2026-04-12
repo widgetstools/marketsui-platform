@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import type { GridCustomizerCore } from '../core/GridCustomizerCore';
 import type { GridStore, GridCustomizerStore } from '../stores/createGridStore';
@@ -26,6 +26,10 @@ interface DraftStoreProviderProps {
 }
 
 export function DraftStoreProvider({ realStore, core, children, onDirtyChange }: DraftStoreProviderProps) {
+  // Use ref for onDirtyChange to avoid stale closure in useMemo-created store
+  const onDirtyRef = useRef(onDirtyChange);
+  onDirtyRef.current = onDirtyChange;
+
   // Snapshot the real store's module states when the sheet opens
   const initialSnapshot = useRef(realStore.getState().modules);
 
@@ -58,7 +62,7 @@ export function DraftStoreProvider({ realStore, core, children, onDirtyChange }:
           };
           return { modules: newModules, isDirty: true };
         });
-        onDirtyChange?.(true);
+        onDirtyRef.current?.(true);
       },
 
       // These delegate to the real store (they control UI, not grid state)
@@ -84,7 +88,7 @@ export function DraftStoreProvider({ realStore, core, children, onDirtyChange }:
           fresh[mod.id] = mod.getInitialState();
         }
         set({ modules: fresh, isDirty: true });
-        onDirtyChange?.(true);
+        onDirtyRef.current?.(true);
       },
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps

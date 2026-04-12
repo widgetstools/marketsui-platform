@@ -209,6 +209,7 @@ export const cellFlashingModule: GridCustomizerModule<CellFlashingState> = {
       cleanup();
       cleanupMap.delete(ctx.gridId);
     }
+    injectorMap.delete(ctx.gridId);
   },
 
   serialize: (state) => state,

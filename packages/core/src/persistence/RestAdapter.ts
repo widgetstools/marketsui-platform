@@ -17,11 +17,12 @@ export class RestAdapter implements StorageAdapter {
   }
 
   async save(profileId: string, snapshot: ProfileSnapshot): Promise<void> {
-    await fetch(`${this.baseUrl}/profiles/${profileId}`, {
+    const response = await fetch(`${this.baseUrl}/profiles/${profileId}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify(snapshot),
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
   async load(profileId: string): Promise<ProfileSnapshot | null> {
@@ -42,10 +43,11 @@ export class RestAdapter implements StorageAdapter {
   }
 
   async delete(profileId: string): Promise<void> {
-    await fetch(`${this.baseUrl}/profiles/${profileId}`, {
+    const response = await fetch(`${this.baseUrl}/profiles/${profileId}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
   async getDefault(gridId: string): Promise<string | null> {
@@ -59,11 +61,12 @@ export class RestAdapter implements StorageAdapter {
   }
 
   async setDefault(gridId: string, profileId: string | null): Promise<void> {
-    await fetch(`${this.baseUrl}/defaults/${encodeURIComponent(gridId)}`, {
+    const response = await fetch(`${this.baseUrl}/defaults/${encodeURIComponent(gridId)}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify({ profileId }),
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
   async exportJson(profileId: string): Promise<string> {

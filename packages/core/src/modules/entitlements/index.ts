@@ -1,8 +1,11 @@
 import type { ColDef, ColGroupDef, EditableCallbackParams } from 'ag-grid-community';
 import type { GridCustomizerModule } from '../../types/module';
 import type { GridContext } from '../../types/common';
+import { ExpressionEngine } from '../../expression';
 import { INITIAL_ENTITLEMENTS, type EntitlementsState, type EntitlementRule } from './state';
 import { EntitlementsPanel } from './EntitlementsPanel';
+
+const engine = new ExpressionEngine();
 
 function evaluateRule(rule: EntitlementRule, params: EditableCallbackParams): boolean {
   if (!rule.enabled) return rule.fallback === 'allow';
@@ -11,8 +14,13 @@ function evaluateRule(rule: EntitlementRule, params: EditableCallbackParams): bo
     case 'row-value': {
       try {
         const data = params.data ?? {};
-        const fn = new Function('data', `with(data) { return Boolean(${rule.expression}); }`);
-        return fn(data);
+        const result = engine.parseAndEvaluate(rule.expression, {
+          x: data,
+          value: data,
+          data: data,
+          columns: data,
+        });
+        return Boolean(result);
       } catch {
         return rule.fallback === 'allow';
       }

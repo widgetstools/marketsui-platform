@@ -391,10 +391,11 @@ test.describe('Formatting Toolbar — All Features', () => {
     // Reload and verify styles are restored
     await page.reload();
     await waitForGrid(page);
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
-    const rules = await getColumnCSSRules(page, colId);
-    expect(rules.some(r => r.includes('font-weight'))).toBe(true);
+    // Check computed style on the cell (more reliable than CSS rules after reload)
+    const fw = await getCellStyle(page, colId, 'font-weight');
+    expect(fw === '700' || fw === 'bold').toBe(true);
   });
 
   // ── Undo / Redo ──
