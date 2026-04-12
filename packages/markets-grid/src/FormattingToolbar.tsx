@@ -5,7 +5,7 @@ import {
   Undo2, Redo2, Bold, Italic, Underline,
   AlignLeft, AlignCenter, AlignRight,
   Type, PaintBucket,
-  Save, Trash2, Grid3X3,
+  Save, Trash2, Grid3X3, Check,
   ChevronDown, ArrowLeft, ArrowRight,
   DollarSign, Percent, Hash,
   Columns3, Rows3,
@@ -84,6 +84,19 @@ function TGroup({ children, className }: { children: React.ReactNode; className?
 }
 
 // ColorPopover removed — using shared ColorPickerPopover from @grid-customizer/core
+
+/** Flash a checkmark icon for 1s after an action, then revert to original icon */
+function useFlashConfirm(): [boolean, () => void] {
+  const [confirmed, setConfirmed] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const flash = useCallback(() => {
+    setConfirmed(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setConfirmed(false), 1200);
+  }, []);
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+  return [confirmed, flash];
+}
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 
@@ -438,6 +451,8 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
   targetRef.current = target;
   const fmt = useColumnFormatting(store, colIds, target);
   const disabled = colIds.length === 0;
+  const [clearConfirmed, flashClear] = useFlashConfirm();
+  const [saveConfirmed, flashSave] = useFlashConfirm();
 
   // Style applies to cell or header based on target toggle
   const doStyle = useCallback((patch: Partial<CellStyleProperties>) => {
@@ -861,32 +876,25 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
       {/* ── Actions ── */}
       <TGroup>
         <TBtn tooltip="Clear all styles" onClick={() => {
-          // Push undo point so user can recover via Ctrl+Z
           store.getState().pushUndoPoint('Before Clear All');
           store.getState().setModuleState('column-templates', () => ({ templates: {}, typeDefaults: {} }));
           store.getState().setModuleState('column-customization', () => ({ assignments: {} }));
-          // Clear all injected CSS rules immediately
           core.cssInjector.clear();
-          // AG-Grid caches headerStyle inline results on the DOM. Even when React
-          // passes new columnDefs, AG-Grid won't re-evaluate headerStyle for existing
-          // columns. We must strip the stale inline styles directly from header elements.
           try {
-            const api = core.getGridApi();
-            if (api) {
-              document.querySelectorAll(`.ag-header-cell`).forEach((el) => {
-                const s = (el as HTMLElement).style;
-                s.removeProperty('font-weight');
-                s.removeProperty('font-style');
-                s.removeProperty('font-size');
-                s.removeProperty('font-family');
-                s.removeProperty('text-decoration');
-                s.removeProperty('color');
-                s.removeProperty('background-color');
-              });
-            }
+            document.querySelectorAll('.ag-header-cell').forEach((el) => {
+              const s = (el as HTMLElement).style;
+              s.removeProperty('font-weight'); s.removeProperty('font-style');
+              s.removeProperty('font-size'); s.removeProperty('font-family');
+              s.removeProperty('text-decoration'); s.removeProperty('color');
+              s.removeProperty('background-color');
+            });
           } catch { /* */ }
-        }}>
-          <Trash2 size={12} strokeWidth={1.5} />
+          flashClear();
+        }} className={clearConfirmed ? '!text-[#2dd4bf]' : undefined}>
+          {clearConfirmed
+            ? <Check size={13} strokeWidth={2.5} className="text-[#2dd4bf]" />
+            : <Trash2 size={12} strokeWidth={1.5} />
+          }
         </TBtn>
         <TBtn tooltip="Save" onClick={() => {
           try {
@@ -895,8 +903,12 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
             store.getState().setDirty(false);
             store.setState({ undoStack: [], redoStack: [] });
           } catch { /* */ }
-        }}>
-          <Save size={12} strokeWidth={1.5} />
+          flashSave();
+        }} className={saveConfirmed ? '!text-[#2dd4bf]' : undefined}>
+          {saveConfirmed
+            ? <Check size={13} strokeWidth={2.5} className="text-[#2dd4bf]" />
+            : <Save size={12} strokeWidth={1.5} />
+          }
         </TBtn>
       </TGroup>
     </div>
