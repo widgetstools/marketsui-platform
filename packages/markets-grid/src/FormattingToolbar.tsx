@@ -892,9 +892,8 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
               onMouseDown={(e) => { const tag = (e.target as HTMLElement).tagName; if (tag !== 'SELECT' && tag !== 'INPUT') e.preventDefault(); }}>
 
               {/* ── Header ── */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ marginBottom: 10 }}>
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted-foreground)' }}>Borders</span>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: activeColor, border: '1px solid var(--border)' }} />
               </div>
 
               {/* ── Cell preview ── */}
