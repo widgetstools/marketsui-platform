@@ -573,21 +573,21 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
       }}
     >
       {/* ── Column context + CELL/HDR segmented control ── */}
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-[6px] shrink-0"
+      <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-[6px] shrink-0"
         style={{ border: '1px solid var(--border)' }}>
-        <span className="text-[10px] font-mono tracking-wider max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap select-none"
+        <span className="text-[10px] font-mono tracking-wider max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap select-none pl-0.5"
           style={{ color: colIds.length > 0 ? 'var(--foreground)' : 'var(--muted-foreground)' }}
           title={colIds.join(', ')}>
           {colLabel}
         </span>
-        <div className="flex h-6 rounded-[4px] overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+        <div className="flex h-7 rounded-[5px] overflow-hidden" style={{ border: '1px solid var(--border)' }}>
           <button
-            className="px-2 text-[9px] font-semibold tracking-wider uppercase transition-all cursor-pointer"
+            className="px-3 text-[9px] font-semibold tracking-wider uppercase transition-all cursor-pointer"
             style={target === 'cell' ? { background: 'var(--primary)', color: 'var(--primary-foreground)' } : { background: 'transparent', color: 'var(--muted-foreground)' }}
             onMouseDown={(e) => { e.preventDefault(); setTarget('cell'); }}
           >CELL</button>
           <button
-            className="px-2 text-[9px] font-semibold tracking-wider uppercase transition-all cursor-pointer"
+            className="px-3 text-[9px] font-semibold tracking-wider uppercase transition-all cursor-pointer"
             style={target === 'header' ? { background: 'var(--primary)', color: 'var(--primary-foreground)' } : { background: 'transparent', color: 'var(--muted-foreground)' }}
             onMouseDown={(e) => { e.preventDefault(); setTarget('header'); }}
           >HDR</button>
