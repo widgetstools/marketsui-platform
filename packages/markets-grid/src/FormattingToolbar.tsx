@@ -583,18 +583,20 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
             variant={target === 'cell' ? 'default' : 'ghost'}
             size="xs"
             className={cn(
-              'rounded-none px-3 text-[9px] font-semibold tracking-wider uppercase',
+              'h-full rounded-none text-[9px] font-semibold tracking-wider uppercase',
               target === 'cell' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'text-muted-foreground hover:text-foreground',
             )}
+            style={{ paddingLeft: 14, paddingRight: 14 }}
             onMouseDown={(e) => { e.preventDefault(); setTarget('cell'); }}
           >CELL</Button>
           <Button
             variant={target === 'header' ? 'default' : 'ghost'}
             size="xs"
             className={cn(
-              'rounded-none px-3 text-[9px] font-semibold tracking-wider uppercase',
+              'h-full rounded-none text-[9px] font-semibold tracking-wider uppercase',
               target === 'header' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'text-muted-foreground hover:text-foreground',
             )}
+            style={{ paddingLeft: 14, paddingRight: 14 }}
             onMouseDown={(e) => { e.preventDefault(); setTarget('header'); }}
           >HDR</Button>
         </div>
