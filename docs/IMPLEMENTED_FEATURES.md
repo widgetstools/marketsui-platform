@@ -33,8 +33,8 @@ AG-Grid Customization Platform — an open-source AdapTable alternative for the 
 - Multiple `<MarketsGrid>` components with different `gridId` props can coexist in the same app
 
 ### Persistence
-- Auto-save to localStorage on every state change (configurable via `persistState` option)
-- Auto-load from localStorage on initialization
+- **Explicit save only** — no auto-persist; state saves to localStorage only when user clicks the Save button
+- Auto-load from localStorage on initialization (restores previously saved state)
 - Storage adapters: `LocalStorageAdapter`, `DexieAdapter` (IndexedDB), `RestAdapter` (HTTP API)
 - `RestAdapter` validates `response.ok` on all HTTP methods
 
@@ -44,14 +44,20 @@ AG-Grid Customization Platform — an open-source AdapTable alternative for the 
 
 ### Excel-Style Toolbar
 - Appears above the grid with grouped tool clusters
-- Compact 38px height with theme-aware background (`var(--card)`)
-- All icons from Lucide React with consistent 13px size, 1.5 stroke weight
-- Two-state contrast: 55% opacity when no cell selected, 100% when cell selected
-- `gc-toolbar-enabled` CSS class toggles full contrast on cell selection
+- 42px height with `bg-card` background and `border-border` bottom border
+- Layout order: Column Context → Templates → Font & Text → Alignment → Number Format → Borders → History + Actions
+- All icons from Lucide React with consistent 14px size, 1.75 stroke weight
+- Two-state contrast: 55% opacity when no cell selected, 85% when cell selected (1.0 on hover)
+- `gc-toolbar-enabled` CSS class toggles contrast on cell selection
 - `z-index: 10000` ensures dropdowns/popovers render above AG-Grid
+- 16px horizontal padding via inline style (immune to Tailwind/preflight conflicts)
+- TGroup containers with `bg-accent/40` background, `rounded-md`, `gap-[3px]` internal spacing
+- All custom CSS classes (`gc-tbtn`, `gc-tbtn-active`, `gc-toolbar-sep`) in `@layer components`
 
 ### Cell/Header Toggle
-- CELL/HDR badge-style toggle button
+- iOS-style segmented control with two side-by-side Shadcn `<Button>` components
+- Active segment uses `bg-primary text-primary-foreground`, inactive uses `ghost` variant
+- 14px horizontal padding per button, `h-7` height, `rounded-none` with `rounded-md` on container
 - Switches all formatting actions between cell styling and header styling
 - Header styles use functional `headerStyle` (excludes floating filters) + `headerClass` for CSS injection
 - Cell styles use `cellClass` + CSS injection with `!important`
@@ -63,15 +69,23 @@ AG-Grid Customization Platform — an open-source AdapTable alternative for the 
 - All write to `cellStyleOverrides` / `headerStyleOverrides` on the `ColumnAssignment` (not templates)
 
 ### Text & Background Color
-- DaVinci Resolve-inspired color picker with 10-column x 8-row grid:
-  - Grayscale row (white to black)
-  - Vivid saturated row (rainbow)
-  - 6 shade gradation rows (pastel to dark)
-- Recent colors row (up to 10, persisted in `localStorage` as `gc-recent-colors`)
-- Hex input field with live validation (supports `#RGB` and `#RRGGBB`)
-- Native system color picker via Pipette icon overlay
-- "Clear" button with Droplet icon (red-tinted, prominent)
-- "Apply" checkmark confirmation button (amber)
+- Color picker with 10-column × 6-row grid (19px rounded swatches, 2px gaps):
+  - Row 1: Grayscale (white to black)
+  - Row 2: Vivid saturated (rainbow)
+  - Row 3: Medium-dark variants
+  - Row 4: Light tints
+  - Row 5: Pastels
+  - Row 6: Very light
+- Recent colors section (up to 10, persisted in `localStorage` as `gc-recent-colors`) with "RECENT" label
+- Bottom bar with 4 equally-sized 22px controls:
+  - Pipette icon: opens native system color picker
+  - Hex input: editable text field with `JetBrains Mono` font, validates on blur/Enter
+  - × button: clears color
+  - ✓ button: confirms selection (foreground/background swap for active state)
+- Draft/confirm pattern — select colors without applying until ✓ is clicked
+- Selected swatch highlighted with 2px CSS `outline` in `var(--primary)` color
+- Container: 8px padding, 8px border-radius, deep shadow (`0 8px 32px rgba(0,0,0,0.3)`)
+- All colors via CSS variables — fully theme-aware for light/dark mode
 - Shared `ColorPicker` / `ColorPickerPopover` components in `@grid-customizer/core`
 
 ### Alignment
@@ -93,11 +107,14 @@ AG-Grid Customization Platform — an open-source AdapTable alternative for the 
 - Written to `ColumnAssignment.valueFormatterTemplate` (per-column override)
 
 ### Border Editor
-- Grid3X3 icon opens border popover
-- Per-side controls: Top, Right, Bottom, Left with PanelTop/Right/Bottom/Left icons
-- Each side: toggle on/off, color picker, width selector (1-4px), style selector (solid/dashed/dotted/double)
-- Preview box shows current border state
-- Quick actions: "All" (Square icon) / "None" (X icon)
+- Grid3X3 icon opens border popover (240px wide)
+- **Header**: "BORDERS" title in uppercase
+- **Cell preview**: inner rectangle showing active borders with dashed inactive borders, "Cell" or "Header" label
+- **6 preset buttons** in a row: All, Top, Right, Btm, Left, None
+  - Each with a custom `BorderIcon` SVG showing which edge is highlighted
+  - Active buttons get `var(--primary)` border + tinted background
+  - "None" button in `var(--destructive)` color
+- **Bottom bar**: color swatch + style dropdown (Solid/Dashed/Dotted/Double) + width selector (1-4)
 - **Implementation**: borders rendered via `::after` pseudo-element with `box-shadow: inset` — does NOT use CSS `border` or `box-shadow` on the cell itself
 - AG-Grid cell selection (`box-shadow`) and column separators (`border-right`) remain unaffected
 - `inset: 0` positioning (not `-1px`) because AG-Grid cells have `overflow: hidden`
@@ -131,6 +148,8 @@ AG-Grid Customization Platform — an open-source AdapTable alternative for the 
 ### Save
 - Save icon — serializes all module state to `localStorage`
 - Flash checkmark feedback (400ms)
+- **Explicit save only** — no auto-persist; styles only save when the user clicks Save
+- Auto-persist `useEffect` removed to prevent unintended localStorage writes
 
 ---
 
@@ -218,8 +237,12 @@ AG-Grid Customization Platform — an open-source AdapTable alternative for the 
 
 ### Theme-Aware Components
 - All toolbar buttons use CSS variables (`--foreground`, `--muted-foreground`, `--accent`, `--primary`, `--border`, `--card`)
-- `gc-tbtn`, `gc-tbtn-active`, `gc-toolbar-sep` CSS classes reference theme variables
-- Color picker, settings panel, and all popovers adapt automatically
+- `gc-tbtn`, `gc-tbtn-active`, `gc-toolbar-sep` CSS classes in `@layer components` (proper cascade order)
+- Color picker uses CSS vars for all colors — no hardcoded hex values
+- Border editor uses CSS vars for backgrounds, borders, text colors
+- Shadcn `<Button>` components used for CELL/HDR toggle, border presets, save-as-template
+- Base CSS reset moved to `@layer base` to avoid overriding Tailwind utilities
+- AG-Grid header collapse overrides use `!important` outside layers (must override AG-Grid's own styles)
 
 ---
 
@@ -271,6 +294,7 @@ AG-Grid Customization Platform — an open-source AdapTable alternative for the 
 - `e2e/toolbar-features.spec.ts` (23 tests): All toolbar features including clear-all header styles
 - `e2e/toolbar-buttons.spec.ts` (27 tests): Every button on cells AND headers, cell/header independence
 - `e2e/templates.spec.ts` (13 tests): Template dropdown, apply template, save-as-template, persistence, composition
+- `clickToolbarBtn` helper uses exact text match to avoid "Save" matching "Save as template"
 
 ### Test Coverage
 | Feature | Cell Tests | Header Tests |
