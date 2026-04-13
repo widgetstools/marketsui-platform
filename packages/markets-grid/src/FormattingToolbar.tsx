@@ -564,7 +564,8 @@ export function FormattingToolbar({ core, store }: FormattingToolbarProps) {
 
   return (
     <div
-      className={cn('flex items-center gap-2 h-[42px] px-4 shrink-0 border-b border-border bg-card text-xs relative z-[10000]', !disabled && 'gc-toolbar-enabled')}
+      className={cn('flex items-center gap-2 h-[42px] shrink-0 border-b border-border bg-card text-xs relative z-[10000]', !disabled && 'gc-toolbar-enabled')}
+      style={{ paddingLeft: 16, paddingRight: 16 }}
       onMouseDown={(e) => {
         const tag = (e.target as HTMLElement).tagName;
         if (tag !== 'SELECT' && tag !== 'INPUT' && tag !== 'OPTION') e.preventDefault();
