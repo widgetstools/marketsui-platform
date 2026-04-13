@@ -46,7 +46,7 @@ function addRecentColor(color: string): void {
 
 // ─── Swatch ─────────────────────────────────────────────────────────────────
 
-function Swatch({ color, selected, size = 20, onClick }: {
+function Swatch({ color, selected, size = 22, onClick }: {
   color: string; selected: boolean; size?: number; onClick: () => void;
 }) {
   return (
@@ -56,11 +56,12 @@ function Swatch({ color, selected, size = 20, onClick }: {
       title={color}
       className={cn(
         'rounded-[2px] cursor-pointer transition-all duration-75 shrink-0',
-        selected
-          ? 'ring-[1.5px] ring-white ring-offset-1 ring-offset-[#1e2329] scale-110 z-10 relative'
-          : 'hover:scale-110 hover:z-10 hover:relative',
+        !selected && 'hover:scale-110 hover:z-10 hover:relative',
       )}
-      style={{ width: size, height: size, background: color }}
+      style={{
+        width: size, height: size, background: color,
+        ...(selected ? { boxShadow: `0 0 0 1.5px var(--card), 0 0 0 3px var(--primary)`, transform: 'scale(1.1)', zIndex: 10, position: 'relative' as const } : undefined),
+      }}
     />
   );
 }
@@ -90,7 +91,7 @@ export function ColorPicker({ value, onChange, allowClear = true, compact = fals
     setHexInput(value || '');
   }, [value]);
 
-  const sz = compact ? 18 : 20;
+  const sz = compact ? 20 : 22;
 
   const selectColor = useCallback((c: string) => {
     setDraft(c);
@@ -119,20 +120,23 @@ export function ColorPicker({ value, onChange, allowClear = true, compact = fals
     }
   }, [hexInput, selectColor]);
 
+  // Reduced grid: grayscale + rows 0,1,3,4,6 from HUE_GRID (skip rows 2 and 5)
+  const filteredHueRows = [HUE_GRID[0], HUE_GRID[1], HUE_GRID[3], HUE_GRID[4], HUE_GRID[6]];
+
   return (
     <div className="p-2" onMouseDown={(e) => {
       if ((e.target as HTMLElement).tagName !== 'INPUT') e.preventDefault();
     }}>
       {/* ── Grayscale row ── */}
-      <div className="flex gap-[2px] mb-[2px]">
+      <div className="flex gap-[1px] mb-[1px]">
         {GRAYSCALE.map((c) => (
           <Swatch key={c} color={c} size={sz} selected={draft === c} onClick={() => selectColor(c)} />
         ))}
       </div>
 
-      {/* ── Hue grid ── */}
-      {HUE_GRID.map((row, ri) => (
-        <div key={ri} className="flex gap-[2px] mb-[2px]">
+      {/* ── Hue grid (6 rows: grayscale + 5 hue rows) ── */}
+      {filteredHueRows.map((row, ri) => (
+        <div key={ri} className="flex gap-[1px] mb-[1px]">
           {row.map((c) => (
             <Swatch key={c} color={c} size={sz} selected={draft === c} onClick={() => selectColor(c)} />
           ))}
@@ -141,8 +145,9 @@ export function ColorPicker({ value, onChange, allowClear = true, compact = fals
 
       {/* ── Recent colors ── */}
       {recentColors.length > 0 && (
-        <div className="mt-2 pt-1.5 border-t border-[#2b3139]">
-          <div className="flex gap-[2px]">
+        <div className="mt-2 pt-1.5" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="text-[8px] uppercase tracking-[0.1em] mb-1" style={{ color: 'var(--muted-foreground)' }}>RECENT</div>
+          <div className="flex gap-[1px]">
             {recentColors.map((c) => (
               <Swatch key={c} color={c} size={sz} selected={draft === c} onClick={() => selectColor(c)} />
             ))}
@@ -151,14 +156,14 @@ export function ColorPicker({ value, onChange, allowClear = true, compact = fals
       )}
 
       {/* ── Bottom: hex input + preview + native picker + actions ── */}
-      <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-[#2b3139]">
+      <div className="flex items-center gap-2 mt-3 pt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
         {/* Native color picker trigger — shows current color + eyedropper icon */}
         <label
-          className="w-6 h-6 rounded-[3px] shrink-0 cursor-pointer ring-1 ring-white/10 relative overflow-hidden flex items-center justify-center group/picker"
-          style={{ background: draft || '#1e2329' }}
+          className="w-6 h-6 rounded-[3px] shrink-0 cursor-pointer relative overflow-hidden flex items-center justify-center group/picker"
+          style={{ background: draft || 'var(--card)', border: '1px solid var(--border)' }}
           title="Pick custom color"
         >
-          <Pipette size={11} strokeWidth={1.5} className="text-white/60 group-hover/picker:text-white/90 transition-colors drop-shadow-sm" />
+          <Pipette size={11} strokeWidth={1.5} className="transition-colors drop-shadow-sm" style={{ color: 'var(--muted-foreground)' }} />
           <input
             type="color"
             value={draft || '#000000'}
@@ -178,7 +183,8 @@ export function ColorPicker({ value, onChange, allowClear = true, compact = fals
             if (e.key === 'Enter') { commitHex(); confirm(); }
           }}
           placeholder="#000000"
-          className="flex-1 h-6 px-1.5 rounded-[3px] bg-[#0b0e11] text-[10px] font-mono text-[#eaecef] placeholder-[#4a5568] ring-1 ring-[#313944] focus:ring-[#f0b90b]/50 focus:outline-none transition-all min-w-0"
+          className="flex-1 h-7 px-2 rounded-[4px] text-[11px] font-mono min-w-0"
+          style={{ background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--border)', outline: 'none' }}
         />
 
         {/* No color — prominent clear button */}
@@ -186,11 +192,12 @@ export function ColorPicker({ value, onChange, allowClear = true, compact = fals
           <button
             onClick={clear}
             onMouseDown={(e) => e.preventDefault()}
-            className="h-6 px-1.5 rounded-[3px] shrink-0 bg-[#f87171]/10 ring-1 ring-[#f87171]/25 hover:bg-[#f87171]/20 hover:ring-[#f87171]/40 cursor-pointer transition-all flex items-center justify-center gap-1"
+            className="h-6 px-1.5 rounded-[3px] shrink-0 cursor-pointer transition-all flex items-center justify-center gap-1"
+            style={{ background: 'color-mix(in srgb, var(--destructive) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)' }}
             title="No color"
           >
-            <Droplet size={11} strokeWidth={2} className="text-[#f87171]" />
-            <span className="text-[9px] font-medium text-[#f87171] tracking-wide">Clear</span>
+            <Droplet size={11} strokeWidth={2} style={{ color: 'var(--destructive)' }} />
+            <span className="text-[9px] font-medium tracking-wide" style={{ color: 'var(--destructive)' }}>Clear</span>
           </button>
         )}
 
@@ -198,12 +205,8 @@ export function ColorPicker({ value, onChange, allowClear = true, compact = fals
         <button
           onClick={confirm}
           onMouseDown={(e) => e.preventDefault()}
-          className={cn(
-            'h-6 w-6 rounded-[3px] shrink-0 transition-all cursor-pointer flex items-center justify-center',
-            draft
-              ? 'bg-[#f0b90b] text-[#0b0e11] hover:bg-[#fcd34d] ring-1 ring-[#f0b90b]/30'
-              : 'bg-[#2b3139] text-[#4a5568] pointer-events-none',
-          )}
+          className="h-6 w-6 rounded-[3px] shrink-0 transition-all cursor-pointer flex items-center justify-center"
+          style={draft ? { background: 'var(--primary)', color: 'var(--primary-foreground)' } : { background: 'var(--accent)', color: 'var(--muted-foreground)' }}
           title="Apply color"
         >
           <Check size={13} strokeWidth={2.5} />
@@ -268,13 +271,14 @@ export function ColorPickerPopover({ value, onChange, icon, disabled, allowClear
             {icon}
             <span
               className="w-3.5 h-[2.5px] rounded-full transition-colors"
-              style={{ background: value || '#7a8494' }}
+              style={{ background: value || 'var(--muted-foreground)' }}
             />
           </span>
         </button>
       </div>
       {open && (
-        <div className="absolute z-50 top-full mt-1 left-0 rounded-md border border-[#313944] bg-[#161a1e] shadow-xl shadow-black/40">
+        <div className="absolute z-50 top-full mt-1 left-0 rounded-lg shadow-lg"
+          style={{ border: '1px solid var(--border)', background: 'var(--card)' }}>
           <ColorPicker
             value={value}
             onChange={handleChange}

@@ -311,7 +311,7 @@ test.describe('Border styling and cell selection coexistence', () => {
       const toolbar = document.querySelector('[class*="z-[10000]"]');
       const btns = toolbar?.querySelectorAll('button') ?? [];
       for (const btn of btns) {
-        if (btn.textContent === 'CELL') {
+        if (btn.textContent?.trim() === 'HDR') {
           btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
           return;
         }

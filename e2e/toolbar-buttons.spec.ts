@@ -74,42 +74,28 @@ async function clickToolbarBtn(page: Page, tooltipText: string) {
   await page.waitForTimeout(300);
 }
 
+/** Click the HDR button in the segmented CELL|HDR control */
 async function toggleToHDR(page: Page) {
-  const mode = await page.evaluate(() => {
+  await page.evaluate(() => {
     const toolbar = document.querySelector('[class*="z-[10000]"]');
     const btns = toolbar?.querySelectorAll('button') ?? [];
-    for (const btn of btns) { if (btn.textContent === 'CELL' || btn.textContent === 'HDR') return btn.textContent; }
-    return 'CELL';
+    for (const btn of btns) {
+      if (btn.textContent?.trim() === 'HDR') { btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); return; }
+    }
   });
-  if (mode === 'CELL') {
-    await page.evaluate(() => {
-      const toolbar = document.querySelector('[class*="z-[10000]"]');
-      const btns = toolbar?.querySelectorAll('button') ?? [];
-      for (const btn of btns) {
-        if (btn.textContent === 'CELL') { btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); return; }
-      }
-    });
-    await page.waitForTimeout(300);
-  }
+  await page.waitForTimeout(300);
 }
 
+/** Click the CELL button in the segmented CELL|HDR control */
 async function toggleToCELL(page: Page) {
-  const mode = await page.evaluate(() => {
+  await page.evaluate(() => {
     const toolbar = document.querySelector('[class*="z-[10000]"]');
     const btns = toolbar?.querySelectorAll('button') ?? [];
-    for (const btn of btns) { if (btn.textContent === 'CELL' || btn.textContent === 'HDR') return btn.textContent; }
-    return 'CELL';
+    for (const btn of btns) {
+      if (btn.textContent?.trim() === 'CELL') { btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); return; }
+    }
   });
-  if (mode === 'HDR') {
-    await page.evaluate(() => {
-      const toolbar = document.querySelector('[class*="z-[10000]"]');
-      const btns = toolbar?.querySelectorAll('button') ?? [];
-      for (const btn of btns) {
-        if (btn.textContent === 'HDR') { btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); return; }
-      }
-    });
-    await page.waitForTimeout(300);
-  }
+  await page.waitForTimeout(300);
 }
 
 async function getCellStyle(page: Page, colId: string, prop: string, rowIndex = 0): Promise<string> {

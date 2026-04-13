@@ -96,33 +96,36 @@ async function clickToolbarBtn(page: Page, tooltipText: string) {
   await page.waitForTimeout(300);
 }
 
-/** Click the CELL/HDR toggle button */
+/** Toggle to the other mode — click HDR if currently CELL, or CELL if currently HDR */
 async function toggleCellHeader(page: Page) {
-  await page.evaluate(() => {
+  const mode = await getTargetMode(page);
+  const target = mode === 'CELL' ? 'HDR' : 'CELL';
+  await page.evaluate((t) => {
     const toolbar = document.querySelector('[class*="z-[10000]"]');
     if (!toolbar) throw new Error('Toolbar not found');
     const btns = toolbar.querySelectorAll('button');
     for (const btn of btns) {
-      if (btn.textContent === 'CELL' || btn.textContent === 'HDR') {
+      if (btn.textContent?.trim() === t) {
         btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
         return;
       }
     }
-    throw new Error('CELL/HDR toggle not found');
-  });
+  }, target);
   await page.waitForTimeout(300);
 }
 
-/** Get the current CELL/HDR toggle state */
+/** Get the current CELL/HDR toggle state — the active one has primary background */
 async function getTargetMode(page: Page): Promise<'CELL' | 'HDR'> {
   return page.evaluate(() => {
     const toolbar = document.querySelector('[class*="z-[10000]"]');
     const btns = toolbar?.querySelectorAll('button') ?? [];
     for (const btn of btns) {
-      if (btn.textContent === 'CELL') return 'CELL';
-      if (btn.textContent === 'HDR') return 'HDR';
+      const text = btn.textContent?.trim();
+      if ((text === 'CELL' || text === 'HDR') && btn.style.background?.includes('var(--primary)')) {
+        return text as 'CELL' | 'HDR';
+      }
     }
-    return 'CELL';
+    return 'CELL'; // default
   }) as Promise<'CELL' | 'HDR'>;
 }
 

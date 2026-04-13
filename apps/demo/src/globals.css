@@ -171,21 +171,23 @@ body {
   opacity: 1;
   background: var(--accent);
 }
-/* When a cell IS selected, buttons become fully opaque */
+/* When a cell IS selected, buttons become more opaque with subtle lift on hover */
 .gc-toolbar-enabled .gc-tbtn {
-  opacity: 1;
+  opacity: 0.85;
 }
 .gc-toolbar-enabled .gc-tbtn:hover {
+  opacity: 1;
   background: var(--accent);
 }
 /* Active toggle state (bold ON, italic ON, etc.) */
 .gc-tbtn-active {
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  opacity: 1 !important;
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
   color: var(--primary) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 .gc-tbtn-active:hover {
-  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
 }
 .gc-toolbar-sep {
   width: 1px;
