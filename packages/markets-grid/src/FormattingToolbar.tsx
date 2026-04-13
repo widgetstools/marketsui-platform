@@ -272,134 +272,80 @@ function getColumnName(core: GridCustomizerCore, colId: string): string {
   return colId;
 }
 
-function ensureTemplateAndAssignment(
-  store: GridStore,
-  core: GridCustomizerCore,
-  colIds: string[],
-) {
-  // Ensure each column has a template in column-templates and an assignment in column-customization
-  store.getState().setModuleState('column-templates', (prev: any) => {
-    const templates = { ...prev.templates };
+/** Ensure each column has a ColumnAssignment (but do NOT create auto-templates) */
+function ensureAssignment(store: GridStore, colIds: string[]) {
+  store.getState().setModuleState('column-customization', (prev: any) => {
+    const assignments = { ...prev.assignments };
+    let changed = false;
     for (const colId of colIds) {
-      const tplId = `${colId}_template`;
-      if (!templates[tplId]) {
-        const now = Date.now();
-        templates[tplId] = {
-          id: tplId,
-          name: `${getColumnName(core, colId)} Template`,
-          description: `Auto-created from toolbar`,
-          createdAt: now,
-          updatedAt: now,
-        };
+      if (!assignments[colId]) {
+        assignments[colId] = { colId };
+        changed = true;
       }
     }
-    return { ...prev, templates };
+    return changed ? { ...prev, assignments } : prev;
   });
+}
+
+/** Apply cell styles as per-column overrides (NOT as templates).
+ *  Templates are only created explicitly via "Save As Template". */
+function applyStyle(store: GridStore, core: GridCustomizerCore, colIds: string[], patch: Partial<CellStyleProperties>) {
+  const patchKeys = Object.keys(patch).join(', ');
+  store.getState().pushUndoPoint(`Style ${patchKeys} on ${colIds.join(', ')}`);
+  ensureAssignment(store, colIds);
 
   store.getState().setModuleState('column-customization', (prev: any) => {
     const assignments = { ...prev.assignments };
     for (const colId of colIds) {
-      const tplId = `${colId}_template`;
-      if (!assignments[colId]) {
-        assignments[colId] = { colId, templateIds: [tplId] };
-      } else {
-        const existing = assignments[colId].templateIds ?? (assignments[colId].templateId ? [assignments[colId].templateId] : []);
-        if (!existing.includes(tplId)) {
-          assignments[colId] = { ...assignments[colId], templateIds: [...existing, tplId] };
-        }
+      const a = assignments[colId] ?? { colId };
+      const merged = { ...(a.cellStyleOverrides ?? {}), ...patch };
+      for (const k of Object.keys(merged)) {
+        if ((merged as any)[k] === undefined) delete (merged as any)[k];
       }
+      assignments[colId] = { ...a, cellStyleOverrides: merged };
     }
     return { ...prev, assignments };
   });
 }
 
-function applyStyle(store: GridStore, core: GridCustomizerCore, colIds: string[], patch: Partial<CellStyleProperties>) {
-  // Push undo point
-  const patchKeys = Object.keys(patch).join(', ');
-  store.getState().pushUndoPoint(`Style ${patchKeys} on ${colIds.join(', ')}`);
-
-  ensureTemplateAndAssignment(store, core, colIds);
-
-  // Write style to each column's template with updatedAt
-  store.getState().setModuleState('column-templates', (prev: any) => {
-    const templates = { ...prev.templates };
-    const now = Date.now();
-    for (const colId of colIds) {
-      const a = store.getState().getModuleState<any>('column-customization')?.assignments?.[colId];
-      const tplIds = a?.templateIds ?? (a?.templateId ? [a.templateId] : [`${colId}_template`]);
-      const tplId = tplIds[tplIds.length - 1]; // Use last (own) template
-      const tpl = templates[tplId];
-      if (tpl) {
-        const merged = { ...tpl.cellStyle, ...patch };
-        // Remove keys set to undefined (clearing a property)
-        for (const k of Object.keys(merged)) {
-          if ((merged as any)[k] === undefined) delete (merged as any)[k];
-        }
-        templates[tplId] = { ...tpl, cellStyle: merged, updatedAt: now };
-      }
-    }
-    return { ...prev, templates };
-  });
-}
-
+/** Apply header styles as per-column overrides */
 function applyHeaderStyle(store: GridStore, core: GridCustomizerCore, colIds: string[], patch: Partial<CellStyleProperties>) {
   const patchKeys = Object.keys(patch).join(', ');
   store.getState().pushUndoPoint(`Header style ${patchKeys} on ${colIds.join(', ')}`);
+  ensureAssignment(store, colIds);
 
-  ensureTemplateAndAssignment(store, core, colIds);
-
-  store.getState().setModuleState('column-templates', (prev: any) => {
-    const templates = { ...prev.templates };
-    const now = Date.now();
+  store.getState().setModuleState('column-customization', (prev: any) => {
+    const assignments = { ...prev.assignments };
     for (const colId of colIds) {
-      const a = store.getState().getModuleState<any>('column-customization')?.assignments?.[colId];
-      const tplIds = a?.templateIds ?? (a?.templateId ? [a.templateId] : [`${colId}_template`]);
-      const tplId = tplIds[tplIds.length - 1];
-      const tpl = templates[tplId];
-      if (tpl) {
-        const merged = { ...tpl.headerStyle, ...patch };
-        for (const k of Object.keys(merged)) {
-          if ((merged as any)[k] === undefined) delete (merged as any)[k];
-        }
-        templates[tplId] = { ...tpl, headerStyle: merged, updatedAt: now };
+      const a = assignments[colId] ?? { colId };
+      const merged = { ...(a.headerStyleOverrides ?? {}), ...patch };
+      for (const k of Object.keys(merged)) {
+        if ((merged as any)[k] === undefined) delete (merged as any)[k];
       }
+      assignments[colId] = { ...a, headerStyleOverrides: merged };
     }
-    return { ...prev, templates };
+    return { ...prev, assignments };
   });
 }
 
-/** Remove specific border keys from ALL templates for given columns — lets AG-Grid theme borders show through */
+/** Remove specific border keys from per-column overrides — lets AG-Grid theme borders show through */
 function clearBorderKeys(
   store: GridStore, core: GridCustomizerCore, colIds: string[],
   keys: string[], target: 'cell' | 'header',
 ) {
   store.getState().pushUndoPoint(`Clear borders on ${colIds.join(', ')}`);
-  ensureTemplateAndAssignment(store, core, colIds);
+  ensureAssignment(store, colIds);
 
-  store.getState().setModuleState('column-templates', (prev: any) => {
-    const templates = { ...prev.templates };
-    const now = Date.now();
+  const overrideKey = target === 'header' ? 'headerStyleOverrides' : 'cellStyleOverrides';
+  store.getState().setModuleState('column-customization', (prev: any) => {
+    const assignments = { ...prev.assignments };
     for (const colId of colIds) {
-      const a = store.getState().getModuleState<any>('column-customization')?.assignments?.[colId];
-      const tplIds = a?.templateIds ?? (a?.templateId ? [a.templateId] : [`${colId}_template`]);
-      // Strip border keys from EVERY template in the chain
-      for (const tplId of tplIds) {
-        const tpl = templates[tplId];
-        if (!tpl) continue;
-        const styleKey = target === 'header' ? 'headerStyle' : 'cellStyle';
-        const style = tpl[styleKey];
-        if (!style) continue;
-        let changed = false;
-        const cleaned = { ...style };
-        for (const k of keys) {
-          if (k in cleaned) { delete (cleaned as any)[k]; changed = true; }
-        }
-        if (changed) {
-          templates[tplId] = { ...tpl, [styleKey]: cleaned, updatedAt: now };
-        }
-      }
+      const a = assignments[colId] ?? { colId };
+      const overrides = { ...(a[overrideKey] ?? {}) };
+      for (const k of keys) { delete (overrides as any)[k]; }
+      assignments[colId] = { ...a, [overrideKey]: overrides };
     }
-    return { ...prev, templates };
+    return { ...prev, assignments };
   });
 }
 
@@ -414,25 +360,18 @@ function borderKeysForSide(side: string): string[] {
   return [`border${side}Width`, `border${side}Style`, `border${side}Color`];
 }
 
+/** Apply value formatter as per-column override (NOT as template) */
 function applyFormatter(store: GridStore, core: GridCustomizerCore, colIds: string[], expr: string | undefined) {
   store.getState().pushUndoPoint(`Format on ${colIds.join(', ')}`);
+  ensureAssignment(store, colIds);
 
-  ensureTemplateAndAssignment(store, core, colIds);
-
-  // Write formatter to each column's template with updatedAt
-  store.getState().setModuleState('column-templates', (prev: any) => {
-    const templates = { ...prev.templates };
-    const now = Date.now();
+  store.getState().setModuleState('column-customization', (prev: any) => {
+    const assignments = { ...prev.assignments };
     for (const colId of colIds) {
-      const a = store.getState().getModuleState<any>('column-customization')?.assignments?.[colId];
-      const tplIds = a?.templateIds ?? (a?.templateId ? [a.templateId] : [`${colId}_template`]);
-      const tplId = tplIds[tplIds.length - 1];
-      const tpl = templates[tplId];
-      if (tpl) {
-        templates[tplId] = { ...tpl, valueFormatterTemplate: expr, updatedAt: now };
-      }
+      const a = assignments[colId] ?? { colId };
+      assignments[colId] = { ...a, valueFormatterTemplate: expr };
     }
-    return { ...prev, templates };
+    return { ...prev, assignments };
   });
 }
 
