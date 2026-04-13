@@ -114,14 +114,14 @@ async function toggleCellHeader(page: Page) {
   await page.waitForTimeout(300);
 }
 
-/** Get the current CELL/HDR toggle state — the active one has primary background */
+/** Get the current CELL/HDR toggle state — the active one has bg-primary class */
 async function getTargetMode(page: Page): Promise<'CELL' | 'HDR'> {
   return page.evaluate(() => {
     const toolbar = document.querySelector('[class*="z-[10000]"]');
     const btns = toolbar?.querySelectorAll('button') ?? [];
     for (const btn of btns) {
       const text = btn.textContent?.trim();
-      if ((text === 'CELL' || text === 'HDR') && btn.style.background?.includes('var(--primary)')) {
+      if ((text === 'CELL' || text === 'HDR') && btn.className.includes('bg-primary')) {
         return text as 'CELL' | 'HDR';
       }
     }
