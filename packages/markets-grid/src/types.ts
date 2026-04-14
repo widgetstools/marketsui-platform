@@ -1,5 +1,30 @@
+import type { ReactNode } from 'react';
 import type { ColDef, ColGroupDef, GridReadyEvent, SideBarDef, StatusPanelDef } from 'ag-grid-community';
 import type { AnyModule } from '@grid-customizer/core';
+
+/** Defines an additional toolbar that shares space with the formatting toolbar. */
+export interface ToolbarSlotConfig {
+  /** Unique ID for this toolbar */
+  id: string;
+  /** Short label shown in the pill (e.g. "Layout", "Data") */
+  label: string;
+  /** Pill accent color — CSS color string */
+  color?: string;
+  /** The toolbar React element to render */
+  content: ReactNode;
+}
+
+/** A saved filter snapshot with a user-editable label and toggle state. */
+export interface SavedFilter {
+  /** Unique ID: `sf_{timestamp}_{random}` */
+  id: string;
+  /** User-editable label (e.g. "Buy Orders", "Status: FILLED") */
+  label: string;
+  /** Snapshot of AG-Grid's getFilterModel() at capture time */
+  filterModel: Record<string, any>;
+  /** Whether this filter is currently applied */
+  active: boolean;
+}
 
 export interface MarketsGridProps<TData = any> {
   // Required
@@ -16,6 +41,19 @@ export interface MarketsGridProps<TData = any> {
   showToolbar?: boolean;
   showSettingsButton?: boolean;
   persistState?: boolean;
+
+  /**
+   * Additional toolbars that share space with the formatting toolbar.
+   * The formatting toolbar is always the first slot (id: "style").
+   * Users switch between toolbars via colored pills at the top edge.
+   */
+  extraToolbars?: ToolbarSlotConfig[];
+
+  /**
+   * Show the built-in Filters toolbar in the toolbar switcher.
+   * Allows users to capture, name, and toggle saved grid filters.
+   */
+  showFiltersToolbar?: boolean;
 
   // AG-Grid passthrough
   rowHeight?: number;
