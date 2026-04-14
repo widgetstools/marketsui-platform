@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { ColDef, ColGroupDef, GridReadyEvent, SideBarDef, StatusPanelDef } from 'ag-grid-community';
-import type { AnyModule } from '@grid-customizer/core';
+import type { AnyModule, StorageAdapter } from '@grid-customizer/core';
 
 /** Defines an additional toolbar that shares space with the formatting toolbar. */
 export interface ToolbarSlotConfig {
@@ -10,6 +10,8 @@ export interface ToolbarSlotConfig {
   label: string;
   /** Pill accent color — CSS color string */
   color?: string;
+  /** Icon element shown in the toolbar switcher dropdown */
+  icon?: ReactNode;
   /** The toolbar React element to render */
   content: ReactNode;
 }
@@ -54,6 +56,14 @@ export interface MarketsGridProps<TData = any> {
    * Allows users to capture, name, and toggle saved grid filters.
    */
   showFiltersToolbar?: boolean;
+
+  /**
+   * Optional storage backend enabling multi-profile support (the Profiles
+   * settings panel). Typical choices: `new DexieAdapter()` (IndexedDB),
+   * `new LocalStorageAdapter()`, or `new RestAdapter({ baseUrl })`.
+   * If omitted, the Profiles panel shows its "not configured" empty state.
+   */
+  storageAdapter?: StorageAdapter;
 
   // AG-Grid passthrough
   rowHeight?: number;

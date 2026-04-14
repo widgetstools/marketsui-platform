@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { ColDef } from 'ag-grid-community';
 import { themeQuartz } from 'ag-grid-community';
 import { MarketsGrid, type ToolbarSlotConfig } from '@grid-customizer/markets-grid';
+import { DexieAdapter } from '@grid-customizer/core';
 import { Sun, Moon, Database } from 'lucide-react';
 
 import { generateOrders, type Order } from './data';
@@ -87,14 +88,18 @@ export function App() {
 
   const theme = isDark ? darkTheme : lightTheme;
 
+  // Persistent profile storage (IndexedDB) — enables the Profiles settings panel
+  const storageAdapter = useMemo(() => new DexieAdapter(), []);
+
   // Demo extra toolbars — placeholder content to showcase the switcher
   const extraToolbars: ToolbarSlotConfig[] = [
     {
       id: 'data',
       label: 'Data',
       color: 'var(--bn-blue, #3da0ff)',
+      icon: <Database size={12} strokeWidth={1.75} />,
       content: (
-        <div className="flex items-center gap-3 h-9 shrink-0 border-b border-border bg-card text-xs px-4">
+        <div className="flex items-center gap-3 h-11 shrink-0 border-b border-border bg-card text-xs px-4">
           <Database size={14} strokeWidth={1.75} style={{ color: 'var(--bn-blue)' }} />
           <span style={{ color: 'var(--muted-foreground)', fontSize: 11 }}>
             Data connections, live subscriptions, and field mappings — coming soon
@@ -107,36 +112,26 @@ export function App() {
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
       <header style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '8px 16px', borderBottom: '1px solid var(--border)', background: 'var(--card)',
+        display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+        padding: '6px 12px', borderBottom: '1px solid var(--border)', background: 'var(--card)',
+        gap: 12,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, fontFamily: "var(--fi-sans, 'Geist', sans-serif)" }}>
-            <span style={{ color: isDark ? '#2dd4bf' : '#0d9488' }}>Markets</span>
-            <span style={{ color: 'var(--foreground)' }}>Grid</span>
-          </div>
-          <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 2, background: isDark ? 'rgba(45,212,191,0.10)' : 'rgba(13,148,136,0.10)', color: isDark ? '#2dd4bf' : '#0d9488', fontFamily: "var(--fi-mono, 'JetBrains Mono', monospace)", fontWeight: 500 }}>
-            v0.1.0
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 9, color: 'var(--muted-foreground)' }}>{rowData.length} orders</span>
-          <button
-            onClick={() => setIsDark(!isDark)}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 28, height: 28, borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--secondary)',
-              color: 'var(--foreground)',
-              cursor: 'pointer',
-              transition: 'all 150ms',
-            }}
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDark ? <Sun size={14} strokeWidth={1.75} /> : <Moon size={14} strokeWidth={1.75} />}
-          </button>
-        </div>
+        <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{rowData.length} orders</span>
+        <button
+          onClick={() => setIsDark(!isDark)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 26, height: 26, borderRadius: 5,
+            border: '1px solid var(--border)',
+            background: 'var(--secondary)',
+            color: 'var(--foreground)',
+            cursor: 'pointer',
+            transition: 'all 150ms',
+          }}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? <Sun size={13} strokeWidth={1.75} /> : <Moon size={13} strokeWidth={1.75} />}
+        </button>
       </header>
 
       <div style={{ flex: 1 }}>
@@ -147,6 +142,7 @@ export function App() {
           theme={theme}
           rowIdField="id"
           showFiltersToolbar={true}
+          storageAdapter={storageAdapter}
           extraToolbars={extraToolbars}
           sideBar={{ toolPanels: ['columns', 'filters'] }}
           statusBar={{
