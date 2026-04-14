@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { GridCustomizerCore, GridStore } from '@grid-customizer/core';
-import { Button, Input, Tooltip, cn } from '@grid-customizer/core';
+import { Button, Tooltip, cn } from '@grid-customizer/core';
 import { Plus, Save, Check, Filter, Pencil, Trash2 } from 'lucide-react';
 import type { SavedFilter } from './types';
 
@@ -195,7 +195,7 @@ export function FiltersToolbar({ core, store, gridId, activeFiltersRef }: Filter
       </Tooltip>
 
       {/* Separator */}
-      {filters.length > 0 && <div className="gc-toolbar-sep" />}
+      {filters.length > 0 && <div className="gc-toolbar-sep h-5" />}
 
       {/* Filter toggle buttons + save (flex-1 to push save right) */}
       <div className="flex-1 flex items-center gap-1 overflow-x-auto min-w-0">
