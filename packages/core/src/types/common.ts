@@ -19,7 +19,7 @@ export interface ValidationResult {
 }
 
 // ─── CSS Style Properties — shared shape used by conditional-styling and
-// the style adapters in core-v2. Keep in sync with the keys produced by
+// the style adapters in core. Keep in sync with the keys produced by
 // `styleBridge.ts` and consumed by `applyCellStyle`. ─────────────────────
 
 export interface CellStyleProperties {
