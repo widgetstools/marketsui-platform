@@ -741,4 +741,4 @@ Append one line per completed session: `<sha> | session N | one-line summary`.
 6152ad6 | session 3 | test view manifests + routes (a manifest, +three lazy /views/test-blotter-{a,b,template} routes mounting BlottersMarketsGrid; dev-server fetch + dock-invisibility deferred to reviewer)
 67479c7 | session 3 | follow-up: b + template manifests (git add dropped on prior commit)
 9a060d0 | session 4 | CDP attach prototype (spec lists via `playwright test --list`; runtime execution deferred to reviewer — needs OpenFin RVM + dev server)
-<pending-sha> | session 5 | openfin fixture + smoke (worker-scoped platform/cdpBrowser + test-scoped openView; webServer added to playwright.config.ts; typecheck clean, both specs list; runtime execution of 02-smoke deferred to reviewer)
+767d6e3 | session 5 | openfin fixture + smoke (worker-scoped platform/cdpBrowser + test-scoped openView; webServer added to playwright.config.ts; typecheck clean, both specs list; runtime execution of 02-smoke deferred to reviewer)
