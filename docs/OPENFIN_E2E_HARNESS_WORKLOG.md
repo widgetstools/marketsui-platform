@@ -740,3 +740,4 @@ Append one line per completed session: `<sha> | session N | one-line summary`.
 361eb33 | session 2 | launchPlatform helper + smoke (manual runtime smoke deferred to reviewer — needs OpenFin RVM + port 9090 + dev server)
 6152ad6 | session 3 | test view manifests + routes (a manifest, +three lazy /views/test-blotter-{a,b,template} routes mounting BlottersMarketsGrid; dev-server fetch + dock-invisibility deferred to reviewer)
 67479c7 | session 3 | follow-up: b + template manifests (git add dropped on prior commit)
+<pending> | session 4 | CDP attach prototype (spec lists via `playwright test --list`; runtime execution deferred to reviewer — needs OpenFin RVM + dev server)
