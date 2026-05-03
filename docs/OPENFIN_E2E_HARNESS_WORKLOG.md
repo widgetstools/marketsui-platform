@@ -737,3 +737,4 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 Append one line per completed session: `<sha> | session N | one-line summary`.
 
 54aeb4f | session 1 | scaffold workspace (replaced prior Vitest harness with Playwright per D3/D4)
+361eb33 | session 2 | launchPlatform helper + smoke (manual runtime smoke deferred to reviewer — needs OpenFin RVM + port 9090 + dev server)
