@@ -742,3 +742,4 @@ Append one line per completed session: `<sha> | session N | one-line summary`.
 67479c7 | session 3 | follow-up: b + template manifests (git add dropped on prior commit)
 9a060d0 | session 4 | CDP attach prototype (spec lists via `playwright test --list`; runtime execution deferred to reviewer — needs OpenFin RVM + dev server)
 767d6e3 | session 5 | openfin fixture + smoke (worker-scoped platform/cdpBrowser + test-scoped openView; webServer added to playwright.config.ts; typecheck clean, both specs list; runtime execution of 02-smoke deferred to reviewer)
+829da99 | session 6 | customData identity specs (3 tests: fin.me.getOptions() readback for blotter-a + template, toolbar info popover surfaces componentName + instanceId; popover assertion targets componentName since componentType is not surfaced in the toolbar today; typecheck clean, all 3 specs list; runtime execution deferred to reviewer)
