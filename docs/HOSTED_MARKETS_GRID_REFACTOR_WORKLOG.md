@@ -576,7 +576,7 @@ Append one line per completed session: `<sha> | session N | one-line summary`.
 Both require running the reference app in OpenFin / a live dev server, which isn't possible from the agent shell. They are listed in the PR's test-plan checklist as deferred:
 
 1. **Theme-source verification** — temporarily change `headerBackgroundColor` in `agGridBlotterDarkParams` (`packages/design-system/src/adapters/ag-grid.ts`), rebuild, observe header re-color in the running app, revert.
-2. **Multi-window OpenFin storage isolation** — launch the reference app in OpenFin, open two MarketsGrid windows, change profile in one, confirm the other window is unaffected.
+2. **Multi-window OpenFin storage isolation** — launch the reference app in OpenFin, open two MarketsGrid windows, change profile in one, confirm the other window is unaffected. **Automated** by `e2e-openfin/tests/05-multi-window-isolation.spec.ts` (OpenFin worklog session 8). The browser-side parity gap on §1.13 (per-view active-profile workspace round-trip and duplicate-view divergence) is also now automated by `e2e-openfin/tests/06-per-view-active-profile-override.spec.ts` (OpenFin worklog session 9). Both require an OpenFin RVM on the reviewer's box; the manual walk remains valid as a hand-verification path.
 
 The browser-side parity walk is fully covered by `e2e/hosted-markets-grid.spec.ts` (5/5 green) and the 27 Vitest specs under `packages/widgets-react/src/hosted/__tests__/`.
 
