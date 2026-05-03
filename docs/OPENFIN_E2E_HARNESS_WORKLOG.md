@@ -736,4 +736,4 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 
 Append one line per completed session: `<sha> | session N | one-line summary`.
 
-(Empty — sessions 1-12 are pending. Append commits as the work lands.)
+54aeb4f | session 1 | scaffold workspace (replaced prior Vitest harness with Playwright per D3/D4)
