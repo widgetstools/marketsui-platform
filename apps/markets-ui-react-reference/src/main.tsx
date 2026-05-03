@@ -93,6 +93,15 @@ async function createRuntimeForViews(): Promise<RuntimePort> {
 const runtimePromise = createRuntimeForViews();
 const configManager = createConfigClient({});
 
+// Dev-only debug hook — exposes the route-shell's ConfigClient so the
+// e2e-openfin harness can inspect AppConfigRow writes without poking
+// Dexie directly. Stripped from production builds via the `import.meta.env.DEV`
+// guard (Vite replaces it with the literal `false` in `npm run build`,
+// so the assignment becomes dead code and tree-shakes away).
+if (import.meta.env.DEV) {
+  (window as unknown as { __configManager?: typeof configManager }).__configManager = configManager;
+}
+
 function ViewRoutesLayout() {
   return (
     <HostWrapper runtime={runtimePromise} configManager={configManager}>
