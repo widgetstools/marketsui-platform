@@ -32,3 +32,26 @@ export function listPages(browser: Browser): Page[] {
   }
   return pages;
 }
+
+/**
+ * Find any page that has the OpenFin `fin` API available — used in attach
+ * mode where we drive `Platform.createView` from a page rather than Node.
+ * The platform provider window (`/platform/provider`) is always present
+ * in a running platform.
+ */
+export async function findPlatformPage(browser: Browser): Promise<Page> {
+  for (const page of listPages(browser)) {
+    try {
+      const hasFin = await page.evaluate(
+        () => typeof (globalThis as { fin?: unknown }).fin !== 'undefined',
+      );
+      if (hasFin) return page;
+    } catch {
+      /* page may have closed */
+    }
+  }
+  throw new Error(
+    'No OpenFin-aware page found via CDP. Is the platform actually running ' +
+      '(npm run dev:openfin:markets-react)?',
+  );
+}

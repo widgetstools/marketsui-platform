@@ -12,16 +12,26 @@ export interface PlatformHandle {
 
 export interface LaunchPlatformOptions {
   manifestUrl?: string;
-  timeoutMs?: number;
+  /** Timeout for the initial RVM port-discovery step. Default 180_000ms — RVM cold-start + manifest fetch can be slow. */
+  launchTimeoutMs?: number;
+  /** Timeout for connect / fetchManifest / platform-api-ready. Default 30_000ms. */
+  stageTimeoutMs?: number;
 }
 
+// Manifest URL must match the host that the manifest's internal URLs
+// (providerUrl, view manifest URLs) declare — otherwise OpenFin's security
+// realm enforcement treats them as cross-origin and the runtime
+// self-terminates ~70ms after spawn. The reference app manifest hard-codes
+// `localhost:5174`, so the harness must use the same.
 const DEFAULT_MANIFEST_URL = 'http://localhost:5174/platform/manifest.fin.json';
-const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_LAUNCH_TIMEOUT_MS = 180_000;
+const DEFAULT_STAGE_TIMEOUT_MS = 30_000;
 const DEBUG_PORT = 9090;
 
 export async function launchPlatform(opts: LaunchPlatformOptions = {}): Promise<PlatformHandle> {
   const manifestUrl = opts.manifestUrl ?? DEFAULT_MANIFEST_URL;
-  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const launchTimeoutMs = opts.launchTimeoutMs ?? DEFAULT_LAUNCH_TIMEOUT_MS;
+  const stageTimeoutMs = opts.stageTimeoutMs ?? DEFAULT_STAGE_TIMEOUT_MS;
 
   try {
     setDefaultResultOrder('ipv4first');
@@ -31,8 +41,8 @@ export async function launchPlatform(opts: LaunchPlatformOptions = {}): Promise<
 
   const port = await withTimeout(
     launch({ manifestUrl }),
-    timeoutMs,
-    `launch(${manifestUrl}) timed out after ${timeoutMs}ms`,
+    launchTimeoutMs,
+    `launch(${manifestUrl}) timed out after ${launchTimeoutMs}ms`,
   );
 
   const fin = await withTimeout(
@@ -41,14 +51,14 @@ export async function launchPlatform(opts: LaunchPlatformOptions = {}): Promise<
       address: `ws://127.0.0.1:${port}`,
       nonPersistent: true,
     }),
-    timeoutMs,
-    `connect(ws://127.0.0.1:${port}) timed out after ${timeoutMs}ms`,
+    stageTimeoutMs,
+    `connect(ws://127.0.0.1:${port}) timed out after ${stageTimeoutMs}ms`,
   );
 
   const manifest = await withTimeout(
     fin.System.fetchManifest(manifestUrl),
-    timeoutMs,
-    `fetchManifest(${manifestUrl}) timed out after ${timeoutMs}ms`,
+    stageTimeoutMs,
+    `fetchManifest(${manifestUrl}) timed out after ${stageTimeoutMs}ms`,
   );
 
   const platformUuid = manifest?.platform?.uuid;
@@ -64,8 +74,8 @@ export async function launchPlatform(opts: LaunchPlatformOptions = {}): Promise<
     new Promise<void>((resolve) => {
       platform.once('platform-api-ready', () => resolve());
     }),
-    timeoutMs,
-    `platform-api-ready not emitted within ${timeoutMs}ms for ${platformUuid}`,
+    stageTimeoutMs,
+    `platform-api-ready not emitted within ${stageTimeoutMs}ms for ${platformUuid}`,
   );
 
   let quitRequested = false;

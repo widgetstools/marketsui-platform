@@ -5,6 +5,13 @@ import type { Browser } from '@playwright/test';
 
 test.describe.configure({ mode: 'serial' });
 
+// In attach mode, the user owns the runtime — there's nothing to launch
+// or quit, so this self-contained launch/quit smoke is meaningless.
+test.skip(
+  process.env.OPENFIN_ATTACH === '1',
+  'attach mode: harness does not own runtime lifecycle',
+);
+
 test('cdp-attach — Playwright connects to OpenFin runtime and enumerates pages', async () => {
   test.setTimeout(60_000);
 

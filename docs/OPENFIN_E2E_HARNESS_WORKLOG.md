@@ -795,3 +795,97 @@ the reviewer per the harness's local-only constraint and the
 zero-broken-state rule from the worklog header (each prior session
 already cleared its own runtime acceptance with the reviewer or
 recorded the deferral).
+
+---
+
+## Runtime validation findings (post-session-12)
+
+Sessions 1–11 each ended with "runtime execution deferred to reviewer" —
+typecheck green and `playwright test --list` listing the right specs,
+but no session had a runtime green. Session 12 closed out as docs-only.
+The first end-to-end runtime attempt (this follow-up) surfaced a chain
+of stacked issues that block runtime green. Documenting them here so the
+next session has a clear punch list rather than re-discovering each from
+scratch.
+
+The harness's typecheck remains green and the architectural decisions
+(D1–D8) still hold — the issues below are environmental / Playwright +
+OpenFin integration gaps, not architectural mistakes.
+
+### What the runtime attempt produced
+
+- `e2e-openfin/helpers/__diag__.ts` — attach-mode CDP diagnostic that
+  connects via `chromium.connectOverCDP`, lists pages, calls
+  `Platform.createWindow` from a platform page, and compares
+  Playwright's view of pages against raw CDP `/json/list`. **Kept in
+  the repo** because the next runtime session needs it as the starting
+  point, not because it's a finished test.
+- An attach-mode switch in the fixture and config:
+  `OPENFIN_ATTACH=1 npm run test:e2e:openfin` skips
+  `launchPlatform()` (and the `webServer`) entirely, attaches to a
+  user-launched runtime (`npm run dev:openfin:markets-react`), and
+  drives `Platform.createWindow` via `page.evaluate` against a
+  platform window. Tests `01` (manual launch) and `06` (workspace
+  round-trip — needs node-side `fin`) skip themselves under
+  `OPENFIN_ATTACH=1` since they require the launchPlatform path.
+
+### Issues found, in the order they surfaced
+
+| # | Issue | Status |
+|---|---|---|
+| 1 | `launchPlatform`'s 30s default raced node-adapter port discovery (60s ceiling) | **Fixed** — bumped launch-step timeout to 180s, kept connect / fetchManifest / api-ready at 30s. `e2e-openfin/helpers/launchPlatform.ts`. |
+| 2 | Playwright `webServer` spawning `npm run dev` leaves a Vite grandchild orphan on Windows after kills (every prior run accumulates a holder of port 5174) | **Mitigated** — `playwright.config.ts` now invokes `npx vite` directly via `cwd`; the user must still kill orphans manually before runs (worklog Constraints already say "fail fast on port-in-use"). |
+| 3 | OpenFin runtime cache `openfin.lock` becomes stale after a force-kill mid-flight; the runtime then self-terminates ~70 ms after spawn with no logs (RVM logs only "Validation of tray icon failed" warning, then "Termination event") | **Workaround** — delete `%LOCALAPPDATA%\OpenFin\cache\react-workspace-starter\<runtimeVersion>\openfin.lock` (or the whole realm dir) before re-running. Documented in `e2e-openfin/README.md`'s Troubleshooting. |
+| 4 | Manifest URL host **must match** the host the manifest's *internal* URLs (`providerUrl`, view manifest URLs) declare, or OpenFin's security-realm origin matching rejects the runtime as cross-origin and it self-terminates. Our manifest hard-codes `localhost`, so passing `http://127.0.0.1:5174/...` fails silently. | **Fixed** — `launchPlatform.ts` `DEFAULT_MANIFEST_URL` and all spec view URLs revert to `localhost:5174`. Comment in `launchPlatform.ts` records the rule. |
+| 5 | `Platform.createView({ name, manifestUrl }, undefined)` — the original session-5 fixture path — returns a *detached* `View` object: it has an identity but never attaches to a window, never loads the URL, never produces a renderer or CDP target. **Every spec from session 5 onward would have failed at runtime if anyone had executed them.** | **Fixed** — fixture now calls `Platform.createWindow({ layout: { content: [{ type: 'stack', content: [{ type: 'component', componentName: 'view', componentState: { name, url } }] } ] } })`. The view URL must come from the manifest's `url` field, not the manifest URL itself. The fixture fetches the manifest from Node side (the platform page can't, due to cross-origin against the `workspace.openfin.co` dock origin). |
+| 6 | **Playwright's `chromium.connectOverCDP` does not see all OpenFin renderer targets.** With a real platform up, `browser.contexts()[*].pages()` shows 8 pages while raw CDP `/json/list` shows 13. The 5 missing targets are the OpenFin view renderers we care about — they sit in browser contexts Playwright didn't auto-attach to. This is why `findPageByUrlSubstring` returns null even though the view's URL is in the runtime's target list. | **Open — blocks every spec.** Two repair paths: (a) bypass Playwright's contexts entirely — poll raw CDP `/json/list`, find target by URL, use `chromium.connectOverCDP` against that page's `webSocketDebuggerUrl` directly (loses some Playwright `Page` ergonomics for context-level operations); (b) restructure tests so they run *inside* the dock's existing platform window via `page.evaluate`, never opening new platform windows — would bypass (6) entirely but constrains how tests can isolate state. (a) is the surgical fix; (b) the architectural one. |
+
+### Diagnostic evidence captured
+
+- RVM logs at `%LOCALAPPDATA%\OpenFin\logs\rvm.log` and rotated archive
+  zips show the 70-90 ms self-terminate cycle when the
+  manifest-URL-vs-internal-URL host mismatched (issue 4) and after
+  force-kills (issue 3).
+- `e2e-openfin/helpers/__diag__.ts` reproduced (5) and (6) cleanly: it
+  attached to a user-launched runtime, called `Platform.createWindow`
+  with a layout, watched Playwright's page list vs raw CDP for 15 s.
+  `Platform.createWindow` returned `{ ok: true, identity: ... }` every
+  time, but Playwright's count never increased while raw CDP held 5
+  more targets.
+
+### Architectural decisions still standing
+
+D1–D8 from the worklog header are unaffected. The harness's shape
+(separate `e2e-openfin/` dir, CDP attach, per-test view UUIDs,
+worker-scoped platform fixture) all remain correct. The unfinished work
+is implementation-level, not architectural.
+
+### Recommended next session — "Session 13: runtime green"
+
+1. Pick repair path (a) or (b) for issue 6 (recommend **(a)** — raw CDP
+   target lookup; preserves the existing test bodies' use of
+   `page.evaluate` for OpenFin API calls).
+2. Promote `helpers/__diag__.ts` into a real `findPageByUrlOnRawCDP`
+   helper. Wire it into the `openView` fixture in attach mode.
+3. Decide whether to keep `launchPlatform` as the default mode at all,
+   or swap the default to attach mode. Issue 3 (cache lock recovery)
+   is genuinely fragile under harness-managed lifecycle; attach mode
+   sidesteps it because the user owns the runtime.
+4. Run the suite under `OPENFIN_ATTACH=1` against a live
+   `dev:openfin:markets-react`. Specs `01` and `06` skip themselves
+   today; revisit `06` (workspace round-trip) once attach mode is
+   green — `Platform.applySnapshot` works fine via `page.evaluate`,
+   the original code just used the node-side handle for convenience.
+
+### What was not changed
+
+- The 12 documented sessions in this worklog stand as-is. Their commit
+  shas in the Session log remain the historical record. The `Harness
+  complete` heading above is accurate for *typecheck-and-architecture*
+  completeness but not for runtime green — this section corrects that
+  framing.
+- `IMPLEMENTED_FEATURES.md` §1.15 description still applies to the
+  shape of the harness; runtime status is documented here, not there.
+- `MANUAL_CHECKLIST.md` and `README.md` are unchanged — both are
+  accurate for the architecture, and the README's Troubleshooting
+  section already covers most of issues 1–4.

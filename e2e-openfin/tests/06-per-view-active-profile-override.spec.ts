@@ -3,6 +3,15 @@ import { findPageByUrlSubstring } from '../helpers/connectPlaywright';
 import { deleteConfigsByOwner } from '../helpers/configReader';
 import type { Browser, Page } from '@playwright/test';
 
+// Both specs in this file drive Platform.applySnapshot / createView from
+// the node-adapter `fin` handle. In attach mode the harness has no such
+// handle (the user owns the runtime), so they're skipped. Re-running them
+// requires `OPENFIN_ATTACH` unset and a working launchPlatform path.
+test.skip(
+  process.env.OPENFIN_ATTACH === '1',
+  'attach mode: workspace round-trip needs node-side fin handle',
+);
+
 /**
  * Parity §1.13 — per-view active-profile override (OpenFin-only).
  *
