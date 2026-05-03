@@ -130,6 +130,36 @@ root.render(
             <Route path="/views/view1" element={<View1 />} />
             <Route path="/views/view2" element={<View2 />} />
 
+            {/* Test-only routes for the e2e-openfin harness. Mount the
+                same BlottersMarketsGrid component as /blotters/marketsgrid;
+                the manifest's customData.instanceId (e.g. e2e-openfin-test-a)
+                is what drives identity under OpenFin, so each route
+                renders the wrapper but the harness asserts via customData. */}
+            <Route
+              path="/views/test-blotter-a"
+              element={
+                <React.Suspense fallback={LOADING}>
+                  <BlottersMarketsGrid />
+                </React.Suspense>
+              }
+            />
+            <Route
+              path="/views/test-blotter-b"
+              element={
+                <React.Suspense fallback={LOADING}>
+                  <BlottersMarketsGrid />
+                </React.Suspense>
+              }
+            />
+            <Route
+              path="/views/test-blotter-template"
+              element={
+                <React.Suspense fallback={LOADING}>
+                  <BlottersMarketsGrid />
+                </React.Suspense>
+              }
+            />
+
             {/* Blotters — MarketsGrid hosted inside the reference app.
                 DexieAdapter persists profile state locally; theme flows
                 through the ambient <ThemeProvider>. */}
