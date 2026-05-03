@@ -1,10 +1,8 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "bundler",
     "noEmit": true,
-    "types": ["vitest/globals", "node"]
+    "types": ["@playwright/test", "node"]
   },
-  "include": ["helpers/**/*.ts", "specs/**/*.ts", "vitest.config.ts"]
+  "include": ["**/*.ts"]
 }
