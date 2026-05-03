@@ -1,0 +1,13 @@
+{
+  "_comment": "Test-only view manifest. Used by e2e-openfin/. Do not advertise on the dock.",
+  "url": "http://localhost:5174/views/test-blotter-template",
+  "customData": {
+    "instanceId": "e2e-openfin-template",
+    "appId": "e2e-openfin",
+    "userId": "e2e-runner",
+    "componentType": "MarketsGrid",
+    "componentSubType": "FX",
+    "isTemplate": true,
+    "singleton": true
+  }
+}
