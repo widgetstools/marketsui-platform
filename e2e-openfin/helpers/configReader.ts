@@ -15,12 +15,18 @@ export interface ConfigRowSnapshot {
   singleton?: boolean;
 }
 
+interface DebugConfigRowFull extends ConfigRowSnapshot {
+  payload?: { gridLevelData?: { liveProviderId?: string | null } & Record<string, unknown> } & Record<string, unknown>;
+}
+
 interface DebugConfigManager {
   queryConfigs: (filter: {
     appIds?: string[];
     userIds?: string[];
     componentTypes?: string[];
-  }) => Promise<ConfigRowSnapshot[]>;
+  }) => Promise<DebugConfigRowFull[]>;
+  getConfig: (configId: string) => Promise<DebugConfigRowFull | undefined>;
+  updateConfig: (configId: string, patch: Record<string, unknown>) => Promise<DebugConfigRowFull>;
   deleteConfig: (configId: string) => Promise<boolean>;
 }
 
@@ -81,5 +87,71 @@ export async function deleteConfigsByOwner(
     }
     return deleted;
   }, filter);
+}
+
+/**
+ * Read `payload.gridLevelData.liveProviderId` from the row keyed by
+ * `configId` (which is the OpenFin `customData.instanceId`). Returns
+ * `null` when the row exists but has no gridLevelData yet, and
+ * `undefined` when no row exists.
+ *
+ * Used by the multi-window isolation spec to assert that a write under
+ * one view's instanceId never spills into the sibling view's row.
+ */
+export async function readGridLevelLiveProviderId(
+  page: Page,
+  configId: string,
+): Promise<string | null | undefined> {
+  return page.evaluate(async (id) => {
+    const cm = (window as unknown as { __configManager?: unknown })
+      .__configManager as DebugConfigManager | undefined;
+    if (!cm || typeof cm.getConfig !== 'function') {
+      throw new Error(
+        'window.__configManager is unavailable — ensure the reference app ' +
+          'is running under `vite dev` (import.meta.env.DEV) so the debug hook is wired.',
+      );
+    }
+    const row = await cm.getConfig(id);
+    if (!row) return undefined;
+    const gld = row.payload?.gridLevelData;
+    if (!gld || typeof gld !== 'object') return null;
+    return gld.liveProviderId ?? null;
+  }, configId);
+}
+
+/**
+ * Stamp `gridLevelData.liveProviderId` onto an existing row. Mirrors
+ * the read-modify-write that `createConfigServiceStorage`'s
+ * `saveGridLevelData` performs internally — preserves the rest of the
+ * payload (profiles, version) and never replaces it wholesale. Throws
+ * if the row doesn't exist; the caller is expected to seed the row
+ * (via a profile create through the real UI) before stamping.
+ */
+export async function setGridLevelLiveProviderId(
+  page: Page,
+  configId: string,
+  liveProviderId: string,
+): Promise<void> {
+  await page.evaluate(
+    async ({ id, providerId }) => {
+      const cm = (window as unknown as { __configManager?: unknown })
+        .__configManager as DebugConfigManager | undefined;
+      if (!cm || typeof cm.getConfig !== 'function' || typeof cm.updateConfig !== 'function') {
+        throw new Error('window.__configManager is unavailable.');
+      }
+      const row = await cm.getConfig(id);
+      if (!row) {
+        throw new Error(`No row found for configId=${id}; seed it before stamping gridLevelData.`);
+      }
+      const existingPayload = (row.payload ?? {}) as Record<string, unknown>;
+      const existingGld = (existingPayload.gridLevelData ?? {}) as Record<string, unknown>;
+      const nextPayload = {
+        ...existingPayload,
+        gridLevelData: { ...existingGld, liveProviderId: providerId },
+      };
+      await cm.updateConfig(id, { payload: nextPayload });
+    },
+    { id: configId, providerId: liveProviderId },
+  );
 }
 
