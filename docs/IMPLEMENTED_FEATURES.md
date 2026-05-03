@@ -1925,6 +1925,79 @@ hosted blotter at once.
 Worklog entry:
 [`docs/HOSTED_MARKETS_GRID_REFACTOR_WORKLOG.md`](./HOSTED_MARKETS_GRID_REFACTOR_WORKLOG.md).
 
+### 1.15 OpenFin e2e harness (Playwright-over-CDP)
+
+A real-OpenFin Playwright suite plus a manual smoke checklist, both
+opt-in and local-only. Lives at
+[`e2e-openfin/`](../e2e-openfin/) with the per-session reasoning trail in
+[`docs/OPENFIN_E2E_HARNESS_WORKLOG.md`](./OPENFIN_E2E_HARNESS_WORKLOG.md).
+
+The fast browser-mode `e2e/hosted-markets-grid.spec.ts` cannot exercise
+`fin.me.getOptions()`, IAB theme broadcast, real OpenFin window chrome,
+or `Platform.getSnapshot()`/`applySnapshot()` — those code paths only
+run under a real runtime. This harness fills that gap.
+
+**Added:**
+
+- `e2e-openfin/` workspace package (`@marketsui/e2e-openfin`,
+  Playwright 1.59 + `@openfin/node-adapter` 43.101.2). Opt-in via
+  `npm run test:e2e:openfin`; Turbo intentionally does not pull it
+  into the default `test` pipeline.
+- `helpers/launchPlatform.ts` — TypeScript port of the reference app's
+  `launch.mjs`; boots the platform, awaits `platform-api-ready`, and
+  returns a structured handle with a clean `quit()`.
+- `helpers/connectPlaywright.ts` — `chromium.connectOverCDP` against
+  port 9090 (already exposed by the platform manifest), plus a page
+  lookup by URL substring.
+- `helpers/configReader.ts` — read/write helpers (`listConfigs`,
+  `deleteConfigs`, `readGridLevelLiveProviderId`,
+  `setGridLevelLiveProviderId`) over a DEV-only
+  `window.__configManager` hook in the reference app's `main.tsx`.
+  Production bundles do not expose the hook.
+- `fixtures/openfin.ts` — worker-scoped `platform` + `cdpBrowser`
+  fixtures plus a test-scoped `openView(manifestUrl)` that creates a
+  view, returns its `Page` via CDP, and tears it down on test exit.
+- Three test view manifests under
+  `apps/markets-ui-react-reference/public/views/test-blotter-{a,b,template}.fin.json`,
+  each carrying the seven `customData` fields the OpenFin identity
+  path consumes; not advertised on the dock.
+- 8 specs covering parity rows 1, 3, 4, 12, 16, 18, 21 and
+  IMPLEMENTED_FEATURES §1.13:
+  - `02-smoke.spec.ts` — view boots and grid renders
+  - `03-identity-customdata.spec.ts` — `fin.me.getOptions()` readback,
+    template/singleton flags, toolbar info popover
+  - `04-registered-component-storage.spec.ts` — every saved row
+    carries `componentType` / `componentSubType` / `isTemplate` /
+    `singleton`
+  - `05-multi-window-isolation.spec.ts` — per-`instanceId` storage
+    isolation across two simultaneously-open views
+  - `06-per-view-active-profile-override.spec.ts` —
+    `Platform.getSnapshot()` captures the override into the workspace
+    JSON; `Platform.applySnapshot()` restores it; duplicate-view
+    semantics diverge after fork
+  - `07-theme-flip.spec.ts` — IAB `theme-changed` broadcast flips
+    `[data-theme]` and the AG-Grid background; cross-view
+    broadcast re-tested with two views open
+  - `08-provider-picker-hotkey.spec.ts` — Alt+Shift+P routes only to
+    the focused view (CDP-driven `Input.dispatchKeyEvent` enforces
+    per-view focus by construction)
+- `e2e-openfin/MANUAL_CHECKLIST.md` — ~15-minute checklist for
+  workspace persistence end-to-end via RVM Save Workspace,
+  multi-monitor placement, native window-manager interactions,
+  platform-restart recovery, and per-`componentSubType` visual smoke.
+  Required walk on any PR that touches the OpenFin layer.
+- `e2e-openfin/README.md` — overview, prerequisites, run instructions,
+  troubleshooting (port-in-use, runtime download, missing
+  `__configManager` hook), coverage matrix.
+
+**Constraints (from the worklog):** Windows/Mac only (RVM availability),
+no headless mode, port 9090 fixed, no CI integration in this work.
+Reviewers run the suite on their dev box before merging
+OpenFin-affecting PRs.
+
+Worklog entry:
+[`docs/OPENFIN_E2E_HARNESS_WORKLOG.md`](./OPENFIN_E2E_HARNESS_WORKLOG.md).
+
 ### Known gaps documented but not blocking
 
 - **Toolbar Visibility wiring** (§1.8e) — module state ships in every profile but concrete toolbar-toggle bindings aren't routed through it yet. Non-blocking; current host chrome uses local React state. Wiring pass is a known follow-up.

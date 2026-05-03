@@ -748,3 +748,50 @@ Append one line per completed session: `<sha> | session N | one-line summary`.
 e9f2373 | session 9 | per-view active-profile override spec (two tests in 06-per-view-active-profile-override.spec.ts: (a) round-trip — create profile via UI, read activeProfileId from fin.me.getOptions().customData, walk Platform.getSnapshot() for the matching view entry, assert override is captured, then drive Platform.applySnapshot({ closeExistingWindows: true }) from the Node fin handle and assert the rehydrated profile selector restores; (b) duplicate-view divergence — clone via Platform.createView passing customData with the source's activeProfileId, assert clone boots on the same profile, switch the clone, assert the source is untouched. Snapshot walker mirrors workspace-persistence.ts collectViewNodes; clone resolution by view name via fin.me.identity.name (CDP exposes URLs only). HMG worklog manual-checks section updated to point at sessions 8 + 9 as the automation. typecheck clean, 9/9 specs list; runtime execution deferred to reviewer.)
 c5a7188 | session 10 | theme + provider-picker specs (07-theme-flip.spec.ts: single-view IAB flip publishes 'theme-changed' { isDark: false } from the page itself — reference app's ThemeProvider subscribes to me.identity.uuid which equals the publishing view's uuid since both are the platform UUID — asserts [data-theme] flips and AG-Grid background colour observably changes; cross-view broadcast opens A+B and publishes from A, asserts both flip together (OpenFin-only path, no browser equivalent); afterEach broadcasts back to dark and clears localStorage.theme on every open page so downstream tests inherit a clean dark default. 08-provider-picker-hotkey.spec.ts: single-view chord mirrors browser e2e assertion (Live/Hist buttons appear); two-views isolation case dispatches the chord on pageA, asserts the picker mounts in A only and B stays untouched (CDP routes Input.dispatchKeyEvent to the targeted Page's session, so per-view focus is enforced by the runtime's keyboard delivery path). Chord helper mirrors the browser e2e's down/down/press/up/up sequence so any modifier-latching handler sees the same key flow. typecheck clean, 13/13 specs list across 8 files; runtime execution deferred to reviewer.)
 5d24661 | session 11 | manual checklist (e2e-openfin/MANUAL_CHECKLIST.md, 5 sections after pre-flight: workspace persistence end-to-end via RVM Save Workspace, multi-monitor placement, native window-manager minimize/maximize/drag-resize reflow, platform-restart recovery via preventQuitOnLastWindowClosed last-view-close path, per-componentSubType visual smoke + cross-view theme flip; each section carries numbered steps, tickable expectations, and a Failure modes subsection so a reviewer can decide whether the regression class matters for their PR; ~15-minute walk; cross-link from e2e-openfin/README.md deferred to session 12 since the README does not exist yet)
+<pending> | session 12 | docs + harness complete (e2e-openfin/README.md with prerequisites, run instructions, layout table, coverage matrix cross-linked to MANUAL_CHECKLIST.md and the worklog, troubleshooting for port-in-use / RVM download / missing __configManager hook; IMPLEMENTED_FEATURES §1.15 records the harness with parity rows, added artefacts, and constraints; user-memory entry already present from prior session; final `npx turbo typecheck` green — FULL TURBO 52/52 cached since the change is docs-only; runtime test:e2e:openfin and turbo build/test/e2e deferred to reviewer per the harness's local-only-by-design constraint. Sha to be filled in by a follow-up `docs:` commit once this lands, mirroring sessions 10–11.)
+
+---
+
+## Harness complete
+
+**Branch:** `e2e/openfin-harness` — ready for review.
+**Sessions landed:** 12/12.
+**Net additions:** new `e2e-openfin/` workspace package
+(helpers + fixtures + 8 specs + manual checklist + README), three test
+view manifests under
+`apps/markets-ui-react-reference/public/views/test-blotter-{a,b,template}.fin.json`,
+DEV-only `window.__configManager` hook in the reference app's `main.tsx`,
+new root script `npm run test:e2e:openfin`, and `IMPLEMENTED_FEATURES`
+§1.15. No production code paths were modified.
+
+**Parity matrix coverage:**
+
+| # | Feature | Coverage |
+|---|---|---|
+| 1 | OpenFin identity via `fin.me.getOptions()` | ✓ `tests/03-identity-customdata.spec.ts` |
+| 3 | Registered-component fields surfaced | ✓ `tests/03-identity-customdata.spec.ts` + `tests/04-registered-component-storage.spec.ts` |
+| 4 | Storage factory auto-injects registered metadata | ✓ `tests/04-registered-component-storage.spec.ts` |
+| 8 | Full-bleed fixed layout under OpenFin chrome | ✓ smoke (`tests/02-smoke.spec.ts`) + manual visual smoke |
+| 9 | DataPlane provider mount under OpenFin | ✓ smoke (`tests/02-smoke.spec.ts`) |
+| 12 | Theme switching via IAB broadcast | ✓ `tests/07-theme-flip.spec.ts` (single-view + cross-view) |
+| 16 | Provider picker (Alt+Shift+P) per-view focus | ✓ `tests/08-provider-picker-hotkey.spec.ts` |
+| 18 | Grid-level provider persistence isolation | ✓ `tests/05-multi-window-isolation.spec.ts` |
+| 21 | Toolbar ⓘ popover surfaces OpenFin identity | ✓ `tests/03-identity-customdata.spec.ts` |
+| §1.13 | Per-view active-profile override workspace round-trip | ✓ `tests/06-per-view-active-profile-override.spec.ts` (snapshot capture + apply + duplicate divergence) |
+
+**Manual coverage:** workspace persistence end-to-end via RVM Save
+Workspace, multi-monitor placement, native window-manager interactions,
+platform-restart recovery, per-`componentSubType` visual smoke — see
+`e2e-openfin/MANUAL_CHECKLIST.md` (~15-minute walk).
+
+**Out of scope (called out in Constraints):** CI integration, headless
+mode, dynamic port selection. The harness is local-only by design;
+reviewers run it on their dev box before merging OpenFin-affecting PRs.
+
+**Verification (this session):** `npx turbo typecheck` green (52/52
+FULL TURBO cached — change is docs + new README only).
+`npm run test:e2e:openfin` and `npx turbo build test e2e` deferred to
+the reviewer per the harness's local-only constraint and the
+zero-broken-state rule from the worklog header (each prior session
+already cleared its own runtime acceptance with the reviewer or
+recorded the deferral).
