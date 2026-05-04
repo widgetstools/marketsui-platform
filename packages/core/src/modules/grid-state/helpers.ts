@@ -365,16 +365,22 @@ function sanitiseFilterModelMap(filterModel: FilterModelMap): FilterModelMap {
 
 /** Walk `gridState.filter.filterModel` (AG-Grid 35's state shape),
  *  sanitise it, and return a fresh `gridState` object. Returns the
- *  input untouched when there's no filter section. */
-function sanitiseFilterModelInState<T extends Record<string, unknown>>(state: T | undefined | null): T {
-  if (!state) return {} as T;
-  const filterSection = state.filter as { filterModel?: FilterModelMap } | undefined;
+ *  input untouched when there's no filter section.
+ *
+ *  Typed as a generic over `unknown` so callers can pass either the
+ *  AG-Grid native `GridState` (which is a structured type, not an
+ *  index-signature `Record<string, unknown>`) or a hand-rolled
+ *  object. We do a defensive runtime narrowing inside. */
+function sanitiseFilterModelInState<T>(state: T | undefined | null): T {
+  if (!state || typeof state !== 'object') return (state ?? ({} as T)) as T;
+  const stateRecord = state as unknown as Record<string, unknown>;
+  const filterSection = stateRecord.filter as { filterModel?: FilterModelMap } | undefined;
   if (!filterSection || !isPlainObject(filterSection.filterModel)) return state;
   const cleanedModel = sanitiseFilterModelMap(filterSection.filterModel);
   return {
-    ...state,
+    ...stateRecord,
     filter: { ...filterSection, filterModel: cleanedModel },
-  } as T;
+  } as unknown as T;
 }
 
 /** Test-visible exports. Not part of the public module API; used by
