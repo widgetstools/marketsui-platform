@@ -21,7 +21,11 @@ import {
 export function captureGridState(api: GridApi): SavedGridState {
   const gridState = (() => {
     try {
-      return api.getState();
+      // Sanitise on the way OUT too — a transient malformed set
+      // model that AG-Grid hands back from `getState()` during init
+      // shouldn't poison the next snapshot we persist. Existing bad
+      // snapshots heal on the next save once they pass through here.
+      return sanitiseFilterModelInState(api.getState());
     } catch {
       return {} as ReturnType<GridApi['getState']>;
     }
@@ -81,7 +85,13 @@ export function applyGridState(api: GridApi, saved: SavedGridState): void {
   }
 
   try {
-    api.setState(saved.gridState);
+    // Sanitise filter models before restoring — see
+    // `sanitiseFilterModel` for why a malformed set-filter shape in
+    // a persisted snapshot crashes AG-Grid 35.2.x's
+    // `SetFilterHandler.refresh()` with `model.values is not
+    // iterable` on reload.
+    const sanitisedGridState = sanitiseFilterModelInState(saved.gridState);
+    api.setState(sanitisedGridState);
   } catch (err) {
     console.warn('[grid-state] api.setState failed:', err);
   }
@@ -265,3 +275,114 @@ export function captureGridStateInto(store: Store, api: GridApi): void {
   const saved = captureGridState(api);
   store.setModuleState<GridStateState>('grid-state', () => ({ saved }));
 }
+
+// ─── Filter-model sanitisation ─────────────────────────────────────────────
+//
+// AG-Grid 35.2.x's `SetFilterHandler.validateModel` iterates
+// `model.values` unconditionally. A persisted snapshot containing a
+// partial set-filter shape — `{ filterType: 'set' }` (no `values`) or
+// `{ filterType: 'set', values: null }` — crashes the grid on reload
+// with `TypeError: model.values is not iterable`. The grid is
+// unrecoverable from this state until the bad snapshot is dropped.
+//
+// We can't change AG-Grid's validation, but we can scrub the snapshot
+// on both ends of the persistence boundary:
+//   - `applyGridState`: filter the saved model before
+//     `api.setState(...)` so old bad snapshots don't crash on reload.
+//   - `captureGridState`: filter what AG-Grid hands back so a
+//     transient bad shape doesn't get persisted into the next save.
+// Together, this makes existing bad snapshots self-heal: load → sanitise
+// → save → snapshot is now clean.
+//
+// We never invent values; if a set child looks broken we drop it
+// entirely. AG-Grid treats a missing slot in a multi-filter exactly
+// the same as the user not having selected anything yet, which is
+// the truthful state when the persisted shape was malformed in the
+// first place.
+
+interface FilterModelMap {
+  [colId: string]: unknown;
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v);
+}
+
+/** Returns true when the given filter model is a usable set-filter
+ *  shape — has `values` and `values` is an array. */
+function isValidSetFilterModel(m: unknown): boolean {
+  if (!isPlainObject(m)) return false;
+  // We don't insist on `filterType: 'set'` — AG-Grid sometimes emits
+  // models without a discriminator and infers from context. Array
+  // `values` is the only field validateModel actually iterates, so
+  // that's what we gate on.
+  return Array.isArray(m.values);
+}
+
+/** Sanitise a single per-column filter model. Returns `undefined` if
+ *  the model is unsalvageable so the caller can drop the entry. */
+function sanitiseColumnFilterModel(model: unknown): unknown | undefined {
+  if (!isPlainObject(model)) return undefined;
+
+  // Multi-column filter — recurse into each child slot.
+  if (model.filterType === 'multi' && Array.isArray(model.filterModels)) {
+    const cleanedChildren = model.filterModels.map((child) => {
+      if (child == null) return null;
+      // Drop set children with non-iterable values, otherwise pass
+      // through unchanged.
+      if (isPlainObject(child) && child.filterType === 'set') {
+        return isValidSetFilterModel(child) ? child : null;
+      }
+      // Other child types (text/number/date) don't have the iterable-
+      // values contract; pass through.
+      return child;
+    });
+    // If every child cleaned out to null the multi-filter is empty —
+    // signal "drop this entry" so the column has no filter applied.
+    if (cleanedChildren.every((c) => c == null)) return undefined;
+    return { ...model, filterModels: cleanedChildren };
+  }
+
+  // Bare set filter at the column root.
+  if (model.filterType === 'set') {
+    return isValidSetFilterModel(model) ? model : undefined;
+  }
+
+  return model;
+}
+
+/** Walk a `filterModel` map (colId → model), sanitising each entry
+ *  and dropping unsalvageable ones. Returns a fresh object — never
+ *  mutates the input. */
+function sanitiseFilterModelMap(filterModel: FilterModelMap): FilterModelMap {
+  const out: FilterModelMap = {};
+  for (const [colId, model] of Object.entries(filterModel)) {
+    const cleaned = sanitiseColumnFilterModel(model);
+    if (cleaned !== undefined) out[colId] = cleaned;
+  }
+  return out;
+}
+
+/** Walk `gridState.filter.filterModel` (AG-Grid 35's state shape),
+ *  sanitise it, and return a fresh `gridState` object. Returns the
+ *  input untouched when there's no filter section. */
+function sanitiseFilterModelInState<T extends Record<string, unknown>>(state: T | undefined | null): T {
+  if (!state) return {} as T;
+  const filterSection = state.filter as { filterModel?: FilterModelMap } | undefined;
+  if (!filterSection || !isPlainObject(filterSection.filterModel)) return state;
+  const cleanedModel = sanitiseFilterModelMap(filterSection.filterModel);
+  return {
+    ...state,
+    filter: { ...filterSection, filterModel: cleanedModel },
+  } as T;
+}
+
+/** Test-visible exports. Not part of the public module API; used by
+ *  the unit tests to exercise the sanitisation logic without driving
+ *  a live AG-Grid through a full apply/capture round trip. */
+export const __sanitiseFilterModelForTests = {
+  isValidSetFilterModel,
+  sanitiseColumnFilterModel,
+  sanitiseFilterModelMap,
+  sanitiseFilterModelInState,
+};
