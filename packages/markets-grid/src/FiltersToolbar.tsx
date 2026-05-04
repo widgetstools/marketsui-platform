@@ -3,6 +3,7 @@ import {
   useGridApi,
   useGridPlatform,
   useModuleState,
+  sanitiseFilterModelMap,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -171,15 +172,26 @@ export function FiltersToolbar() {
   const [hasNewFilter, setHasNewFilter] = useState(false);
 
   // ─── Push the merged filter into AG-Grid whenever the active set changes ─
+  //
+  // Every model is run through `sanitiseFilterModelMap` first.
+  // Persisted saved-filter pills can carry malformed `agSetColumnFilter`
+  // shapes (`{ filterType: 'set' }` without `values`, or
+  // `values: null`) — AG-Grid 35.2.x's `SetFilterHandler.validateModel`
+  // iterates `model.values` unconditionally and crashes the whole grid
+  // with `TypeError: model.values is not iterable` if it sees one.
+  // The sanitiser strips bad set children to null so the rest of the
+  // pill still applies.
   useEffect(() => {
     if (!api) return;
     const active = filters.filter((f) => f.active);
     if (active.length === 0) {
       api.setFilterModel(null);
     } else if (active.length === 1) {
-      api.setFilterModel(active[0].filterModel);
+      api.setFilterModel(sanitiseFilterModelMap(active[0].filterModel));
     } else {
-      api.setFilterModel(mergeFilterModels(active.map((f) => f.filterModel)));
+      api.setFilterModel(
+        sanitiseFilterModelMap(mergeFilterModels(active.map((f) => f.filterModel))),
+      );
     }
     // Whenever we push the active saved-filters' model INTO AG-Grid, by
     // definition the live model now matches — clear the "new filter" flag

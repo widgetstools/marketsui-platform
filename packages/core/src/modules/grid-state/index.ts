@@ -87,4 +87,5 @@ export {
   captureGridState,
   applyGridState,
   captureGridStateInto,
+  sanitiseFilterModelMap,
 } from './helpers';

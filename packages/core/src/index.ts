@@ -404,6 +404,7 @@ export {
   captureGridState,
   applyGridState,
   captureGridStateInto,
+  sanitiseFilterModelMap,
   type GridStateState,
   type SavedGridState,
 } from './modules/grid-state';

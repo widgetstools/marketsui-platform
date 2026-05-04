@@ -351,10 +351,23 @@ function sanitiseColumnFilterModel(model: unknown): unknown | undefined {
   return model;
 }
 
-/** Walk a `filterModel` map (colId → model), sanitising each entry
- *  and dropping unsalvageable ones. Returns a fresh object — never
- *  mutates the input. */
-function sanitiseFilterModelMap(filterModel: FilterModelMap): FilterModelMap {
+/**
+ * Walk a `filterModel` map (colId → model), sanitising each entry
+ * and dropping unsalvageable ones. Returns a fresh object — never
+ * mutates the input.
+ *
+ * Public export so other surfaces that push filter models into AG-
+ * Grid can apply the same protection. The two known callers are:
+ *   - `applyGridState` in this file (load path for the grid-state
+ *     module).
+ *   - `<FiltersToolbar>` in markets-grid (load path for saved-filter
+ *     pill data — runs in a separate React effect that calls
+ *     `api.setFilterModel(...)` outside grid-state).
+ *
+ * Both call sites bring their own bad-snapshot risk; both must
+ * sanitise before calling AG-Grid's setter.
+ */
+export function sanitiseFilterModelMap(filterModel: FilterModelMap): FilterModelMap {
   const out: FilterModelMap = {};
   for (const [colId, model] of Object.entries(filterModel)) {
     const cleaned = sanitiseColumnFilterModel(model);

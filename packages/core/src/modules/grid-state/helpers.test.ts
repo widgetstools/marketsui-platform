@@ -14,12 +14,14 @@
  * the wild.
  */
 import { describe, expect, it } from 'vitest';
-import { __sanitiseFilterModelForTests as S } from './helpers';
+import {
+  __sanitiseFilterModelForTests as S,
+  sanitiseFilterModelMap,
+} from './helpers';
 
 const {
   isValidSetFilterModel,
   sanitiseColumnFilterModel,
-  sanitiseFilterModelMap,
   sanitiseFilterModelInState,
 } = S;
 
