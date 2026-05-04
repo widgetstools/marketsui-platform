@@ -73,6 +73,25 @@ interface MultiFilterInstance {
   getModel?: () => MultiFilterModel | null;
 }
 
+/** A `set` filter model is the only second-child shape we expect to
+ *  preserve across keystrokes. AG-Grid 35.2 expects
+ *  `model.values: unknown[]` and crashes (`model.values is not
+ *  iterable`) the moment its SetFilterHandler validates a partial
+ *  shape, so we drop anything else to `null` rather than echo it
+ *  back through `multi.setModel`.
+ *
+ *  This also covers the (rare but observed) case where the multi-
+ *  filter's child slot transiently holds something like
+ *  `{ filterType: 'set' }` (no `values` yet) during AG-Grid's
+ *  internal init / restore sequence. */
+function isValidSetFilterModel(
+  m: unknown,
+): m is { filterType?: 'set'; values: unknown[] } {
+  if (!m || typeof m !== 'object') return false;
+  const obj = m as Record<string, unknown>;
+  return Array.isArray(obj.values);
+}
+
 /** Read the child text filter's current model from the multi-filter
  *  parent model. Returns the empty string when there's nothing to
  *  show. */
@@ -137,7 +156,17 @@ export const MultiTextFloatingFilter = forwardRef<IFloatingFilter, IFloatingFilt
           // any other child's state. Defensive: returns `null` when
           // no filter is currently applied.
           const current = multi.getModel?.() ?? null;
-          const setChild = current?.filterModels?.[1] ?? null;
+          // Only preserve the second child's model when it's a
+          // well-formed set filter model (`values` present + array).
+          // AG-Grid 35.2's SetFilterHandler.validateModel iterates
+          // `model.values` unconditionally — a partial / mid-init
+          // shape (`values: undefined` / `null` / non-array) crashes
+          // with `TypeError: model.values is not iterable`. Treating
+          // anything else as "no set selection" is safe: it matches
+          // the user's actual state (they haven't picked anything
+          // valid in the set filter yet).
+          const rawSetChild = current?.filterModels?.[1];
+          const setChild = isValidSetFilterModel(rawSetChild) ? rawSetChild : null;
           const textChild: TextFilterModel | null =
             next === '' ? null : { filterType: 'text', type: 'contains', filter: next };
 

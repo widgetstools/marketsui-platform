@@ -113,6 +113,42 @@ describe('MultiTextFloatingFilter', () => {
     expect(fake.parent.setModel).toHaveBeenCalledWith(null);
   });
 
+  it.each([
+    ['undefined values', { filterType: 'set' }],
+    ['null values', { filterType: 'set', values: null }],
+    ['non-array values (string)', { filterType: 'set', values: 'EUR' }],
+    ['non-array values (object)', { filterType: 'set', values: {} }],
+  ])(
+    'drops a malformed set child (%s) to null instead of echoing it back — would otherwise crash AG-Grid 35.2 with "model.values is not iterable"',
+    (_label, badSetChild) => {
+      const fake = makeFakeParams({
+        initialModel: {
+          filterType: 'multi',
+          filterModels: [null, badSetChild],
+        },
+      });
+      render(
+        <MultiTextFloatingFilter
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {...({ parentFilterInstance: fake.parentFilterInstance, api: fake.api } as any)}
+        />,
+      );
+      const input = screen
+        .getByTestId('gc-multi-text-floating-filter')
+        .querySelector('input') as HTMLInputElement;
+
+      fireEvent.change(input, { target: { value: 'a' } });
+
+      expect(fake.parent.setModel).toHaveBeenLastCalledWith({
+        filterType: 'multi',
+        filterModels: [
+          { filterType: 'text', type: 'contains', filter: 'a' },
+          null,
+        ],
+      });
+    },
+  );
+
   it('preserves the SECOND child (set filter) current model when the user only types in the text floater', () => {
     // Seed the parent with an existing set-filter selection. Typing
     // in our floating text input must NOT clobber it.
