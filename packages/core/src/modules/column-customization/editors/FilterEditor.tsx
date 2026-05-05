@@ -158,7 +158,39 @@ export function FilterEditor({
                   value={cfg.floatingFilterStyle ?? 'default'}
                   onChange={(e) => {
                     const v = e.target.value as FloatingFilterStyle;
-                    update({ floatingFilterStyle: v === 'default' ? undefined : v });
+                    const patch: Partial<ColumnFilterConfig> = {
+                      floatingFilterStyle: v === 'default' ? undefined : v,
+                    };
+                    // Token-search styles need a matching sub-filter
+                    // slot to plant their model into:
+                    //   tokenText   → agTextColumnFilter sub-filter
+                    //   tokenNumber → agNumberColumnFilter sub-filter
+                    // When the user hasn't authored sub-filters yet,
+                    // seed a sensible default so the floating filter
+                    // works out of the box. CSV → set sub-filter is
+                    // also an integral part of the streamSafe routing,
+                    // so include agSetColumnFilter too.
+                    const currentSubs = cfg.multiFilters ?? [];
+                    const hasNumber = currentSubs.some((m) => m.filter === 'agNumberColumnFilter');
+                    const hasText = currentSubs.some((m) => m.filter === 'agTextColumnFilter');
+                    if (v === 'tokenNumber' && !hasNumber) {
+                      patch.multiFilters = [
+                        { filter: 'agNumberColumnFilter', display: 'subMenu', title: 'Number' },
+                        ...currentSubs.filter((m) => m.filter !== 'agNumberColumnFilter'),
+                        ...(currentSubs.some((m) => m.filter === 'agSetColumnFilter')
+                          ? []
+                          : [{ filter: 'agSetColumnFilter' as const, display: 'subMenu' as const, title: 'Set' }]),
+                      ];
+                    } else if (v === 'tokenText' && !hasText) {
+                      patch.multiFilters = [
+                        { filter: 'agTextColumnFilter', display: 'subMenu', title: 'Text' },
+                        ...currentSubs.filter((m) => m.filter !== 'agTextColumnFilter'),
+                        ...(currentSubs.some((m) => m.filter === 'agSetColumnFilter')
+                          ? []
+                          : [{ filter: 'agSetColumnFilter' as const, display: 'subMenu' as const, title: 'Set' }]),
+                      ];
+                    }
+                    update(patch);
                   }}
                   data-testid={`cols-${colId}-floating-filter-style`}
                   style={{ maxWidth: 240 }}

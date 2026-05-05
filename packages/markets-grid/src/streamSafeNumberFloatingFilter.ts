@@ -137,10 +137,12 @@ export class StreamSafeNumberFloatingFilter implements IFloatingFilterComp {
     const setIdx = isInsideMulti
       ? subFilters.findIndex((f) => f?.filter === 'agSetColumnFilter')
       : -1;
+    // streamSafeNumber sets `filterType: 'number'` models — those only
+    // validate inside an agNumberColumnFilter sub-filter slot. Targeting
+    // the text slot as a fallback would emit a number model into a text
+    // sub-filter and AG-Grid would reject (or silently drop) the model.
     const numIdx = isInsideMulti
-      ? subFilters.findIndex(
-          (f) => f?.filter === 'agNumberColumnFilter' || f?.filter === 'agTextColumnFilter',
-        )
+      ? subFilters.findIndex((f) => f?.filter === 'agNumberColumnFilter')
       : -1;
 
     const api = (this.params as unknown as {
@@ -167,9 +169,16 @@ export class StreamSafeNumberFloatingFilter implements IFloatingFilterComp {
     };
 
     const buildMultiEnvelope = (entries: Record<number, unknown>): unknown => {
-      const filterModels: unknown[] = [];
-      for (let i = 0; i < subFilters.length; i++) {
-        filterModels[i] = entries[i] ?? null;
+      // Sparse array: slots that aren't being set are LEFT EMPTY (length
+      // grows but the slot reads as `undefined`). Don't fill with null —
+      // AG-Grid 35.1's SetFilterHandler.validateModel iterates
+      // `model.values` without a null check and crashes with
+      // `model.values is not iterable` when its slot is null.
+      // Sparse / undefined slots are skipped by MultiFilter.setModel's
+      // forEach iteration.
+      const filterModels: unknown[] = new Array(subFilters.length);
+      for (const [idxStr, model] of Object.entries(entries)) {
+        if (model != null) filterModels[Number(idxStr)] = model;
       }
       return { filterType: 'multi', filterModels };
     };
@@ -242,8 +251,19 @@ export class StreamSafeNumberFloatingFilter implements IFloatingFilterComp {
     }
 
     if (isInsideMulti) {
-      const targetIdx = numIdx >= 0 ? numIdx : 0;
-      pushColumnModel(buildMultiEnvelope({ [targetIdx]: model }));
+      if (numIdx < 0) {
+        // No agNumberColumnFilter sub-filter on this column — nowhere
+        // valid to plant a number model. Warn (one-shot would be better
+        // long-term) and skip. The user needs to add agNumberColumnFilter
+        // as a sub-filter via the multi sub-filter editor.
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[streamSafeNumber] column "${colId ?? '?'}" has no agNumberColumnFilter sub-filter; ` +
+          'add one via the column-settings multi sub-filter editor to use Token search — number.',
+        );
+        return;
+      }
+      pushColumnModel(buildMultiEnvelope({ [numIdx]: model }));
     } else {
       pushColumnModel(model);
     }

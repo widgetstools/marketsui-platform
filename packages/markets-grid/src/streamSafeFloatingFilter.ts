@@ -187,11 +187,16 @@ export class StreamSafeTextFloatingFilter implements IFloatingFilterComp {
     };
 
     // Build a multi-filter envelope with sub-filter slots set per the
-    // colDef order. Slots not provided are left null (= no filter).
+    // colDef order. Slots not addressed in the call are LEFT EMPTY in
+    // a sparse array (NOT filled with `null`) — AG-Grid 35.1's
+    // SetFilterHandler.validateModel iterates `model.values` without a
+    // null check and crashes (`model.values is not iterable`) when its
+    // slot is null. Sparse / undefined slots are skipped by
+    // MultiFilter.setModel's forEach.
     const buildMultiEnvelope = (entries: Record<number, unknown>): unknown => {
-      const filterModels: unknown[] = [];
-      for (let i = 0; i < subFilters.length; i++) {
-        filterModels[i] = entries[i] ?? null;
+      const filterModels: unknown[] = new Array(subFilters.length);
+      for (const [idxStr, model] of Object.entries(entries)) {
+        if (model != null) filterModels[Number(idxStr)] = model;
       }
       return { filterType: 'multi', filterModels };
     };
