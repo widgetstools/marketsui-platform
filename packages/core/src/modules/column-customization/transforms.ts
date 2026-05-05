@@ -216,16 +216,7 @@ export function applyFilterConfigToColDef(merged: ColDef, cfg: ColumnFilterConfi
     return;
   }
 
-  // Synthetic 'streamSafeMulti*ColumnFilter' kinds aren't real AG-Grid
-  // filter types — they're opt-in markers for `agMultiColumnFilter`
-  // with our custom column-level floating filter (streamSafeText for
-  // text columns, streamSafeNumber for number columns). Flatten to
-  // the real AG-Grid kind for emission; the floating-filter component
-  // gets planted further down in the multi-filter branch.
-  const isStreamSafeMultiText = cfg.kind === 'streamSafeMultiColumnFilter';
-  const isStreamSafeMultiNumber = cfg.kind === 'streamSafeMultiNumberColumnFilter';
-  const isStreamSafeMulti = isStreamSafeMultiText || isStreamSafeMultiNumber;
-  if (cfg.kind) merged.filter = isStreamSafeMulti ? 'agMultiColumnFilter' : cfg.kind;
+  if (cfg.kind) merged.filter = cfg.kind;
   if (cfg.floatingFilter !== undefined) merged.floatingFilter = cfg.floatingFilter;
 
   // AG-Grid Enterprise resolves `filter: true` to `agSetColumnFilter`, whose
@@ -252,10 +243,7 @@ export function applyFilterConfigToColDef(merged: ColDef, cfg: ColumnFilterConfi
     if (s.defaultToNothingSelected !== undefined) params.defaultToNothingSelected = s.defaultToNothingSelected;
   }
 
-  const isMultiKind =
-    cfg.kind === 'agMultiColumnFilter' ||
-    cfg.kind === 'streamSafeMultiColumnFilter' ||
-    cfg.kind === 'streamSafeMultiNumberColumnFilter';
+  const isMultiKind = cfg.kind === 'agMultiColumnFilter';
   if (isMultiKind && cfg.multiFilters && cfg.multiFilters.length > 0) {
     params.filters = cfg.multiFilters.map((mf) => {
       const entry: Record<string, unknown> = { filter: mf.filter };
@@ -274,22 +262,24 @@ export function applyFilterConfigToColDef(merged: ColDef, cfg: ColumnFilterConfi
     });
   }
 
-  // Register streamSafeText at the COLUMN level only when the user
-  // explicitly picked the synthetic 'streamSafeMultiColumnFilter' kind
-  // in the column-settings dropdown. Column-level floatingFilterComponent
-  // overrides the multi-filter's auto-rotation behaviour: by default
-  // the multi-filter shows the floating filter of whichever sub-filter
-  // has the active model — so when our code applies a set-filter values
-  // list, the multi rotates to the set sub-filter's read-only floating
-  // display ((N) val1,val2,...) and replaces our component. With
-  // column-level wiring our floating filter stays put and we drive the
-  // model through api.setColumnFilterModel regardless of which
-  // sub-filter is "active". Plain agMultiColumnFilter keeps AG-Grid's
-  // default behaviour — no opinion imposed.
-  if (isStreamSafeMulti && cfg.floatingFilter !== false) {
-    merged.floatingFilterComponent = (
-      isStreamSafeMultiNumber ? 'streamSafeNumber' : 'streamSafeText'
-    ) as never;
+  // Honour `floatingFilterStyle` only when the column actually uses
+  // agMultiColumnFilter AND the floating filter is on. Column-level
+  // floatingFilterComponent overrides the multi-filter's auto-rotation
+  // behaviour: by default the multi-filter shows the floating filter
+  // of whichever sub-filter has the active model — so when our code
+  // applies a set-filter values list, the multi rotates to the set
+  // sub-filter's read-only floating display ((N) val1,val2,...) and
+  // replaces our component. With column-level wiring our floating
+  // filter stays put and we drive the model through
+  // `api.setColumnFilterModel` regardless of which sub-filter is
+  // "active". `'default'` / undefined leaves AG-Grid's auto-rotation
+  // alone — no opinion imposed.
+  if (isMultiKind && cfg.floatingFilter !== false && cfg.floatingFilterStyle) {
+    if (cfg.floatingFilterStyle === 'tokenText') {
+      merged.floatingFilterComponent = 'streamSafeText' as never;
+    } else if (cfg.floatingFilterStyle === 'tokenNumber') {
+      merged.floatingFilterComponent = 'streamSafeNumber' as never;
+    }
   }
 
   if (Object.keys(params).length > 0) {

@@ -26,22 +26,25 @@ export type FilterKind =
   | 'agNumberColumnFilter'
   | 'agDateColumnFilter'
   | 'agSetColumnFilter'
-  | 'agMultiColumnFilter'
-  // Synthetic kind: AG-Grid agMultiColumnFilter with our streamSafeText
-  // custom floating filter wired in at the column level. Behaves
-  // identically to agMultiColumnFilter for the popup; the floating
-  // filter row gets a typeable input with clear button + comma-token
-  // routing (single token → text contains, multi token → set values).
-  // Not a real AG-Grid filter type — transforms map it to
-  // agMultiColumnFilter at colDef-emission time.
-  | 'streamSafeMultiColumnFilter'
-  // Same idea, number-flavoured: agMultiColumnFilter with our
-  // streamSafeNumber floating filter that parses operator syntax
-  // (>100, <=50, 100-150, >0 and <50, =100 or =200, 1,2,3,4) into
-  // AG-Grid number-filter models. CSV of bare numbers routes to the
-  // set sub-filter when present; everything else to the number
-  // sub-filter as a single or compound condition model.
-  | 'streamSafeMultiNumberColumnFilter';
+  | 'agMultiColumnFilter';
+
+/**
+ * Floating-filter visual style. Only meaningful when `kind` is
+ * `agMultiColumnFilter` and `floatingFilter` is true; ignored for all
+ * other shapes. Splits the "what filter logic" question from the
+ * "what does the typed input do" question — keeps the column-settings
+ * dropdown showing only real AG-Grid filter types and lets users opt
+ * into our streamSafe components as a separate, dependent choice.
+ *
+ *   - `default`     — AG-Grid's built-in floating filter (sub-filter
+ *                     auto-rotation, read-only set display, etc.)
+ *   - `tokenText`   — streamSafeText: typeable input, clear ✕ button,
+ *                     CSV → set values, single-token → contains
+ *   - `tokenNumber` — streamSafeNumber: typeable input with operator
+ *                     parser (>100, 100-150, >0 and <50, =100 or =200,
+ *                     CSV → set values)
+ */
+export type FloatingFilterStyle = 'default' | 'tokenText' | 'tokenNumber';
 
 /** AG-Grid set-filter params we expose in the UI. */
 export interface SetFilterOptions {
@@ -72,6 +75,15 @@ export interface ColumnFilterConfig {
   buttons?: Array<'apply' | 'clear' | 'reset' | 'cancel'>;
   setFilterOptions?: SetFilterOptions;
   multiFilters?: MultiFilterEntry[];
+  /**
+   * Visual style for the floating filter input. Only honoured when
+   * `kind === 'agMultiColumnFilter'` and `floatingFilter === true`;
+   * otherwise the colDef gets AG-Grid's default floating filter.
+   * `'default'` (or undefined) = AG-Grid native; `'tokenText'` /
+   * `'tokenNumber'` = our streamSafe components. See
+   * `FloatingFilterStyle` above for the details.
+   */
+  floatingFilterStyle?: FloatingFilterStyle;
 }
 
 // ─── Row-grouping / aggregation config ─────────────────────────────────────

@@ -30,7 +30,7 @@ export const columnCustomizationModule: Module<ColumnCustomizationState> = {
   id: COLUMN_CUSTOMIZATION_MODULE_ID,
   name: 'Column Settings',
   code: '04',
-  schemaVersion: 5,
+  schemaVersion: 6,
   dependencies: [COLUMN_TEMPLATES_MODULE_ID],
   priority: 10,
 
@@ -40,9 +40,13 @@ export const columnCustomizationModule: Module<ColumnCustomizationState> = {
     // Intra-v2 schema evolution:
     //   - schemaVersion 4 added optional `filter` per-assignment
     //   - schemaVersion 5 added optional `rowGrouping`
-    // Both are additive so schemaVersion 1..4 snapshots roundtrip
-    // unchanged; we accept them and let the deserializer sanitise.
-    if (fromVersion >= 1 && fromVersion <= 4) {
+    //   - schemaVersion 6 split synthetic streamSafeMulti{,Number}ColumnFilter
+    //     filter kinds back into kind: agMultiColumnFilter +
+    //     floatingFilterStyle: 'tokenText' | 'tokenNumber'. Cleaner UI in
+    //     the column-settings editor (see FilterEditor.tsx). Migration
+    //     here rewrites old assignments so existing pills keep their
+    //     intended floating-filter behaviour.
+    if (fromVersion >= 1 && fromVersion <= 5) {
       if (!raw || typeof raw !== 'object') {
         console.warn(
           '[column-customization]',
@@ -50,7 +54,27 @@ export const columnCustomizationModule: Module<ColumnCustomizationState> = {
         );
         return { ...INITIAL_COLUMN_CUSTOMIZATION };
       }
-      return raw as ColumnCustomizationState;
+      // Use a permissive shape during migration — `filter.kind` may
+      // hold legacy string values (the synthetic streamSafeMulti kinds
+      // we just removed) that no longer exist on the new FilterKind
+      // type. Treat the slot as `string` here.
+      const cloned = JSON.parse(JSON.stringify(raw)) as { assignments?: Record<string, { filter?: { kind?: string; floatingFilterStyle?: string } }> };
+      if (fromVersion === 5 && cloned.assignments && typeof cloned.assignments === 'object') {
+        for (const colId of Object.keys(cloned.assignments)) {
+          const a = cloned.assignments[colId];
+          const filter = a?.filter as { kind?: string; floatingFilterStyle?: string } | undefined;
+          if (!filter || typeof filter !== 'object') continue;
+          const k = filter.kind;
+          if (k === 'streamSafeMultiColumnFilter') {
+            filter.kind = 'agMultiColumnFilter';
+            filter.floatingFilterStyle = 'tokenText';
+          } else if (k === 'streamSafeMultiNumberColumnFilter') {
+            filter.kind = 'agMultiColumnFilter';
+            filter.floatingFilterStyle = 'tokenNumber';
+          }
+        }
+      }
+      return cloned as ColumnCustomizationState;
     }
     console.warn(
       '[column-customization]',
