@@ -120,20 +120,6 @@ export function useGridHost(opts: {
   const onGridReady = (event: GridReadyEvent) => {
     platform.onGridReady(event.api);
     setTick((n) => n + 1); // re-run transforms now that api is live
-    // TEMP diagnostic — remove once token-filter routing is confirmed.
-    (window as unknown as { __dumpFP?: (id: string) => unknown }).__dumpFP = (colId: string) => {
-      const c = event.api.getColumn(colId);
-      if (!c) return `no column "${colId}"`;
-      const d = c.getColDef();
-      // eslint-disable-next-line no-console
-      console.log('[dumpFP]', colId, JSON.stringify({
-        filter: d.filter,
-        floatingFilter: d.floatingFilter,
-        floatingFilterComponent: d.floatingFilterComponent,
-        filterParams: d.filterParams,
-      }, null, 2));
-      return d;
-    };
   };
 
   const onGridPreDestroyed = () => {

@@ -161,34 +161,34 @@ export function FilterEditor({
                     const patch: Partial<ColumnFilterConfig> = {
                       floatingFilterStyle: v === 'default' ? undefined : v,
                     };
-                    // Token-search styles need a matching sub-filter
-                    // slot to plant their model into:
-                    //   tokenText   → agTextColumnFilter sub-filter
-                    //   tokenNumber → agNumberColumnFilter sub-filter
-                    // When the user hasn't authored sub-filters yet,
-                    // seed a sensible default so the floating filter
-                    // works out of the box. CSV → set sub-filter is
-                    // also an integral part of the streamSafe routing,
-                    // so include agSetColumnFilter too.
-                    const currentSubs = cfg.multiFilters ?? [];
-                    const hasNumber = currentSubs.some((m) => m.filter === 'agNumberColumnFilter');
-                    const hasText = currentSubs.some((m) => m.filter === 'agTextColumnFilter');
-                    if (v === 'tokenNumber' && !hasNumber) {
-                      patch.multiFilters = [
-                        { filter: 'agNumberColumnFilter', display: 'subMenu', title: 'Number' },
-                        ...currentSubs.filter((m) => m.filter !== 'agNumberColumnFilter'),
-                        ...(currentSubs.some((m) => m.filter === 'agSetColumnFilter')
-                          ? []
-                          : [{ filter: 'agSetColumnFilter' as const, display: 'subMenu' as const, title: 'Set' }]),
-                      ];
-                    } else if (v === 'tokenText' && !hasText) {
-                      patch.multiFilters = [
-                        { filter: 'agTextColumnFilter', display: 'subMenu', title: 'Text' },
-                        ...currentSubs.filter((m) => m.filter !== 'agTextColumnFilter'),
-                        ...(currentSubs.some((m) => m.filter === 'agSetColumnFilter')
-                          ? []
-                          : [{ filter: 'agSetColumnFilter' as const, display: 'subMenu' as const, title: 'Set' }]),
-                      ];
+                    // Token-search styles need TWO sub-filter slots:
+                    //   - the typed shape (tokenText → agTextColumnFilter,
+                    //     tokenNumber → agNumberColumnFilter) for single-
+                    //     token / fallback compound conditions
+                    //   - agSetColumnFilter for multi-token CSV → set
+                    //     values routing (no maxNumConditions cap, clean
+                    //     popup checkbox list)
+                    // When picking the style, ensure BOTH are present —
+                    // add only what's missing so we don't duplicate the
+                    // user's authored entries.
+                    if (v === 'tokenText' || v === 'tokenNumber') {
+                      const currentSubs = cfg.multiFilters ?? [];
+                      const typedKind: FilterKind = v === 'tokenNumber'
+                        ? 'agNumberColumnFilter'
+                        : 'agTextColumnFilter';
+                      const typedTitle = v === 'tokenNumber' ? 'Number' : 'Text';
+                      const hasTyped = currentSubs.some((m) => m.filter === typedKind);
+                      const hasSet = currentSubs.some((m) => m.filter === 'agSetColumnFilter');
+                      if (!hasTyped || !hasSet) {
+                        const next: MultiFilterEntry[] = [...currentSubs];
+                        if (!hasTyped) {
+                          next.unshift({ filter: typedKind, display: 'subMenu', title: typedTitle });
+                        }
+                        if (!hasSet) {
+                          next.push({ filter: 'agSetColumnFilter', display: 'subMenu', title: 'Set' });
+                        }
+                        patch.multiFilters = next;
+                      }
                     }
                     update(patch);
                   }}
